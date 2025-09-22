@@ -15,7 +15,8 @@
   "standard_rate",
   "image",
   "section_break_rtwm",
-  "description"
+  "description",
+  "tags"
  ],
  "fields": [
   {
@@ -65,6 +66,12 @@
    "fieldname": "standard_rate",
    "fieldtype": "Currency",
    "label": "Standard Selling Rate"
+  },
+  {
+   "fieldname": "tags",
+   "fieldtype": "Small Text",
+   "label": "Tags",
+   "description": "Comma-separated tags for categorization and filtering"
   }
  ],
  "grid_page_length": 50,
@@ -94,7 +101,7 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
- "search_fields": "product_name,description",
+ "search_fields": "product_name,description,tags",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "creation",

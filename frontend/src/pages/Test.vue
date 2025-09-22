@@ -14,7 +14,7 @@
           variant="solid"
           :label="__('Aggiungi Prodotto')"
           :iconLeft="LucidePlus"
-          @click="showAddModal = true"
+          @click="addNewProduct"
         />
       </template>
     </LayoutHeader>
@@ -72,6 +72,12 @@
             />
           </div>
           <Dropdown
+            v-model="selectedTag"
+            :options="tagFilterOptions"
+            :placeholder="__('Filtra per tag')"
+            class="w-48"
+          />
+          <Dropdown
             v-model="sortBy"
             :options="sortOptions"
             :placeholder="__('Ordina per')"
@@ -113,17 +119,21 @@
           </div>
           
           <div class="space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-ink-gray-6">{{ __('Prezzo:') }}</span>
-              <span class="font-semibold text-ink-gray-8">€{{ product.rate || '0.00' }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-ink-gray-6">{{ __('Quantità:') }}</span>
-              <span class="font-medium text-ink-gray-8">{{ product.qty || 1 }}</span>
-            </div>
             <div class="flex justify-between items-center border-t pt-2">
-              <span class="text-sm font-medium text-ink-gray-8">{{ __('Totale:') }}</span>
-              <span class="font-bold text-green-600">€{{ product.amount || '0.00' }}</span>
+              <span class="text-sm font-medium text-ink-gray-8">{{ __('Prezzo:') }}</span>
+              <span class="font-bold text-green-600">€{{ (product.rate || 0).toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <div v-if="product.tags" class="mt-3 pt-3 border-t">
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="tag in getProductTags(product.tags)"
+                :key="tag"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+              >
+                {{ tag }}
+              </span>
             </div>
           </div>
 
@@ -142,7 +152,7 @@
           variant="solid"
           :label="__('Aggiungi Prodotto')"
           :iconLeft="LucidePlus"
-          @click="showAddModal = true"
+          @click="addNewProduct"
         />
       </div>
     </div>
@@ -165,27 +175,25 @@
             />
           </div>
           
-          <div class="grid grid-cols-2 gap-4">
-            <Input
-              v-model="productForm.rate"
-              :label="__('Prezzo')"
-              :placeholder="__('0.00')"
-              type="number"
-              step="0.01"
-            />
-            <Input
-              v-model="productForm.qty"
-              :label="__('Quantità')"
-              :placeholder="__('1')"
-              type="number"
-              step="1"
-            />
-          </div>
+          <Input
+            v-model="productForm.rate"
+            :label="__('Prezzo')"
+            :placeholder="__('0.00')"
+            type="number"
+            step="0.01"
+          />
 
           <Textarea
             v-model="productForm.description"
             :label="__('Descrizione')"
             :placeholder="__('Descrizione del prodotto')"
+          />
+
+          <Input
+            v-model="productForm.tags"
+            :label="__('Tag')"
+            :placeholder="__('Es. elettronica, smartphone, premium')"
+            :description="__('Separati da virgola per categorizzare i prodotti')"
           />
 
           <div class="flex items-center gap-4">
@@ -197,14 +205,16 @@
         </div>
       </template>
       <template #actions>
-        <Button variant="ghost" :label="__('Annulla')" @click="closeModal" />
-        <Button
-          variant="solid"
-          :label="isEditing ? __('Salva Modifiche') : __('Aggiungi Prodotto')"
-          :disabled="!productForm.product_code || !productForm.product_name"
-          :loading="saving"
-          @click="saveProduct"
-        />
+        <div class="flex gap-2 ml-auto">
+          <Button variant="ghost" :label="__('Annulla')" @click="closeModal" />
+          <Button
+            variant="solid"
+            :label="isEditing ? __('Salva Modifiche') : __('Aggiungi Prodotto')"
+            :disabled="!productForm.product_code || !productForm.product_name"
+            :loading="saving"
+            @click="saveProduct"
+          />
+        </div>
       </template>
     </Dialog>
 
@@ -216,21 +226,21 @@
             variant="ghost"
             :label="__('Modifica')"
             :iconLeft="LucideEdit"
-            @click="editProduct(selectedProduct)"
+            @click="editProductFromMenu(selectedProduct)"
             class="w-full justify-start"
           />
           <Button
             variant="ghost"
             :label="__('Duplica')"
             :iconLeft="LucideCopy"
-            @click="duplicateProduct(selectedProduct)"
+            @click="duplicateProductFromMenu(selectedProduct)"
             class="w-full justify-start"
           />
           <Button
             variant="ghost"
             :label="__('Elimina')"
             :iconLeft="LucideTrash2"
-            @click="deleteProduct(selectedProduct)"
+            @click="deleteProductFromMenu(selectedProduct)"
             class="w-full justify-start text-red-600"
           />
         </div>
@@ -264,6 +274,7 @@ const isEditing = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 const sortBy = ref('name')
+const selectedTag = ref('')
 const selectedProduct = ref(null)
 
 // Product form
@@ -271,8 +282,8 @@ const productForm = ref({
   product_code: '',
   product_name: '',
   rate: '',
-  qty: 1,
   description: '',
+  tags: '',
   disabled: false
 })
 
@@ -284,6 +295,22 @@ const sortOptions = [
   { label: __('Codice'), value: 'code' }
 ]
 
+// Tag filter options
+const tagFilterOptions = computed(() => {
+  const allTags = new Set()
+  products.value.forEach(product => {
+    if (product.tags) {
+      getProductTags(product.tags).forEach(tag => allTags.add(tag))
+    }
+  })
+  
+  const options = [{ label: __('Tutti i tag'), value: '' }]
+  Array.from(allTags).sort().forEach(tag => {
+    options.push({ label: tag, value: tag })
+  })
+  return options
+})
+
 // Computed properties
 const filteredProducts = computed(() => {
   let filtered = products.value
@@ -294,8 +321,18 @@ const filteredProducts = computed(() => {
     filtered = filtered.filter(product => 
       product.product_name?.toLowerCase().includes(query) ||
       product.product_code?.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query)
+      product.description?.toLowerCase().includes(query) ||
+      product.tags?.toLowerCase().includes(query)
     )
+  }
+
+  // Tag filter
+  if (selectedTag.value) {
+    filtered = filtered.filter(product => {
+      if (!product.tags) return false
+      const productTags = getProductTags(product.tags)
+      return productTags.includes(selectedTag.value)
+    })
   }
 
   // Sort
@@ -325,8 +362,7 @@ const averagePrice = computed(() => {
 
 const totalValue = computed(() => {
   return products.value.reduce((sum, product) => {
-    const amount = (product.rate || 0) * (product.qty || 1)
-    return sum + amount
+    return sum + (product.rate || 0)
   }, 0).toFixed(2)
 })
 
@@ -336,7 +372,7 @@ const productsResource = createResource({
   makeParams() {
     return {
       doctype: 'CRM Product',
-      fields: ['name', 'product_code', 'product_name', 'standard_rate', 'image', 'description', 'disabled', 'creation'],
+      fields: ['name', 'product_code', 'product_name', 'standard_rate', 'image', 'description', 'tags', 'disabled', 'creation'],
       limit_page_length: 0
     }
   },
@@ -344,9 +380,7 @@ const productsResource = createResource({
   onSuccess(data) {
     products.value = data.map(product => ({
       ...product,
-      rate: product.standard_rate || 0,
-      qty: 1,
-      amount: (product.standard_rate || 0) * 1
+      rate: product.standard_rate || 0
     }))
   }
 })
@@ -354,6 +388,13 @@ const productsResource = createResource({
 // Methods
 function refreshProducts() {
   productsResource.reload()
+}
+
+function addNewProduct() {
+  isEditing.value = false
+  selectedProduct.value = null
+  resetForm()
+  showAddModal.value = true
 }
 
 function closeModal() {
@@ -369,8 +410,8 @@ function resetForm() {
     product_code: '',
     product_name: '',
     rate: '',
-    qty: 1,
     description: '',
+    tags: '',
     disabled: false
   }
 }
@@ -382,8 +423,8 @@ function editProduct(product) {
     product_code: product.product_code,
     product_name: product.product_name,
     rate: product.rate,
-    qty: product.qty,
     description: product.description || '',
+    tags: product.tags || '',
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -400,7 +441,7 @@ async function saveProduct() {
   saving.value = true
   
   try {
-    if (isEditing.value) {
+    if (isEditing.value && selectedProduct.value) {
       // Update existing product
       await call('frappe.client.set_value', {
         doctype: 'CRM Product',
@@ -409,6 +450,7 @@ async function saveProduct() {
           product_name: productForm.value.product_name,
           standard_rate: parseFloat(productForm.value.rate) || 0,
           description: productForm.value.description,
+          tags: productForm.value.tags,
           disabled: productForm.value.disabled
         }
       })
@@ -421,6 +463,7 @@ async function saveProduct() {
           product_name: productForm.value.product_name,
           standard_rate: parseFloat(productForm.value.rate) || 0,
           description: productForm.value.description,
+          tags: productForm.value.tags,
           disabled: productForm.value.disabled
         }
       })
@@ -431,9 +474,8 @@ async function saveProduct() {
         product_code: productForm.value.product_code,
         product_name: productForm.value.product_name,
         rate: parseFloat(productForm.value.rate) || 0,
-        qty: parseInt(productForm.value.qty) || 1,
-        amount: (parseFloat(productForm.value.rate) || 0) * (parseInt(productForm.value.qty) || 1),
         description: productForm.value.description,
+        tags: productForm.value.tags,
         disabled: productForm.value.disabled,
         creation: new Date().toISOString()
       })
@@ -455,12 +497,32 @@ function duplicateProduct(product) {
     product_code: `${product.product_code}-COPY`,
     product_name: `${product.product_name} (Copia)`,
     rate: product.rate,
-    qty: product.qty,
     description: product.description || '',
+    tags: product.tags || '',
     disabled: false
   }
   showProductMenuModal.value = false
   showAddModal.value = true
+}
+
+function editProductFromMenu(product) {
+  showProductMenuModal.value = false
+  editProduct(product)
+}
+
+function duplicateProductFromMenu(product) {
+  showProductMenuModal.value = false
+  duplicateProduct(product)
+}
+
+async function deleteProductFromMenu(product) {
+  showProductMenuModal.value = false
+  await deleteProduct(product)
+}
+
+function getProductTags(tagsString) {
+  if (!tagsString) return []
+  return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
 }
 
 async function deleteProduct(product) {
@@ -484,12 +546,6 @@ async function deleteProduct(product) {
   }
 }
 
-// Watch for form changes to calculate amount
-watch(() => [productForm.value.rate, productForm.value.qty], () => {
-  if (productForm.value.rate && productForm.value.qty) {
-    productForm.value.amount = (parseFloat(productForm.value.rate) || 0) * (parseInt(productForm.value.qty) || 1)
-  }
-})
 
 usePageMeta(() => {
   return { title: __('Listino Prodotti') }
