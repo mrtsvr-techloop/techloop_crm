@@ -25,7 +25,7 @@
           {{ __('Listino Prodotti') }}
         </h1>
         <p class="text-ink-gray-6">
-          {{ __('Gestisci il catalogo prodotti con prezzi e quantità.') }}
+          {{ __('Gestisci il catalogo prodotti con prezzi.') }}
         </p>
       </div>
 
@@ -71,17 +71,32 @@
               :iconLeft="LucideSearch"
             />
           </div>
-          <Dropdown
-            v-model="selectedTag"
-            :options="tagFilterOptions"
-            :placeholder="__('Filtra per tag')"
-            class="w-48"
+          <Button
+            variant="outline"
+            :iconLeft="LucideFilter"
+            :label="getFilterButtonLabel()"
+            @click="showFilterModal = true"
           />
-          <Dropdown
-            v-model="sortBy"
-            :options="sortOptions"
-            :placeholder="__('Ordina per')"
-            class="w-48"
+        </div>
+        
+        <!-- Filter Status -->
+        <div v-if="hasActiveFilters" class="mt-3 flex items-center gap-2">
+          <span class="text-sm text-ink-gray-6">{{ __('Vista filtrata:') }}</span>
+          <Badge
+            v-if="selectedTag"
+            :label="`Tag: ${selectedTag}`"
+            variant="subtle"
+          />
+          <Badge
+            v-if="sortBy !== 'name'"
+            :label="`Ordinato per: ${getSortLabel()}`"
+            variant="subtle"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            :label="__('Rimuovi filtri')"
+            @click="clearFilters"
           />
         </div>
       </div>
@@ -125,6 +140,10 @@
             </div>
           </div>
 
+          <div v-if="product.description" class="mt-3 pt-3 border-t">
+            <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
+          </div>
+
           <div v-if="product.tags" class="mt-3 pt-3 border-t">
             <div class="flex flex-wrap gap-1">
               <span
@@ -135,10 +154,6 @@
                 {{ tag }}
               </span>
             </div>
-          </div>
-
-          <div v-if="product.description" class="mt-3 pt-3 border-t">
-            <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
           </div>
         </div>
       </div>
@@ -246,6 +261,41 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Filter Modal -->
+    <Dialog v-model="showFilterModal" :options="{ title: __('Filtri e Ordinamento') }">
+      <template #body-content>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Filtra per Tag') }}</label>
+            <Dropdown
+              v-model="selectedTag"
+              :options="tagFilterOptions"
+              :placeholder="__('Seleziona un tag')"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Ordina per') }}</label>
+            <Dropdown
+              v-model="sortBy"
+              :options="sortOptions"
+              :placeholder="__('Seleziona ordinamento')"
+            />
+          </div>
+        </div>
+      </template>
+      <template #actions>
+        <div class="flex gap-2 ml-auto">
+          <Button variant="ghost" :label="__('Annulla')" @click="showFilterModal = false" />
+          <Button
+            variant="solid"
+            :label="__('Applica Filtri')"
+            @click="applyFilters"
+          />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -262,14 +312,16 @@ import LucideMoreVertical from '~icons/lucide/more-vertical'
 import LucideEdit from '~icons/lucide/edit'
 import LucideCopy from '~icons/lucide/copy'
 import LucideTrash2 from '~icons/lucide/trash-2'
-import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, createResource, call } from 'frappe-ui'
-import { ref, computed, watch } from 'vue'
+import LucideFilter from '~icons/lucide/filter'
+import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, createResource, call } from 'frappe-ui'
+import { ref, computed } from 'vue'
 import { usePageMeta } from 'frappe-ui'
 
 // Reactive data
 const products = ref([])
 const showAddModal = ref(false)
 const showProductMenuModal = ref(false)
+const showFilterModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
@@ -365,6 +417,23 @@ const totalValue = computed(() => {
     return sum + (product.rate || 0)
   }, 0).toFixed(2)
 })
+
+// Filter and sorting helpers
+const hasActiveFilters = computed(() => {
+  return selectedTag.value || sortBy.value !== 'name'
+})
+
+const getFilterButtonLabel = () => {
+  if (hasActiveFilters.value) {
+    return __('Filtri Attivi')
+  }
+  return __('Filtri')
+}
+
+const getSortLabel = () => {
+  const option = sortOptions.find(opt => opt.value === sortBy.value)
+  return option ? option.label : ''
+}
 
 // Resources
 const productsResource = createResource({
@@ -525,6 +594,15 @@ function getProductTags(tagsString) {
   return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
 }
 
+function applyFilters() {
+  showFilterModal.value = false
+}
+
+function clearFilters() {
+  selectedTag.value = ''
+  sortBy.value = 'name'
+}
+
 async function deleteProduct(product) {
   if (confirm(__('Sei sicuro di voler eliminare questo prodotto?'))) {
     try {
@@ -542,6 +620,20 @@ async function deleteProduct(product) {
       showProductMenuModal.value = false
     } catch (error) {
       console.error('Error deleting product:', error)
+      let errorMessage = __('Impossibile eliminare il prodotto.')
+      
+      if (error.message) {
+        if (error.message.includes('linked') || error.message.includes('referenced')) {
+          errorMessage = __('Impossibile eliminare il prodotto perché è utilizzato in altri documenti. Rimuovi prima tutti i riferimenti a questo prodotto.')
+        } else if (error.message.includes('permission')) {
+          errorMessage = __('Non hai i permessi necessari per eliminare questo prodotto.')
+        } else if (error.message.includes('not found')) {
+          errorMessage = __('Il prodotto non esiste più nel sistema.')
+        }
+      }
+      
+      alert(errorMessage)
+      showProductMenuModal.value = false
     }
   }
 }
