@@ -238,6 +238,11 @@ const links = [
     icon: PhoneIcon,
     to: 'Call Logs',
   },
+  {
+    label: 'Test',
+    icon: SquareAsterisk,
+    to: 'Test',
+  },
 ]
 
 const allViews = computed(() => {
@@ -302,6 +307,8 @@ function getIcon(routeName, icon) {
       return NoteIcon
     case 'Call Logs':
       return PhoneIcon
+    case 'Test':
+      return SquareAsterisk
     default:
       return PinIcon
   }

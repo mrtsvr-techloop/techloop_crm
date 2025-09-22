@@ -90,6 +90,11 @@ const routes = [
     component: () => import('@/pages/Welcome.vue'),
   },
   {
+    path: '/test',
+    name: 'Test',
+    component: () => import('@/pages/Test.vue'),
+  },
+  {
     path: '/:invalidpath',
     name: 'Invalid Page',
     component: () => import('@/pages/InvalidPage.vue'),
