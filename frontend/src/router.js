@@ -90,8 +90,8 @@ const routes = [
     component: () => import('@/pages/Welcome.vue'),
   },
   {
-    path: '/test',
-    name: 'Test',
+    path: '/listino-prodotti',
+    name: 'Listino Prodotti',
     component: () => import('@/pages/Test.vue'),
   },
   {

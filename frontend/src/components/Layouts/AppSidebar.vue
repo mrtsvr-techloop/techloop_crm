@@ -239,9 +239,9 @@ const links = [
     to: 'Call Logs',
   },
   {
-    label: 'Test',
+    label: 'Listino Prodotti',
     icon: SquareAsterisk,
-    to: 'Test',
+    to: 'Listino Prodotti',
   },
 ]
 
@@ -307,7 +307,7 @@ function getIcon(routeName, icon) {
       return NoteIcon
     case 'Call Logs':
       return PhoneIcon
-    case 'Test':
+    case 'Listino Prodotti':
       return SquareAsterisk
     default:
       return PinIcon
