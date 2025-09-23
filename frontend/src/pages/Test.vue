@@ -139,7 +139,17 @@
             <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
           </div>
 
-          <!-- Tags will be visible when you edit the product in the standard Frappe form -->
+          <div v-if="product.product_tags && product.product_tags.length > 0" class="mt-3 pt-3 border-t">
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="tagRow in product.product_tags"
+                :key="tagRow.tag_name"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+              >
+                {{ tagRow.tag_name }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -189,10 +199,60 @@
             :placeholder="__('Descrizione del prodotto')"
           />
 
-          <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
-            <p class="text-sm text-yellow-800">
-              <strong>{{ __('Nota:') }}</strong> {{ __('I tag verranno gestiti nel modulo standard di Frappe. Salva il prodotto e poi modificalo per aggiungere i tag.') }}
-            </p>
+          <div>
+            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Tags') }}</label>
+            
+            <!-- Tags Table -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <table class="w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      {{ __('Tag') }}
+                    </th>
+                    <th class="w-16 px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(tagRow, index) in productForm.product_tags" :key="index" class="border-t border-gray-200">
+                    <td class="px-4 py-2">
+                      <Link
+                        v-model="tagRow.tag_name"
+                        doctype="CRM Product Tag Master"
+                        :placeholder="__('Seleziona o crea tag')"
+                        :onCreate="(value, close) => {
+                          createNewTag(value, tagRow)
+                          close()
+                        }"
+                      />
+                    </td>
+                    <td class="px-4 py-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon="trash-2"
+                        @click="removeTag(index)"
+                      />
+                    </td>
+                  </tr>
+                  <tr v-if="productForm.product_tags.length === 0">
+                    <td colspan="2" class="px-4 py-8 text-center text-gray-500 text-sm">
+                      {{ __('Nessun tag aggiunto') }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <div class="px-4 py-2 border-t border-gray-200 bg-gray-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon="plus"
+                  :label="__('Aggiungi Riga')"
+                  @click="addTag"
+                />
+              </div>
+            </div>
           </div>
 
           <div class="flex items-center gap-4">
@@ -292,6 +352,7 @@ import LucideCopy from '~icons/lucide/copy'
 import LucideTrash2 from '~icons/lucide/trash-2'
 import LucideFilter from '~icons/lucide/filter'
 import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, createResource, call } from 'frappe-ui'
+import Link from '@/components/Controls/Link.vue'
 import { ref, computed } from 'vue'
 import { usePageMeta } from 'frappe-ui'
 
@@ -315,6 +376,7 @@ const productForm = ref({
   product_name: '',
   rate: '',
   description: '',
+  product_tags: [],
   disabled: false
 })
 
@@ -402,11 +464,32 @@ const productsResource = createResource({
   },
   auto: true,
   onSuccess(data) {
-    products.value = data.map(product => ({
-      ...product,
-      rate: product.standard_rate || 0,
-      product_tags: [] // Tags will be loaded from backend when needed
-    }))
+    // Load products with tags
+    const promises = data.map(async product => {
+      try {
+        const tagData = await call('frappe.client.get_list', {
+          doctype: 'CRM Product Tag',
+          filters: { parent: product.name },
+          fields: ['tag_name']
+        })
+        
+        return {
+          ...product,
+          rate: product.standard_rate || 0,
+          product_tags: tagData || []
+        }
+      } catch (error) {
+        return {
+          ...product,
+          rate: product.standard_rate || 0,
+          product_tags: []
+        }
+      }
+    })
+    
+    Promise.all(promises).then(productsWithTags => {
+      products.value = productsWithTags
+    })
   }
 })
 
@@ -438,6 +521,7 @@ function resetForm() {
     product_name: '',
     rate: '',
     description: '',
+    product_tags: [],
     disabled: false
   }
 }
@@ -450,6 +534,7 @@ function editProduct(product) {
     product_name: product.product_name,
     rate: product.rate,
     description: product.description || '',
+    product_tags: product.product_tags || [],
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -470,15 +555,22 @@ async function saveProduct() {
       product_name: productForm.value.product_name,
       standard_rate: parseFloat(productForm.value.rate) || 0,
       description: productForm.value.description,
-      disabled: productForm.value.disabled
+      disabled: productForm.value.disabled,
+      product_tags: productForm.value.product_tags
     }
 
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product
-      await call('frappe.client.set_value', {
+      // Update existing product with child table support
+      const doc = await call('frappe.client.get_doc', {
         doctype: 'CRM Product',
-        name: selectedProduct.value.name,
-        fieldname: productData
+        name: selectedProduct.value.name
+      })
+      
+      // Update the document
+      Object.assign(doc, productData)
+      
+      await call('frappe.client.save', {
+        doc: doc
       })
     } else {
       // Create new product
@@ -508,6 +600,7 @@ function duplicateProduct(product) {
     product_name: `${product.product_name} (Copia)`,
     rate: product.rate,
     description: product.description || '',
+    product_tags: product.product_tags || [],
     disabled: false
   }
   showProductMenuModal.value = false
@@ -540,7 +633,20 @@ function getProductTags(tagsString) {
   return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
 }
 
+function addTag() {
+  productForm.value.product_tags.push({
+    tag_name: ''
+  })
+}
 
+function removeTag(index) {
+  productForm.value.product_tags.splice(index, 1)
+}
+
+function createNewTag(value, tagRow) {
+  // This will be called when a new tag is created
+  tagRow.tag_name = value
+}
 
 function applyFilters() {
   showFilterModal.value = false
