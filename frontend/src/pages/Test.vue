@@ -464,21 +464,19 @@ const productsResource = createResource({
   },
   auto: true,
   onSuccess(data) {
-    // Load products with tags
+    // Load products with tags using safe method
     const promises = data.map(async product => {
       try {
-        const tagData = await call('frappe.client.get_list', {
-          doctype: 'CRM Product Tag',
-          filters: { parent: product.name },
-          fields: ['tag_name']
+        const productWithTags = await call('crm.fcrm.doctype.crm_product.api.get_product_with_tags', {
+          name: product.name
         })
         
         return {
-          ...product,
-          rate: product.standard_rate || 0,
-          product_tags: tagData || []
+          ...productWithTags,
+          rate: productWithTags.standard_rate || 0
         }
       } catch (error) {
+        console.warn(`Error loading tags for product ${product.name}:`, error)
         return {
           ...product,
           rate: product.standard_rate || 0,
@@ -560,23 +558,18 @@ async function saveProduct() {
     }
 
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product with child table support
-      const doc = await call('frappe.client.get_doc', {
-        doctype: 'CRM Product',
-        name: selectedProduct.value.name
-      })
-      
-      // Update the document
-      Object.assign(doc, productData)
-      
-      await call('frappe.client.save', {
-        doc: doc
+      // Update existing product using our custom API
+      await call('crm.fcrm.doctype.crm_product.api.update_product_with_tags', {
+        name: selectedProduct.value.name,
+        product_data: {
+          product_code: productForm.value.product_code,
+          ...productData
+        }
       })
     } else {
-      // Create new product
-      await call('frappe.client.insert', {
-        doc: {
-          doctype: 'CRM Product',
+      // Create new product using our custom API
+      await call('crm.fcrm.doctype.crm_product.api.create_product_with_tags', {
+        product_data: {
           product_code: productForm.value.product_code,
           ...productData
         }
@@ -587,6 +580,22 @@ async function saveProduct() {
     refreshProducts()
   } catch (error) {
     console.error('Error saving product:', error)
+    
+    let errorMessage = __('Errore durante il salvataggio del prodotto.')
+    
+    if (error.messages && error.messages.length > 0) {
+      errorMessage = error.messages[0]
+    } else if (error.message) {
+      if (error.message.includes('already exists')) {
+        errorMessage = __('Un prodotto con questo codice esiste già.')
+      } else if (error.message.includes('validation')) {
+        errorMessage = __('Errore di validazione. Controlla i dati inseriti.')
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    alert(errorMessage)
   } finally {
     saving.value = false
   }
@@ -659,8 +668,7 @@ function clearFilters() {
 async function deleteProduct(product) {
   if (confirm(__('Sei sicuro di voler eliminare questo prodotto?'))) {
     try {
-      await call('frappe.client.delete', {
-        doctype: 'CRM Product',
+      await call('crm.fcrm.doctype.crm_product.api.delete_product_safe', {
         name: product.name
       })
       
@@ -671,17 +679,27 @@ async function deleteProduct(product) {
       }
       
       showProductMenuModal.value = false
+      
+      // Show success message
+      alert(__('Prodotto eliminato con successo.'))
+      
     } catch (error) {
       console.error('Error deleting product:', error)
       let errorMessage = __('Impossibile eliminare il prodotto.')
       
-      if (error.message) {
+      if (error.messages && error.messages.length > 0) {
+        errorMessage = error.messages[0]
+      } else if (error.message) {
         if (error.message.includes('linked') || error.message.includes('referenced')) {
           errorMessage = __('Impossibile eliminare il prodotto perché è utilizzato in altri documenti. Rimuovi prima tutti i riferimenti a questo prodotto.')
         } else if (error.message.includes('permission')) {
           errorMessage = __('Non hai i permessi necessari per eliminare questo prodotto.')
         } else if (error.message.includes('not found')) {
           errorMessage = __('Il prodotto non esiste più nel sistema.')
+        } else if (error.message.includes('OperationalError')) {
+          errorMessage = __('Errore del database. Riprova più tardi o contatta l\'amministratore.')
+        } else {
+          errorMessage = error.message
         }
       }
       
