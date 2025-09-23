@@ -528,7 +528,7 @@ function editProduct(product) {
     product_name: product.product_name,
     rate: product.rate,
     description: product.description || '',
-    product_tags: product.product_tags || [],
+    product_tags: (product.product_tags || []).map(r => ({ tag_name: r.tag_name })),
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -549,9 +549,13 @@ async function saveProduct() {
       product_name: productForm.value.product_name,
       standard_rate: parseFloat(productForm.value.rate) || 0,
       description: productForm.value.description,
-      disabled: productForm.value.disabled,
-      product_tags: productForm.value.product_tags
+      disabled: productForm.value.disabled
     }
+
+    // Prepare child rows as proper Table rows
+    const childRows = (productForm.value.product_tags || [])
+      .filter(r => r.tag_name && r.tag_name.trim().length)
+      .map(r => ({ doctype: 'CRM Product Tag', parentfield: 'product_tags', parenttype: 'CRM Product', tag_name: r.tag_name }))
 
     // Check duplicate code
     const dup = await call('frappe.client.get_list', {
@@ -569,18 +573,18 @@ async function saveProduct() {
     }
 
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product including child table: use get_doc + save to handle children
       const doc = await call('frappe.client.get', { doctype: 'CRM Product', name: selectedProduct.value.name })
       Object.assign(doc, productData)
-      doc.product_tags = productForm.value.product_tags
+      // Replace child table safely: clear and assign
+      doc.product_tags = childRows
       await call('frappe.client.save', { doc })
     } else {
-      // Create new product with child table
       await call('frappe.client.insert', {
         doc: {
           doctype: 'CRM Product',
           product_code: productForm.value.product_code,
-          ...productData
+          ...productData,
+          product_tags: childRows
         }
       })
     }
@@ -599,6 +603,8 @@ async function saveProduct() {
         errorMessage = __('Un prodotto con questo codice esiste già.')
       } else if (error.message.includes('validation')) {
         errorMessage = __('Errore di validazione. Controlla i dati inseriti.')
+      } else if (error.message.includes('LinkValidationError')) {
+        errorMessage = __('Tag non valido. Seleziona o crea un tag valido.')
       } else {
         errorMessage = error.message
       }
@@ -661,9 +667,21 @@ function removeTag(index) {
   productForm.value.product_tags.splice(index, 1)
 }
 
-function createNewTag(value, tagRow) {
-  // This will be called when a new tag is created
-  tagRow.tag_name = value
+async function createNewTag(value, tagRow) {
+  if (!value) return
+  try {
+    const newTag = await call('frappe.client.insert', {
+      doc: {
+        doctype: 'CRM Product Tag Master',
+        tag_name: value
+      }
+    })
+    tagRow.tag_name = newTag.name
+  } catch (e) {
+    console.error('Error creating tag master:', e)
+    // fallback: set raw value; server will error if invalid
+    tagRow.tag_name = value
+  }
 }
 
 function applyFilters() {
