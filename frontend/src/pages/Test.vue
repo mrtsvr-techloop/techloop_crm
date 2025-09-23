@@ -456,38 +456,34 @@ const getSortLabel = () => {
 const productsResource = createResource({
   url: 'frappe.client.get_list',
   makeParams() {
-    return {
+    const params = {
       doctype: 'CRM Product',
-      fields: ['name', 'product_code', 'product_name', 'standard_rate', 'image', 'description', 'disabled', 'creation', 'product_tags'],
-      limit_page_length: 0
+      fields: ['name','product_code','product_name','standard_rate','image','description','disabled','creation'],
+      limit_page_length: 50,
+      order_by: 'creation desc'
     }
+    if (searchQuery.value) {
+      params.filters = [
+        ['product_name','like',`%${searchQuery.value}%`]
+      ]
+    }
+    return params
   },
   auto: true,
-  onSuccess(data) {
-    // Load products with tags using safe method
-    const promises = data.map(async product => {
+  async onSuccess(list) {
+    const promises = (list || []).map(async (row) => {
       try {
-        const productWithTags = await call('crm.fcrm.doctype.crm_product.api.get_product_with_tags', {
-          name: product.name
-        })
-        
+        const full = await call('frappe.client.get', { doctype: 'CRM Product', name: row.name })
         return {
-          ...productWithTags,
-          rate: productWithTags.standard_rate || 0
+          ...full,
+          rate: full.standard_rate || 0,
+          product_tags: full.product_tags || []
         }
-      } catch (error) {
-        console.warn(`Error loading tags for product ${product.name}:`, error)
-        return {
-          ...product,
-          rate: product.standard_rate || 0,
-          product_tags: []
-        }
+      } catch (e) {
+        return { ...row, rate: row.standard_rate || 0, product_tags: [] }
       }
     })
-    
-    Promise.all(promises).then(productsWithTags => {
-      products.value = productsWithTags
-    })
+    products.value = await Promise.all(promises)
   }
 })
 
@@ -557,19 +553,32 @@ async function saveProduct() {
       product_tags: productForm.value.product_tags
     }
 
+    // Check duplicate code
+    const dup = await call('frappe.client.get_list', {
+      doctype: 'CRM Product',
+      fields: ['name'],
+      filters: {
+        product_code: productForm.value.product_code,
+        name: isEditing.value && selectedProduct.value ? ['!=', selectedProduct.value.name] : undefined
+      },
+      limit_page_length: 1
+    })
+    if (dup && dup.length) {
+      alert(__('Un prodotto con questo codice esiste già.'))
+      return
+    }
+
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product using our custom API
-      await call('crm.fcrm.doctype.crm_product.api.update_product_with_tags', {
-        name: selectedProduct.value.name,
-        product_data: {
-          product_code: productForm.value.product_code,
-          ...productData
-        }
-      })
+      // Update existing product including child table: use get_doc + save to handle children
+      const doc = await call('frappe.client.get', { doctype: 'CRM Product', name: selectedProduct.value.name })
+      Object.assign(doc, productData)
+      doc.product_tags = productForm.value.product_tags
+      await call('frappe.client.save', { doc })
     } else {
-      // Create new product using our custom API
-      await call('crm.fcrm.doctype.crm_product.api.create_product_with_tags', {
-        product_data: {
+      // Create new product with child table
+      await call('frappe.client.insert', {
+        doc: {
+          doctype: 'CRM Product',
           product_code: productForm.value.product_code,
           ...productData
         }
@@ -668,7 +677,8 @@ function clearFilters() {
 async function deleteProduct(product) {
   if (confirm(__('Sei sicuro di voler eliminare questo prodotto?'))) {
     try {
-      await call('crm.fcrm.doctype.crm_product.api.delete_product_safe', {
+      await call('frappe.client.delete', {
+        doctype: 'CRM Product',
         name: product.name
       })
       

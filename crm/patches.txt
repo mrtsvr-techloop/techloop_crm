@@ -16,4 +16,3 @@ crm.patches.v1_0.create_default_scripts # 13-06-2025
 crm.patches.v1_0.update_deal_status_probabilities
 crm.patches.v1_0.update_deal_status_type
 crm.patches.v1_0.create_default_lost_reasons
-crm.patches.v1_0.fix_product_tag_schema
