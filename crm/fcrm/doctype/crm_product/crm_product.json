@@ -16,7 +16,8 @@
   "image",
   "section_break_rtwm",
   "description",
-  "tags"
+  "section_break_tags",
+  "product_tags"
  ],
  "fields": [
   {
@@ -68,10 +69,15 @@
    "label": "Standard Selling Rate"
   },
   {
-   "fieldname": "tags",
-   "fieldtype": "Small Text",
-   "label": "Tags",
-   "description": "Comma-separated tags for categorization and filtering"
+   "fieldname": "section_break_tags",
+   "fieldtype": "Section Break",
+   "label": "Tags"
+  },
+  {
+   "fieldname": "product_tags",
+   "fieldtype": "Table",
+   "label": "Product Tags",
+   "options": "CRM Product Tag"
   }
  ],
  "grid_page_length": 50,
@@ -101,7 +107,7 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
- "search_fields": "product_name,description,tags",
+ "search_fields": "product_name,description",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
  "sort_field": "creation",

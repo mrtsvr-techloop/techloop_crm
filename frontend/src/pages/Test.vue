@@ -144,14 +144,15 @@
             <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
           </div>
 
-          <div v-if="product.tags" class="mt-3 pt-3 border-t">
+          <div v-if="product.product_tags && product.product_tags.length > 0" class="mt-3 pt-3 border-t">
             <div class="flex flex-wrap gap-1">
               <span
-                v-for="tag in getProductTags(product.tags)"
-                :key="tag"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                v-for="tagRow in product.product_tags"
+                :key="tagRow.tag"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
+                :style="{ backgroundColor: tagRow.tag_color || '#3b82f6' }"
               >
-                {{ tag }}
+                {{ tagRow.tag }}
               </span>
             </div>
           </div>
@@ -204,12 +205,38 @@
             :placeholder="__('Descrizione del prodotto')"
           />
 
-          <Input
-            v-model="productForm.tags"
-            :label="__('Tag')"
-            :placeholder="__('Es. elettronica, smartphone, premium')"
-            :description="__('Separati da virgola per categorizzare i prodotti')"
-          />
+          <div>
+            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Tags') }}</label>
+            <div class="space-y-2">
+              <div v-for="(tagRow, index) in productForm.product_tags" :key="index" class="flex items-center gap-2">
+                <Dropdown
+                  v-model="tagRow.tag"
+                  :options="availableTags"
+                  :placeholder="__('Seleziona un tag')"
+                  class="flex-1"
+                  @change="updateTagColor(tagRow, index)"
+                />
+                <div 
+                  v-if="tagRow.tag_color" 
+                  class="w-6 h-6 rounded-full border border-gray-300"
+                  :style="{ backgroundColor: tagRow.tag_color }"
+                ></div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  :iconLeft="LucideTrash2"
+                  @click="removeTag(index)"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                :iconLeft="LucidePlus"
+                :label="__('Aggiungi Tag')"
+                @click="addTag"
+              />
+            </div>
+          </div>
 
           <div class="flex items-center gap-4">
             <Checkbox
@@ -272,6 +299,7 @@
               v-model="selectedTag"
               :options="tagFilterOptions"
               :placeholder="__('Seleziona un tag')"
+              @change="applyFilters"
             />
           </div>
           
@@ -281,18 +309,14 @@
               v-model="sortBy"
               :options="sortOptions"
               :placeholder="__('Seleziona ordinamento')"
+              @change="applyFilters"
             />
           </div>
         </div>
       </template>
       <template #actions>
         <div class="flex gap-2 ml-auto">
-          <Button variant="ghost" :label="__('Annulla')" @click="showFilterModal = false" />
-          <Button
-            variant="solid"
-            :label="__('Applica Filtri')"
-            @click="applyFilters"
-          />
+          <Button variant="solid" :label="__('Chiudi')" @click="showFilterModal = false" />
         </div>
       </template>
     </Dialog>
@@ -328,6 +352,8 @@ const searchQuery = ref('')
 const sortBy = ref('name')
 const selectedTag = ref('')
 const selectedProduct = ref(null)
+const availableTags = ref([])
+const masterTags = ref([])
 
 // Product form
 const productForm = ref({
@@ -335,7 +361,7 @@ const productForm = ref({
   product_name: '',
   rate: '',
   description: '',
-  tags: '',
+  product_tags: [],
   disabled: false
 })
 
@@ -351,8 +377,10 @@ const sortOptions = [
 const tagFilterOptions = computed(() => {
   const allTags = new Set()
   products.value.forEach(product => {
-    if (product.tags) {
-      getProductTags(product.tags).forEach(tag => allTags.add(tag))
+    if (product.product_tags && product.product_tags.length > 0) {
+      product.product_tags.forEach(tagRow => {
+        if (tagRow.tag) allTags.add(tagRow.tag)
+      })
     }
   })
   
@@ -370,20 +398,23 @@ const filteredProducts = computed(() => {
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(product => 
-      product.product_name?.toLowerCase().includes(query) ||
-      product.product_code?.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.tags?.toLowerCase().includes(query)
-    )
+    filtered = filtered.filter(product => {
+      const searchInTags = product.product_tags?.some(tagRow => 
+        tagRow.tag?.toLowerCase().includes(query)
+      ) || false
+      
+      return product.product_name?.toLowerCase().includes(query) ||
+             product.product_code?.toLowerCase().includes(query) ||
+             product.description?.toLowerCase().includes(query) ||
+             searchInTags
+    })
   }
 
   // Tag filter
   if (selectedTag.value) {
     filtered = filtered.filter(product => {
-      if (!product.tags) return false
-      const productTags = getProductTags(product.tags)
-      return productTags.includes(selectedTag.value)
+      if (!product.product_tags || product.product_tags.length === 0) return false
+      return product.product_tags.some(tagRow => tagRow.tag === selectedTag.value)
     })
   }
 
@@ -441,15 +472,64 @@ const productsResource = createResource({
   makeParams() {
     return {
       doctype: 'CRM Product',
-      fields: ['name', 'product_code', 'product_name', 'standard_rate', 'image', 'description', 'tags', 'disabled', 'creation'],
+      fields: ['name', 'product_code', 'product_name', 'standard_rate', 'image', 'description', 'disabled', 'creation', 'product_tags'],
       limit_page_length: 0
     }
   },
   auto: true,
   onSuccess(data) {
-    products.value = data.map(product => ({
-      ...product,
-      rate: product.standard_rate || 0
+    // Load product tags for each product
+    const promises = data.map(async product => {
+      if (product.name) {
+        try {
+          const tagData = await call('frappe.client.get_list', {
+            doctype: 'CRM Product Tag',
+            filters: { parent: product.name },
+            fields: ['tag', 'tag_color']
+          })
+          return {
+            ...product,
+            rate: product.standard_rate || 0,
+            product_tags: tagData || []
+          }
+        } catch (error) {
+          console.error('Error loading tags for product:', product.name, error)
+          return {
+            ...product,
+            rate: product.standard_rate || 0,
+            product_tags: []
+          }
+        }
+      }
+      return {
+        ...product,
+        rate: product.standard_rate || 0,
+        product_tags: []
+      }
+    })
+    
+    Promise.all(promises).then(productsWithTags => {
+      products.value = productsWithTags
+    })
+  }
+})
+
+const tagsResource = createResource({
+  url: 'frappe.client.get_list',
+  makeParams() {
+    return {
+      doctype: 'CRM Product Tag Master',
+      fields: ['name', 'tag_name', 'color'],
+      limit_page_length: 0,
+      order_by: 'tag_name asc'
+    }
+  },
+  auto: true,
+  onSuccess(data) {
+    masterTags.value = data
+    availableTags.value = data.map(tag => ({
+      label: tag.tag_name,
+      value: tag.name
     }))
   }
 })
@@ -457,6 +537,7 @@ const productsResource = createResource({
 // Methods
 function refreshProducts() {
   productsResource.reload()
+  tagsResource.reload()
 }
 
 function addNewProduct() {
@@ -480,7 +561,7 @@ function resetForm() {
     product_name: '',
     rate: '',
     description: '',
-    tags: '',
+    product_tags: [],
     disabled: false
   }
 }
@@ -493,7 +574,7 @@ function editProduct(product) {
     product_name: product.product_name,
     rate: product.rate,
     description: product.description || '',
-    tags: product.tags || '',
+    product_tags: product.product_tags ? [...product.product_tags] : [],
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -510,18 +591,26 @@ async function saveProduct() {
   saving.value = true
   
   try {
+    const productData = {
+      product_name: productForm.value.product_name,
+      standard_rate: parseFloat(productForm.value.rate) || 0,
+      description: productForm.value.description,
+      disabled: productForm.value.disabled,
+      product_tags: productForm.value.product_tags
+    }
+
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product
-      await call('frappe.client.set_value', {
+      // Update existing product using full document update to handle child table
+      const doc = await call('frappe.client.get_doc', {
         doctype: 'CRM Product',
-        name: selectedProduct.value.name,
-        fieldname: {
-          product_name: productForm.value.product_name,
-          standard_rate: parseFloat(productForm.value.rate) || 0,
-          description: productForm.value.description,
-          tags: productForm.value.tags,
-          disabled: productForm.value.disabled
-        }
+        name: selectedProduct.value.name
+      })
+      
+      // Update the document with new values
+      Object.assign(doc, productData)
+      
+      await call('frappe.client.save', {
+        doc: doc
       })
     } else {
       // Create new product
@@ -529,24 +618,8 @@ async function saveProduct() {
         doc: {
           doctype: 'CRM Product',
           product_code: productForm.value.product_code,
-          product_name: productForm.value.product_name,
-          standard_rate: parseFloat(productForm.value.rate) || 0,
-          description: productForm.value.description,
-          tags: productForm.value.tags,
-          disabled: productForm.value.disabled
+          ...productData
         }
-      })
-      
-      // Add to local products array
-      products.value.push({
-        name: newProduct.name,
-        product_code: productForm.value.product_code,
-        product_name: productForm.value.product_name,
-        rate: parseFloat(productForm.value.rate) || 0,
-        description: productForm.value.description,
-        tags: productForm.value.tags,
-        disabled: productForm.value.disabled,
-        creation: new Date().toISOString()
       })
     }
     
@@ -567,7 +640,7 @@ function duplicateProduct(product) {
     product_name: `${product.product_name} (Copia)`,
     rate: product.rate,
     description: product.description || '',
-    tags: product.tags || '',
+    product_tags: product.product_tags ? [...product.product_tags] : [],
     disabled: false
   }
   showProductMenuModal.value = false
@@ -592,6 +665,26 @@ async function deleteProductFromMenu(product) {
 function getProductTags(tagsString) {
   if (!tagsString) return []
   return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+}
+
+function addTag() {
+  productForm.value.product_tags.push({
+    tag: '',
+    tag_color: ''
+  })
+}
+
+function removeTag(index) {
+  productForm.value.product_tags.splice(index, 1)
+}
+
+function updateTagColor(tagRow, index) {
+  if (tagRow.tag) {
+    const selectedTag = masterTags.value.find(tag => tag.name === tagRow.tag)
+    if (selectedTag) {
+      tagRow.tag_color = selectedTag.color
+    }
+  }
 }
 
 function applyFilters() {
