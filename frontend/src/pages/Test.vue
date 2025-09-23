@@ -172,18 +172,31 @@
     <Dialog v-model="showAddModal" :options="{ title: isEditing ? __('Modifica Prodotto') : __('Aggiungi Prodotto') }">
       <template #body-content>
         <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <Input
-              v-model="productForm.product_code"
-              :label="__('Codice Prodotto')"
-              :placeholder="__('Es. PROD-001')"
-              :disabled="isEditing"
-            />
-            <Input
-              v-model="productForm.product_name"
-              :label="__('Nome Prodotto')"
-              :placeholder="__('Nome del prodotto')"
-            />
+          <div class="flex gap-4 items-start">
+            <div>
+              <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Immagine') }}</label>
+              <div class="w-24 h-24 rounded border flex items-center justify-center bg-white overflow-hidden">
+                <img v-if="productForm.image" :src="productForm.image" :alt="productForm.product_name" class="w-full h-full object-cover" />
+                <LucidePackage v-else class="w-8 h-8 text-ink-gray-4" />
+              </div>
+              <div class="mt-2 flex gap-2">
+                <Button size="sm" variant="outline" :label="productForm.image ? __('Rimuovi') : __('Aggiungi')" @click="productForm.image ? removeImage() : setImageFromUrl()" />
+                <Button v-if="productForm.image" size="sm" variant="ghost" :label="__('Cambia')" @click="setImageFromUrl()" />
+              </div>
+            </div>
+            <div class="flex-1 grid gap-3">
+              <Input
+                v-model="productForm.product_code"
+                :label="__('Codice Prodotto')"
+                :placeholder="__('Es. PROD-001')"
+                :disabled="isEditing"
+              />
+              <Input
+                v-model="productForm.product_name"
+                :label="__('Nome Prodotto')"
+                :placeholder="__('Nome del prodotto')"
+              />
+            </div>
           </div>
           
                       <Input
@@ -194,13 +207,7 @@
               step="0.01"
             />
 
-            <div>
-              <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Immagine') }}</label>
-              <Input type="url" v-model="productForm.image" :placeholder="__('URL immagine oppure incolla un link')" />
-              <div v-if="productForm.image" class="mt-2">
-                <img :src="productForm.image" alt="preview" class="h-20 rounded border" />
-              </div>
-            </div>
+
 
           <Textarea
             v-model="productForm.description"
@@ -491,6 +498,7 @@ function resetForm() {
     product_code: '',
     product_name: '',
     rate: '',
+    image: '',
     description: '',
     product_tags: [],
     disabled: false
@@ -721,4 +729,14 @@ async function deleteProduct(product) {
 usePageMeta(() => {
   return { title: __('Listino Prodotti') }
 })
+
+async function setImageFromUrl() {
+  const url = prompt(__('Inserisci URL immagine'))
+  if (!url) return
+  productForm.value.image = url.trim()
+}
+
+function removeImage() {
+  productForm.value.image = ''
+}
 </script>
