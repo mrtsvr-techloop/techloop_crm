@@ -148,11 +148,10 @@
             <div class="flex flex-wrap gap-1">
               <span
                 v-for="tagRow in product.product_tags"
-                :key="tagRow.tag"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
-                :style="{ backgroundColor: tagRow.tag_color || '#3b82f6' }"
+                :key="tagRow.tag_name"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
               >
-                {{ tagRow.tag }}
+                {{ tagRow.tag_name }}
               </span>
             </div>
           </div>
@@ -209,18 +208,11 @@
             <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Tags') }}</label>
             <div class="space-y-2">
               <div v-for="(tagRow, index) in productForm.product_tags" :key="index" class="flex items-center gap-2">
-                <Dropdown
-                  v-model="tagRow.tag"
-                  :options="availableTags"
-                  :placeholder="__('Seleziona un tag')"
+                <Input
+                  v-model="tagRow.tag_name"
+                  :placeholder="__('Nome tag')"
                   class="flex-1"
-                  @change="updateTagColor(tagRow, index)"
                 />
-                <div 
-                  v-if="tagRow.tag_color" 
-                  class="w-6 h-6 rounded-full border border-gray-300"
-                  :style="{ backgroundColor: tagRow.tag_color }"
-                ></div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -352,8 +344,7 @@ const searchQuery = ref('')
 const sortBy = ref('name')
 const selectedTag = ref('')
 const selectedProduct = ref(null)
-const availableTags = ref([])
-const masterTags = ref([])
+
 
 // Product form
 const productForm = ref({
@@ -379,7 +370,7 @@ const tagFilterOptions = computed(() => {
   products.value.forEach(product => {
     if (product.product_tags && product.product_tags.length > 0) {
       product.product_tags.forEach(tagRow => {
-        if (tagRow.tag) allTags.add(tagRow.tag)
+        if (tagRow.tag_name) allTags.add(tagRow.tag_name)
       })
     }
   })
@@ -400,7 +391,7 @@ const filteredProducts = computed(() => {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(product => {
       const searchInTags = product.product_tags?.some(tagRow => 
-        tagRow.tag?.toLowerCase().includes(query)
+        tagRow.tag_name?.toLowerCase().includes(query)
       ) || false
       
       return product.product_name?.toLowerCase().includes(query) ||
@@ -414,7 +405,7 @@ const filteredProducts = computed(() => {
   if (selectedTag.value) {
     filtered = filtered.filter(product => {
       if (!product.product_tags || product.product_tags.length === 0) return false
-      return product.product_tags.some(tagRow => tagRow.tag === selectedTag.value)
+      return product.product_tags.some(tagRow => tagRow.tag_name === selectedTag.value)
     })
   }
 
@@ -485,7 +476,7 @@ const productsResource = createResource({
           const tagData = await call('frappe.client.get_list', {
             doctype: 'CRM Product Tag',
             filters: { parent: product.name },
-            fields: ['tag', 'tag_color']
+            fields: ['tag_name']
           })
           return {
             ...product,
@@ -514,30 +505,11 @@ const productsResource = createResource({
   }
 })
 
-const tagsResource = createResource({
-  url: 'frappe.client.get_list',
-  makeParams() {
-    return {
-      doctype: 'CRM Product Tag Master',
-      fields: ['name', 'tag_name', 'color'],
-      limit_page_length: 0,
-      order_by: 'tag_name asc'
-    }
-  },
-  auto: true,
-  onSuccess(data) {
-    masterTags.value = data
-    availableTags.value = data.map(tag => ({
-      label: tag.tag_name,
-      value: tag.name
-    }))
-  }
-})
+
 
 // Methods
 function refreshProducts() {
   productsResource.reload()
-  tagsResource.reload()
 }
 
 function addNewProduct() {
@@ -669,22 +641,12 @@ function getProductTags(tagsString) {
 
 function addTag() {
   productForm.value.product_tags.push({
-    tag: '',
-    tag_color: ''
+    tag_name: ''
   })
 }
 
 function removeTag(index) {
   productForm.value.product_tags.splice(index, 1)
-}
-
-function updateTagColor(tagRow, index) {
-  if (tagRow.tag) {
-    const selectedTag = masterTags.value.find(tag => tag.name === tagRow.tag)
-    if (selectedTag) {
-      tagRow.tag_color = selectedTag.color
-    }
-  }
 }
 
 function applyFilters() {

@@ -7,24 +7,15 @@
  "engine": "InnoDB",
  "istable": 1,
  "field_order": [
-  "tag",
-  "tag_color"
+  "tag_name"
  ],
  "fields": [
   {
-   "fieldname": "tag",
-   "fieldtype": "Link",
+   "fieldname": "tag_name",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Tag",
-   "options": "CRM Product Tag Master",
+   "label": "Tag Name",
    "reqd": 1
-  },
-  {
-   "fieldname": "tag_color",
-   "fieldtype": "Color",
-   "in_list_view": 1,
-   "label": "Color",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
