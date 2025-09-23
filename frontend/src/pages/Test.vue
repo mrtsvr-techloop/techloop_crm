@@ -71,11 +71,10 @@
               :iconLeft="LucideSearch"
             />
           </div>
-          <Button
-            variant="outline"
-            :iconLeft="LucideFilter"
-            :label="getFilterButtonLabel()"
-            @click="showFilterModal = true"
+          <Dropdown
+            v-model="sortBy"
+            :options="sortOptions"
+            :placeholder="__('Ordina per')"
           />
         </div>
         
@@ -106,19 +105,20 @@
         >
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" :class="product.disabled ? 'bg-gray-100' : 'bg-blue-100'">
                 <img
                   v-if="product.image"
                   :src="product.image"
                   :alt="product.product_name"
                   class="w-8 h-8 object-cover rounded"
                 />
-                <LucidePackage v-else class="w-6 h-6 text-blue-600" />
+                <LucidePackage v-else :class="product.disabled ? 'w-6 h-6 text-gray-400' : 'w-6 h-6 text-blue-600'" />
               </div>
               <div class="min-w-0 flex-1">
-                <h3 class="font-medium text-ink-gray-8 truncate">{{ product.product_name }}</h3>
-                <p class="text-sm text-ink-gray-6 truncate">{{ product.product_code }}</p>
+                <h3 class="font-medium truncate" :class="product.disabled ? 'text-ink-gray-5' : 'text-ink-gray-8'">{{ product.product_name }}</h3>
+                <p class="text-sm truncate" :class="product.disabled ? 'text-ink-gray-4' : 'text-ink-gray-6'">{{ product.product_code }}</p>
               </div>
+              <Badge v-if="product.disabled" :label="__('Non disponibile')" />
             </div>
             <Button
               variant="ghost"
@@ -136,7 +136,7 @@
           </div>
 
           <div v-if="product.description" class="mt-3 pt-3 border-t">
-            <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
+            <p class="text-xs line-clamp-2" :class="product.disabled ? 'text-ink-gray-4' : 'text-ink-gray-6'">{{ product.description }}</p>
           </div>
 
           <div v-if="product.product_tags && product.product_tags.length > 0" class="mt-3 pt-3 border-t">
@@ -144,7 +144,8 @@
               <span
                 v-for="tagRow in product.product_tags"
                 :key="tagRow.tag_name"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                :style="{ backgroundColor: tagRow.color || '#e0f2fe', color: '#0b1324' }"
               >
                 {{ tagRow.tag_name }}
               </span>
@@ -185,13 +186,21 @@
             />
           </div>
           
-          <Input
-            v-model="productForm.rate"
-            :label="__('Prezzo')"
-            :placeholder="__('0.00')"
-            type="number"
-            step="0.01"
-          />
+                      <Input
+              v-model="productForm.rate"
+              :label="__('Prezzo')"
+              :placeholder="__('0.00')"
+              type="number"
+              step="0.01"
+            />
+
+            <div>
+              <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Immagine') }}</label>
+              <Input type="url" v-model="productForm.image" :placeholder="__('URL immagine oppure incolla un link')" />
+              <div v-if="productForm.image" class="mt-2">
+                <img :src="productForm.image" alt="preview" class="h-20 rounded border" />
+              </div>
+            </div>
 
           <Textarea
             v-model="productForm.description"
@@ -200,7 +209,7 @@
           />
 
           <div>
-            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Tags') }}</label>
+            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Etichette') }}</label>
             
             <!-- Tags Table -->
             <div class="border border-gray-200 rounded-lg overflow-hidden">
@@ -216,15 +225,16 @@
                 <tbody>
                   <tr v-for="(tagRow, index) in productForm.product_tags" :key="index" class="border-t border-gray-200">
                     <td class="px-4 py-2">
-                      <Link
-                        v-model="tagRow.tag_name"
-                        doctype="CRM Product Tag Master"
-                        :placeholder="__('Seleziona o crea tag')"
-                        :onCreate="(value, close) => {
-                          createNewTag(value, tagRow)
-                          close()
-                        }"
-                      />
+                      <div class="flex items-center gap-2">
+                        <Link
+                          v-model="tagRow.tag_name"
+                          doctype="CRM Product Tag Master"
+                          :placeholder="__('Seleziona o crea etichetta')"
+                          :onCreate="async (value, close) => { await createNewTag(value, tagRow); close() }"
+                          class="flex-1"
+                        />
+                        <input type="color" v-model="tagRow.color" class="w-8 h-8 p-0 border rounded" />
+                      </div>
                     </td>
                     <td class="px-4 py-2">
                       <Button
@@ -258,7 +268,7 @@
           <div class="flex items-center gap-4">
             <Checkbox
               v-model="productForm.disabled"
-              :label="__('Disabilitato')"
+              :label="__('Non disponibile')"
             />
           </div>
         </div>
@@ -288,20 +298,6 @@
               @click="editProductFromMenu(selectedProduct)"
               class="w-full justify-start"
             />
-            <Button
-              variant="ghost"
-              :label="__('Modifica in Frappe')"
-              :iconLeft="LucideEdit"
-              @click="openFrappeForm(selectedProduct)"
-              class="w-full justify-start"
-            />
-            <Button
-              variant="ghost"
-              :label="__('Duplica')"
-              :iconLeft="LucideCopy"
-              @click="duplicateProductFromMenu(selectedProduct)"
-              class="w-full justify-start"
-            />
           <Button
             variant="ghost"
             :label="__('Elimina')"
@@ -314,26 +310,7 @@
     </Dialog>
 
     <!-- Filter Modal -->
-    <Dialog v-model="showFilterModal" :options="{ title: __('Filtri e Ordinamento') }">
-      <template #body-content>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Ordina per') }}</label>
-            <Dropdown
-              v-model="sortBy"
-              :options="sortOptions"
-              :placeholder="__('Seleziona ordinamento')"
-              @change="applyFilters"
-            />
-          </div>
-        </div>
-      </template>
-      <template #actions>
-        <div class="flex gap-2 ml-auto">
-          <Button variant="solid" :label="__('Chiudi')" @click="showFilterModal = false" />
-        </div>
-      </template>
-    </Dialog>
+
   </div>
 </template>
 
@@ -527,8 +504,9 @@ function editProduct(product) {
     product_code: product.product_code,
     product_name: product.product_name,
     rate: product.rate,
+    image: product.image || '',
     description: product.description || '',
-    product_tags: (product.product_tags || []).map(r => ({ tag_name: r.tag_name })),
+    product_tags: (product.product_tags || []).map(r => ({ tag_name: r.tag_name, color: r.color })),
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -548,6 +526,7 @@ async function saveProduct() {
     const productData = {
       product_name: productForm.value.product_name,
       standard_rate: parseFloat(productForm.value.rate) || 0,
+      image: productForm.value.image || '',
       description: productForm.value.description,
       disabled: productForm.value.disabled
     }
@@ -555,7 +534,7 @@ async function saveProduct() {
     // Prepare child rows as proper Table rows
     const childRows = (productForm.value.product_tags || [])
       .filter(r => r.tag_name && r.tag_name.trim().length)
-      .map(r => ({ doctype: 'CRM Product Tag', parentfield: 'product_tags', parenttype: 'CRM Product', tag_name: r.tag_name }))
+      .map(r => ({ doctype: 'CRM Product Tag', parentfield: 'product_tags', parenttype: 'CRM Product', tag_name: r.tag_name, color: r.color || null }))
 
     // Check duplicate code
     const dup = await call('frappe.client.get_list', {
@@ -623,8 +602,9 @@ function duplicateProduct(product) {
     product_code: `${product.product_code}-COPY`,
     product_name: `${product.product_name} (Copia)`,
     rate: product.rate,
+    image: product.image || '',
     description: product.description || '',
-    product_tags: product.product_tags || [],
+    product_tags: (product.product_tags || []).map(r => ({ tag_name: r.tag_name, color: r.color })),
     disabled: false
   }
   showProductMenuModal.value = false
