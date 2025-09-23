@@ -3,13 +3,12 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:tag_name",
- "creation": "2025-09-23 17:00:00.000000",
+ "creation": "2025-09-23 18:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "tag_name",
-  "description",
-  "color"
+  "description"
  ],
  "fields": [
   {
@@ -24,18 +23,11 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
-  },
-  {
-   "fieldname": "color",
-   "fieldtype": "Color",
-   "in_list_view": 1,
-   "label": "Color",
-   "default": "#3b82f6"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-23 17:00:00.000000",
+ "modified": "2025-09-23 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "CRM Product Tag Master",

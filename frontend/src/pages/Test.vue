@@ -83,11 +83,6 @@
         <div v-if="hasActiveFilters" class="mt-3 flex items-center gap-2">
           <span class="text-sm text-ink-gray-6">{{ __('Vista filtrata:') }}</span>
           <Badge
-            v-if="selectedTag"
-            :label="`Tag: ${selectedTag}`"
-            variant="subtle"
-          />
-          <Badge
             v-if="sortBy !== 'name'"
             :label="`Ordinato per: ${getSortLabel()}`"
             variant="subtle"
@@ -144,17 +139,7 @@
             <p class="text-xs text-ink-gray-6 line-clamp-2">{{ product.description }}</p>
           </div>
 
-          <div v-if="product.product_tags && product.product_tags.length > 0" class="mt-3 pt-3 border-t">
-            <div class="flex flex-wrap gap-1">
-              <span
-                v-for="tagRow in product.product_tags"
-                :key="tagRow.tag_name"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                {{ tagRow.tag_name }}
-              </span>
-            </div>
-          </div>
+          <!-- Tags will be visible when you edit the product in the standard Frappe form -->
         </div>
       </div>
 
@@ -204,30 +189,10 @@
             :placeholder="__('Descrizione del prodotto')"
           />
 
-          <div>
-            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Tags') }}</label>
-            <div class="space-y-2">
-              <div v-for="(tagRow, index) in productForm.product_tags" :key="index" class="flex items-center gap-2">
-                <Input
-                  v-model="tagRow.tag_name"
-                  :placeholder="__('Nome tag')"
-                  class="flex-1"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  :iconLeft="LucideTrash2"
-                  @click="removeTag(index)"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                :iconLeft="LucidePlus"
-                :label="__('Aggiungi Tag')"
-                @click="addTag"
-              />
-            </div>
+          <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p class="text-sm text-yellow-800">
+              <strong>{{ __('Nota:') }}</strong> {{ __('I tag verranno gestiti nel modulo standard di Frappe. Salva il prodotto e poi modificalo per aggiungere i tag.') }}
+            </p>
           </div>
 
           <div class="flex items-center gap-4">
@@ -256,20 +221,27 @@
     <Dialog v-model="showProductMenuModal" :options="{ title: __('Azioni Prodotto') }">
       <template #body-content>
         <div class="space-y-2">
-          <Button
-            variant="ghost"
-            :label="__('Modifica')"
-            :iconLeft="LucideEdit"
-            @click="editProductFromMenu(selectedProduct)"
-            class="w-full justify-start"
-          />
-          <Button
-            variant="ghost"
-            :label="__('Duplica')"
-            :iconLeft="LucideCopy"
-            @click="duplicateProductFromMenu(selectedProduct)"
-            class="w-full justify-start"
-          />
+                      <Button
+              variant="ghost"
+              :label="__('Modifica')"
+              :iconLeft="LucideEdit"
+              @click="editProductFromMenu(selectedProduct)"
+              class="w-full justify-start"
+            />
+            <Button
+              variant="ghost"
+              :label="__('Modifica in Frappe')"
+              :iconLeft="LucideEdit"
+              @click="openFrappeForm(selectedProduct)"
+              class="w-full justify-start"
+            />
+            <Button
+              variant="ghost"
+              :label="__('Duplica')"
+              :iconLeft="LucideCopy"
+              @click="duplicateProductFromMenu(selectedProduct)"
+              class="w-full justify-start"
+            />
           <Button
             variant="ghost"
             :label="__('Elimina')"
@@ -285,16 +257,6 @@
     <Dialog v-model="showFilterModal" :options="{ title: __('Filtri e Ordinamento') }">
       <template #body-content>
         <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Filtra per Tag') }}</label>
-            <Dropdown
-              v-model="selectedTag"
-              :options="tagFilterOptions"
-              :placeholder="__('Seleziona un tag')"
-              @change="applyFilters"
-            />
-          </div>
-          
           <div>
             <label class="block text-sm font-medium text-ink-gray-8 mb-2">{{ __('Ordina per') }}</label>
             <Dropdown
@@ -346,13 +308,13 @@ const selectedTag = ref('')
 const selectedProduct = ref(null)
 
 
+
 // Product form
 const productForm = ref({
   product_code: '',
   product_name: '',
   rate: '',
   description: '',
-  product_tags: [],
   disabled: false
 })
 
@@ -364,23 +326,7 @@ const sortOptions = [
   { label: __('Codice'), value: 'code' }
 ]
 
-// Tag filter options
-const tagFilterOptions = computed(() => {
-  const allTags = new Set()
-  products.value.forEach(product => {
-    if (product.product_tags && product.product_tags.length > 0) {
-      product.product_tags.forEach(tagRow => {
-        if (tagRow.tag_name) allTags.add(tagRow.tag_name)
-      })
-    }
-  })
-  
-  const options = [{ label: __('Tutti i tag'), value: '' }]
-  Array.from(allTags).sort().forEach(tag => {
-    options.push({ label: tag, value: tag })
-  })
-  return options
-})
+
 
 // Computed properties
 const filteredProducts = computed(() => {
@@ -389,24 +335,11 @@ const filteredProducts = computed(() => {
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(product => {
-      const searchInTags = product.product_tags?.some(tagRow => 
-        tagRow.tag_name?.toLowerCase().includes(query)
-      ) || false
-      
-      return product.product_name?.toLowerCase().includes(query) ||
-             product.product_code?.toLowerCase().includes(query) ||
-             product.description?.toLowerCase().includes(query) ||
-             searchInTags
-    })
-  }
-
-  // Tag filter
-  if (selectedTag.value) {
-    filtered = filtered.filter(product => {
-      if (!product.product_tags || product.product_tags.length === 0) return false
-      return product.product_tags.some(tagRow => tagRow.tag_name === selectedTag.value)
-    })
+    filtered = filtered.filter(product => 
+      product.product_name?.toLowerCase().includes(query) ||
+      product.product_code?.toLowerCase().includes(query) ||
+      product.description?.toLowerCase().includes(query)
+    )
   }
 
   // Sort
@@ -442,7 +375,7 @@ const totalValue = computed(() => {
 
 // Filter and sorting helpers
 const hasActiveFilters = computed(() => {
-  return selectedTag.value || sortBy.value !== 'name'
+  return sortBy.value !== 'name'
 })
 
 const getFilterButtonLabel = () => {
@@ -469,39 +402,11 @@ const productsResource = createResource({
   },
   auto: true,
   onSuccess(data) {
-    // Load product tags for each product
-    const promises = data.map(async product => {
-      if (product.name) {
-        try {
-          const tagData = await call('frappe.client.get_list', {
-            doctype: 'CRM Product Tag',
-            filters: { parent: product.name },
-            fields: ['tag_name']
-          })
-          return {
-            ...product,
-            rate: product.standard_rate || 0,
-            product_tags: tagData || []
-          }
-        } catch (error) {
-          console.error('Error loading tags for product:', product.name, error)
-          return {
-            ...product,
-            rate: product.standard_rate || 0,
-            product_tags: []
-          }
-        }
-      }
-      return {
-        ...product,
-        rate: product.standard_rate || 0,
-        product_tags: []
-      }
-    })
-    
-    Promise.all(promises).then(productsWithTags => {
-      products.value = productsWithTags
-    })
+    products.value = data.map(product => ({
+      ...product,
+      rate: product.standard_rate || 0,
+      product_tags: [] // Tags will be loaded from backend when needed
+    }))
   }
 })
 
@@ -533,7 +438,6 @@ function resetForm() {
     product_name: '',
     rate: '',
     description: '',
-    product_tags: [],
     disabled: false
   }
 }
@@ -546,7 +450,6 @@ function editProduct(product) {
     product_name: product.product_name,
     rate: product.rate,
     description: product.description || '',
-    product_tags: product.product_tags ? [...product.product_tags] : [],
     disabled: product.disabled || false
   }
   showAddModal.value = true
@@ -567,26 +470,19 @@ async function saveProduct() {
       product_name: productForm.value.product_name,
       standard_rate: parseFloat(productForm.value.rate) || 0,
       description: productForm.value.description,
-      disabled: productForm.value.disabled,
-      product_tags: productForm.value.product_tags
+      disabled: productForm.value.disabled
     }
 
     if (isEditing.value && selectedProduct.value) {
-      // Update existing product using full document update to handle child table
-      const doc = await call('frappe.client.get_doc', {
+      // Update existing product
+      await call('frappe.client.set_value', {
         doctype: 'CRM Product',
-        name: selectedProduct.value.name
-      })
-      
-      // Update the document with new values
-      Object.assign(doc, productData)
-      
-      await call('frappe.client.save', {
-        doc: doc
+        name: selectedProduct.value.name,
+        fieldname: productData
       })
     } else {
       // Create new product
-      const newProduct = await call('frappe.client.insert', {
+      await call('frappe.client.insert', {
         doc: {
           doctype: 'CRM Product',
           product_code: productForm.value.product_code,
@@ -612,7 +508,6 @@ function duplicateProduct(product) {
     product_name: `${product.product_name} (Copia)`,
     rate: product.rate,
     description: product.description || '',
-    product_tags: product.product_tags ? [...product.product_tags] : [],
     disabled: false
   }
   showProductMenuModal.value = false
@@ -629,6 +524,12 @@ function duplicateProductFromMenu(product) {
   duplicateProduct(product)
 }
 
+function openFrappeForm(product) {
+  // Open the standard Frappe form for editing the product
+  window.open(`/app/crm-product/${product.name}`, '_blank')
+  showProductMenuModal.value = false
+}
+
 async function deleteProductFromMenu(product) {
   showProductMenuModal.value = false
   await deleteProduct(product)
@@ -639,22 +540,13 @@ function getProductTags(tagsString) {
   return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
 }
 
-function addTag() {
-  productForm.value.product_tags.push({
-    tag_name: ''
-  })
-}
 
-function removeTag(index) {
-  productForm.value.product_tags.splice(index, 1)
-}
 
 function applyFilters() {
   showFilterModal.value = false
 }
 
 function clearFilters() {
-  selectedTag.value = ''
   sortBy.value = 'name'
 }
 

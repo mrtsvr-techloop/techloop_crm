@@ -12,9 +12,10 @@
  "fields": [
   {
    "fieldname": "tag_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Tag Name",
+   "label": "Tag",
+   "options": "CRM Product Tag Master",
    "reqd": 1
   }
  ],
