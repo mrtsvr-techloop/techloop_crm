@@ -90,9 +90,9 @@ const routes = [
     component: () => import('@/pages/Welcome.vue'),
   },
   {
-    path: '/listino-prodotti',
-    name: 'Listino Prodotti',
-    component: () => import('@/pages/Test.vue'),
+    path: '/listino-prezzi',
+    name: 'Listino Prezzi',
+    component: () => import('@/pages/ListinoPrezzi.vue'),
   },
   {
     path: '/:invalidpath',
