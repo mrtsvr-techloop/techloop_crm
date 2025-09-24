@@ -63,7 +63,7 @@
 
       <!-- Search and Filter -->
       <div class="mb-6">
-        <div class="flex gap-4 items-center">
+                    <div class="flex gap-3 items-center">
           <div class="flex-1">
             <Input
               v-model="searchQuery"
@@ -71,11 +71,10 @@
               :iconLeft="LucideSearch"
             />
           </div>
-          <Dropdown
-            v-model="sortBy"
-            :options="sortOptions"
-            :placeholder="__('Ordina per')"
-          />
+          <Button size="sm" variant="outline" :label="__('Tutti')" @click="sortBy='name'" />
+          <Button size="sm" variant="outline" :label="__('Prezzo')" @click="sortBy='rate'" />
+          <Button size="sm" variant="outline" :label="__('Data')" @click="sortBy='creation'" />
+          <Button size="sm" variant="outline" :label="__('Codice')" @click="sortBy='code'" />
         </div>
         
         <!-- Filter Status -->
@@ -180,21 +179,26 @@
                 <LucidePackage v-else class="w-8 h-8 text-ink-gray-4" />
               </div>
               <div class="mt-2 flex gap-2">
-                <Button size="sm" variant="outline" :label="productForm.image ? __('Rimuovi') : __('Aggiungi')" @click="productForm.image ? removeImage() : setImageFromUrl()" />
-                <Button v-if="productForm.image" size="sm" variant="ghost" :label="__('Cambia')" @click="setImageFromUrl()" />
+                <FileUploader :fileTypes="'image/*'" @success="onImageUploaded">
+                  <template #default="{ openFileSelector, uploading, progress }">
+                    <Button size="sm" variant="outline" :label="productForm.image ? __('Cambia') : __('Aggiungi')" @click="openFileSelector" />
+                    <span v-if="uploading" class="text-xs text-ink-gray-5">{{ progress }}%</span>
+                  </template>
+                </FileUploader>
+                <Button v-if="productForm.image" size="sm" variant="ghost" :label="__('Rimuovi')" @click="removeImage()" />
               </div>
             </div>
             <div class="flex-1 grid gap-3">
+              <Input
+                v-model="productForm.product_name"
+                :label="__('Nome Prodotto')"
+                :placeholder="__('Nome del prodotto')"
+              />
               <Input
                 v-model="productForm.product_code"
                 :label="__('Codice Prodotto')"
                 :placeholder="__('Es. PROD-001')"
                 :disabled="isEditing"
-              />
-              <Input
-                v-model="productForm.product_name"
-                :label="__('Nome Prodotto')"
-                :placeholder="__('Nome del prodotto')"
               />
             </div>
           </div>
@@ -240,7 +244,7 @@
                           :onCreate="async (value, close) => { await createNewTag(value, tagRow); close() }"
                           class="flex-1"
                         />
-                        <input type="color" v-model="tagRow.color" class="w-8 h-8 p-0 border rounded" />
+                        <input type="color" v-model="tagRow.color" class="w-8 h-8 p-0 border rounded-full" />
                       </div>
                     </td>
                     <td class="px-4 py-2">
@@ -335,7 +339,7 @@ import LucideEdit from '~icons/lucide/edit'
 import LucideCopy from '~icons/lucide/copy'
 import LucideTrash2 from '~icons/lucide/trash-2'
 import LucideFilter from '~icons/lucide/filter'
-import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, createResource, call } from 'frappe-ui'
+import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, FileUploader, createResource, call } from 'frappe-ui'
 import Link from '@/components/Controls/Link.vue'
 import { ref, computed } from 'vue'
 import { usePageMeta } from 'frappe-ui'
@@ -730,10 +734,12 @@ usePageMeta(() => {
   return { title: __('Listino Prodotti') }
 })
 
-async function setImageFromUrl() {
-  const url = prompt(__('Inserisci URL immagine'))
-  if (!url) return
-  productForm.value.image = url.trim()
+async function onImageUploaded(file) {
+  // file contains file_url after upload via FileUploader
+  const url = file?.file_url || file?.message?.file_url || ''
+  if (url) {
+    productForm.value.image = url
+  }
 }
 
 function removeImage() {
