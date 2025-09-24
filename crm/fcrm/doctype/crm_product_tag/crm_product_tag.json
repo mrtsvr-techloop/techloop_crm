@@ -23,7 +23,8 @@
    "fieldname": "color",
    "fieldtype": "Color",
    "in_list_view": 1,
-   "label": "Color"
+   "label": "Color",
+   "default": "#e0f2fe"
   }
  ],
  "index_web_pages_for_search": 1,

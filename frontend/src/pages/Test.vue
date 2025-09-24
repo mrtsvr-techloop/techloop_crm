@@ -21,9 +21,6 @@
 
     <div class="p-5 flex-1 overflow-y-auto">
       <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-ink-gray-8 mb-2">
-          {{ __('Listino Prodotti') }}
-        </h1>
         <p class="text-ink-gray-6">
           {{ __('Gestisci il catalogo prodotti con prezzi.') }}
         </p>
@@ -144,7 +141,7 @@
                 v-for="tagRow in product.product_tags"
                 :key="tagRow.tag_name"
                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                :style="{ backgroundColor: tagRow.color || '#e0f2fe', color: '#0b1324' }"
+                :style="{ backgroundColor: tagRow.color || '#e0f2fe', color: getReadableTextColor(tagRow.color || '#e0f2fe') }"
               >
                 {{ tagRow.tag_name }}
               </span>
@@ -227,8 +224,8 @@
               <table class="w-full">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      {{ __('Tag') }}
+                                          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      {{ __('Etichetta') }}
                     </th>
                     <th class="w-16 px-4 py-2"></th>
                   </tr>
@@ -244,7 +241,7 @@
                           :onCreate="async (value, close) => { await createNewTag(value, tagRow); close() }"
                           class="flex-1"
                         />
-                        <input type="color" v-model="tagRow.color" class="w-8 h-8 p-0 border rounded-full" />
+                                                 <input type="color" v-model="tagRow.color" class="w-8 h-8 p-0 rounded-full appearance-none bg-transparent border-0 outline-none" />
                       </div>
                     </td>
                     <td class="px-4 py-2">
@@ -744,5 +741,19 @@ async function onImageUploaded(file) {
 
 function removeImage() {
   productForm.value.image = ''
+}
+
+function getReadableTextColor(bg) {
+  // Compute luminance to decide text color (black/white)
+  try {
+    const hex = bg.replace('#','')
+    const r = parseInt(hex.substring(0,2),16)
+    const g = parseInt(hex.substring(2,4),16)
+    const b = parseInt(hex.substring(4,6),16)
+    const luminance = (0.299*r + 0.587*g + 0.114*b) / 255
+    return luminance > 0.6 ? '#0b1324' : '#FFFFFF'
+  } catch {
+    return '#0b1324'
+  }
 }
 </script>
