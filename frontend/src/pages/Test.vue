@@ -1,4 +1,3 @@
-@ -1,759 +0,0 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <LayoutHeader>
@@ -256,7 +255,7 @@
                   </tr>
                   <tr v-if="productForm.product_tags.length === 0">
                     <td colspan="2" class="px-4 py-8 text-center text-gray-500 text-sm">
-                      {{ __('Nessun tag aggiunto') }}
+                      {{ __('Nessuna etichetta aggiunta') }}
                     </td>
                   </tr>
                 </tbody>
