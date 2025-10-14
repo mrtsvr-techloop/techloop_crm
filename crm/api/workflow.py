@@ -219,23 +219,37 @@ def _ensure_contact_for_digits(digits: str) -> dict:
 	)
 	contact_name: Optional[str] = existing[0].name if existing else None
 
-	# 2) Fallback: match on child table Contact Phone.phone
+	# 2) Fallback: match on child table Contact Phone.phone (normalize by digits)
 	if not contact_name:
-		rows = frappe.get_all(
-			"Contact Phone",
-			filters={"phone": digits},
-			fields=["parent"],
-			limit=1,
+		rows = frappe.db.sql(
+			"""
+			SELECT parent
+			FROM `tabContact Phone`
+			WHERE REGEXP_REPLACE(phone, '[^0-9]', '') = %s
+			LIMIT 1
+			""",
+			(digits,),
+			as_dict=True,
 		)
 		contact_name = rows[0].parent if rows else None
 
 	if contact_name:
 		doc = frappe.get_doc("Contact", contact_name)
-		# Normalize display field to pretty format for consistency
+		# Normalize stored values to pretty format for consistency
 		try:
-			pretty_current = _format_pretty_number(doc.mobile_no or "")
-			if pretty_current and (doc.mobile_no or "").strip() != pretty_current:
-				doc.mobile_no = pretty_current
+			pretty_digits = _format_pretty_number(digits)
+			need_save = False
+			if pretty_digits and (doc.mobile_no or "").strip() != pretty_digits:
+				doc.mobile_no = pretty_digits
+				need_save = True
+			# Update primary mobile row if present
+			for ph in (getattr(doc, "phone_nos", []) or []):
+				if int(getattr(ph, "is_primary_mobile_no", 0) or 0) == 1:
+					if (ph.phone or "").strip() != pretty_digits:
+						ph.phone = pretty_digits
+						need_save = True
+					break
+			if need_save:
 				doc.save(ignore_permissions=True)
 		except Exception:
 			pass
@@ -248,7 +262,7 @@ def _ensure_contact_for_digits(digits: str) -> dict:
 		"doctype": "Contact",
 		"first_name": pretty or f"+{digits}",
 		"mobile_no": pretty or f"+{digits}",
-		"phone_nos": [{"phone": digits, "is_primary_mobile_no": 1}],
+		"phone_nos": [{"phone": pretty or f"+{digits}", "is_primary_mobile_no": 1}],
 	})
 	new_doc.insert(ignore_permissions=True)
 	try:
