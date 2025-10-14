@@ -231,6 +231,14 @@ def _ensure_contact_for_digits(digits: str) -> dict:
 
 	if contact_name:
 		doc = frappe.get_doc("Contact", contact_name)
+		# Normalize display field to pretty format for consistency
+		try:
+			pretty_current = _format_pretty_number(doc.mobile_no or "")
+			if pretty_current and (doc.mobile_no or "").strip() != pretty_current:
+				doc.mobile_no = pretty_current
+				doc.save(ignore_permissions=True)
+		except Exception:
+			pass
 		frappe.response["http_status_code"] = 200
 		return {"success": True, "message": _("Contatto esistente trovato"), "contact": doc.as_dict()}
 
@@ -238,8 +246,8 @@ def _ensure_contact_for_digits(digits: str) -> dict:
 	pretty = _format_pretty_number(digits)
 	new_doc = frappe.get_doc({
 		"doctype": "Contact",
-		"first_name": pretty or digits,
-		"mobile_no": digits,
+		"first_name": pretty or f"+{digits}",
+		"mobile_no": pretty or f"+{digits}",
 		"phone_nos": [{"phone": digits, "is_primary_mobile_no": 1}],
 	})
 	new_doc.insert(ignore_permissions=True)
