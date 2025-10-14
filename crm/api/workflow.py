@@ -206,3 +206,114 @@ def new_client_lead(**data):
 		frappe.log_error(message=frappe.get_traceback(), title="workflow.new_client_lead")
 		frappe.response["http_status_code"] = 500
 		return {"success": False, "error": _(str(e))} 
+
+
+def _ensure_contact_for_digits(digits: str) -> dict:
+	"""Idempotently ensure a Contact exists for the given digits-only phone."""
+	# 1) Try direct match on Contact.mobile_no
+	existing = frappe.get_all(
+		"Contact",
+		filters={"mobile_no": digits},
+		fields=["name"],
+		limit=1,
+	)
+	contact_name: Optional[str] = existing[0].name if existing else None
+
+	# 2) Fallback: match on child table Contact Phone.phone
+	if not contact_name:
+		rows = frappe.get_all(
+			"Contact Phone",
+			filters={"phone": digits},
+			fields=["parent"],
+			limit=1,
+		)
+		contact_name = rows[0].parent if rows else None
+
+	if contact_name:
+		doc = frappe.get_doc("Contact", contact_name)
+		frappe.response["http_status_code"] = 200
+		return {"success": True, "message": _("Contatto esistente trovato"), "contact": doc.as_dict()}
+
+	# Create new Contact with phone as display-first name (no unreliable full name import)
+	pretty = _format_pretty_number(digits)
+	new_doc = frappe.get_doc({
+		"doctype": "Contact",
+		"first_name": pretty or digits,
+		"mobile_no": digits,
+		"phone_nos": [{"phone": digits, "is_primary_mobile_no": 1}],
+	})
+	new_doc.insert(ignore_permissions=True)
+	try:
+		frappe.logger().info(f"[crm.workflow] ensure_contact: created contact name={new_doc.name} phone_len={len(digits)}")
+	except Exception:
+		pass
+	frappe.response["http_status_code"] = 201
+	return {"success": True, "message": _("Contatto creato"), "contact": new_doc.as_dict()}
+
+
+def ensure_contact_from_message(
+	reference_doctype: Optional[str] = None,
+	reference_name: Optional[str] = None,
+	message_name: Optional[str] = None,
+) -> dict:
+	"""Ensure a Contact exists for an incoming message source.
+
+	- Phone is inferred from WhatsApp Message when possible; never taken from the end user via AI.
+	- If a matching Contact exists (by exact mobile digits or Contact Phone child), it is returned.
+	- Otherwise, a new Contact is created with the inferred phone set as primary.
+	
+	Args:
+		reference_doctype: Optional doctype linked to the message (e.g., "CRM Deal").
+		reference_name: Optional name linked to the message.
+		message_name: Optional WhatsApp Message name to derive phone from.
+		full_name: Optional contact display name to use on creation.
+		email: Optional email to set on creation.
+	"""
+	try:
+		# Resolve phone number source (internal only; never from user input)
+		phone_raw: Optional[str] = None
+		if (message_name or "").strip():
+			try:
+				msg = frappe.get_doc("WhatsApp Message", message_name)
+				phone_raw = str(msg.get("from") or "").strip()
+			except Exception:
+				phone_raw = None
+		if not phone_raw:
+			phone_raw = _infer_phone_from_reference(
+				ref_dt=str(reference_doctype or ""),
+				ref_dn=str(reference_name or ""),
+			)
+
+		# Normalize to digits-only for matching/idempotency
+		digits = re.sub(r"\D+", "", phone_raw or "")
+		if not digits:
+			frappe.response["http_status_code"] = 400
+			return {"success": False, "error": _("Impossibile determinare il numero di telefono dal messaggio")}
+
+		# Ensure or create
+		return _ensure_contact_for_digits(digits)
+
+	except Exception as e:
+		frappe.log_error(message=frappe.get_traceback(), title="workflow.ensure_contact_from_message")
+		frappe.response["http_status_code"] = 500
+		return {"success": False, "error": _(str(e))}
+
+
+def on_whatsapp_after_insert_ensure_contact(doc, method=None):
+	"""DocEvent hook: ensure contact exists for every incoming WhatsApp message.
+
+	Internal-only; not whitelisted. Uses message's `from` to derive digits.
+	"""
+	try:
+		if (getattr(doc, "type", "") or "").lower() != "incoming":
+			return
+		phone_raw = str(doc.get("from") or "").strip()
+		digits = re.sub(r"\D+", "", phone_raw or "")
+		if not digits:
+			return
+		_ensure_contact_for_digits(digits)
+	except Exception:
+		frappe.log_error(
+			message=frappe.get_traceback(),
+			title="workflow.on_whatsapp_after_insert_ensure_contact",
+		)
