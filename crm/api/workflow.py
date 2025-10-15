@@ -73,7 +73,6 @@ def _format_pretty_number(digits_only: str) -> str:
 		return digits_only or ""
 
 
-@frappe.whitelist(allow_guest=True)
 def new_client_lead(**data):
 	try:
 		# Collect JSON body if not provided as kwargs
@@ -339,3 +338,128 @@ def on_whatsapp_after_insert_ensure_contact(doc, method=None):
 			message=frappe.get_traceback(),
 			title="workflow.on_whatsapp_after_insert_ensure_contact",
 		)
+
+
+def update_contact_from_thread(
+	first_name: str,
+	last_name: str,
+	email: Optional[str] = None,
+	organization: Optional[str] = None,
+	confirm_organization: Optional[bool] = None,
+	phone_from: Optional[str] = None,
+) -> dict:
+	"""Update (or create) the Contact tied to the current thread phone.
+
+	- Required: first_name, last_name
+	- Optional: email, organization, confirm_organization (bool), phone_from (injected by AI runtime)
+	- Behavior:
+	  - Finds the Contact by phone; creates if missing.
+	  - Updates name and optional email.
+	  - If organization is provided:
+	    - If it exists and confirm_organization is True, link Contact to it.
+	    - If it exists and confirm_organization is not True, return needs_confirmation to let AI ask.
+	    - If it does not exist, create the CRM Organization and link.
+	"""
+	try:
+		# Normalize and validate basics
+		fn = (first_name or "").strip()
+		ln = (last_name or "").strip()
+		if not (fn and ln):
+			frappe.response["http_status_code"] = 400
+			return {"success": False, "error": _("Campi mancanti: first_name, last_name")}
+
+		raw_phone = (phone_from or "").strip()
+		digits = re.sub(r"\D+", "", raw_phone)
+		if not digits:
+			# Best-effort: try via reference on latest incoming message for this user session is out of scope here.
+			frappe.response["http_status_code"] = 400
+			return {"success": False, "error": _("Impossibile determinare il numero di telefono dal thread")}
+
+		# Locate or create the Contact by phone
+		contact_name = None
+		existing = frappe.get_all("Contact", filters={"mobile_no": digits}, fields=["name"], limit=1)
+		contact_name = existing[0].name if existing else None
+		if not contact_name:
+			rows = frappe.db.sql(
+				"""
+				SELECT parent
+				FROM `tabContact Phone`
+				WHERE REGEXP_REPLACE(phone, '[^0-9]', '') = %s
+				LIMIT 1
+				""",
+				(digits,),
+				as_dict=True,
+			)
+			contact_name = rows[0].parent if rows else None
+
+		pretty = _format_pretty_number(digits)
+		if contact_name:
+			doc = frappe.get_doc("Contact", contact_name)
+		else:
+			doc = frappe.get_doc({
+				"doctype": "Contact",
+				"first_name": pretty or f"+{digits}",
+				"mobile_no": pretty or f"+{digits}",
+				"phone_nos": [{"phone": pretty or f"+{digits}", "is_primary_mobile_no": 1}],
+			})
+			doc.insert(ignore_permissions=True)
+
+		# Update core fields
+		doc.first_name = fn
+		doc.last_name = ln
+		if email:
+			doc.email_id = str(email).strip()
+		doc.save(ignore_permissions=True)
+
+		org_created = False
+		linked_org = None
+		org_name_in = (organization or "").strip()
+		if org_name_in:
+			# Check existing CRM Organization by name
+			org_row = frappe.db.get_value("CRM Organization", {"organization_name": org_name_in}, ["name"], as_dict=True)
+			if org_row:
+				# If not confirmed, ask upstream to confirm
+				if not bool(confirm_organization):
+					frappe.response["http_status_code"] = 200
+					return {
+						"success": False,
+						"needs_confirmation": True,
+						"organization_match": org_name_in,
+						"contact": doc.as_dict(),
+					}
+				linked_org = org_row.get("name")
+			else:
+				# Create new organization
+				org_doc = frappe.get_doc({
+					"doctype": "CRM Organization",
+					"organization_name": org_name_in,
+				})
+				org_doc.insert(ignore_permissions=True)
+				linked_org = org_doc.name
+				org_created = True
+
+		# Ensure link from Contact to CRM Organization (Contact.links Dynamic Link)
+		if linked_org:
+			links = list(getattr(doc, "links", []) or [])
+			already = False
+			for li in links:
+				if getattr(li, "link_doctype", "") == "CRM Organization" and getattr(li, "link_name", "") == linked_org:
+					already = True
+					break
+			if not already:
+				doc.append("links", {"link_doctype": "CRM Organization", "link_name": linked_org})
+				doc.save(ignore_permissions=True)
+
+		frappe.response["http_status_code"] = 200 if contact_name else 201
+		return {
+			"success": True,
+			"message": _("Contatto aggiornato" if contact_name else "Contatto creato"),
+			"contact": doc.as_dict(),
+			"organization": linked_org,
+			"organization_created": org_created,
+		}
+
+	except Exception as e:
+		frappe.log_error(message=frappe.get_traceback(), title="workflow.update_contact_from_thread")
+		frappe.response["http_status_code"] = 500
+		return {"success": False, "error": _(str(e))}
