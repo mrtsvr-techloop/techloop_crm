@@ -135,6 +135,44 @@ def new_client_lead(**data):
 			org_doc.insert(ignore_permissions=True)
 			org = {"name": org_doc.name}
 
+		# If a Contact already exists for this phone, link it to the Organization
+		try:
+			if mobile_no:
+				existing_contact = frappe.get_all(
+					"Contact",
+					filters={"mobile_no": mobile_no},
+					fields=["name"],
+					limit=1,
+				)
+				if existing_contact:
+					c = frappe.get_doc("Contact", existing_contact[0].name)
+					# Update contact email if provided
+					try:
+						if email and (str(c.get("email_id") or "").strip().lower() != email.strip().lower()):
+							c.email_id = email.strip().lower()
+							# Optionally ensure a primary child email row exists/updated
+							primary_set = False
+							for row in (getattr(c, "email_ids", []) or []):
+								if int(getattr(row, "is_primary", 0) or 0) == 1:
+									row.email_id = email.strip().lower()
+									primary_set = True
+									break
+							if not primary_set:
+								c.append("email_ids", {"email_id": email.strip().lower(), "is_primary": 1})
+					except Exception:
+						pass
+					links = list(getattr(c, "links", []) or [])
+					already = False
+					for li in links:
+						if getattr(li, "link_doctype", "") == "CRM Organization" and getattr(li, "link_name", "") == org.get("name"):
+							already = True
+							break
+					if not already:
+						c.append("links", {"link_doctype": "CRM Organization", "link_name": org.get("name")})
+					c.save(ignore_permissions=True)
+		except Exception:
+			pass
+
 		# Idempotency: avoid duplicate leads for the same person + org (email OR mobile as key)
 		existing_lead = frappe.get_all(
 			"CRM Lead",
@@ -395,6 +433,22 @@ def update_contact_from_thread(
 		pretty = _format_pretty_number(digits)
 		if contact_name:
 			doc = frappe.get_doc("Contact", contact_name)
+			# Safety: ensure this update applies only to the same phone owner
+			try:
+				primary_digits = re.sub(r"\D+", "", (doc.mobile_no or ""))
+				matches_primary = bool(primary_digits) and primary_digits == digits
+				matches_child = False
+				if not matches_primary:
+					for ph in (getattr(doc, "phone_nos", []) or []):
+						p = re.sub(r"\D+", "", (getattr(ph, "phone", "") or ""))
+						if p == digits:
+							matches_child = True
+							break
+				if not (matches_primary or matches_child):
+					frappe.response["http_status_code"] = 403
+					return {"success": False, "error": _("Non autorizzato: numero non corrispondente al contatto")}
+			except Exception:
+				pass
 		else:
 			doc = frappe.get_doc({
 				"doctype": "Contact",
@@ -408,7 +462,20 @@ def update_contact_from_thread(
 		doc.first_name = fn
 		doc.last_name = ln
 		if email:
-			doc.email_id = str(email).strip()
+			em = str(email).strip()
+			# Set convenience field
+			doc.email_id = em
+			# Ensure child table reflects and sets primary
+			found = False
+			for row in (getattr(doc, "email_ids", []) or []):
+				if (row.email_id or "").strip().lower() == em.lower():
+					row.is_primary = 1
+					found = True
+				else:
+					# demote others if setting a primary
+					row.is_primary = 0
+			if not found:
+				doc.append("email_ids", {"email_id": em, "is_primary": 1 if len(doc.email_ids or []) == 0 else 1})
 		doc.save(ignore_permissions=True)
 
 		org_created = False
@@ -428,15 +495,7 @@ def update_contact_from_thread(
 						"contact": doc.as_dict(),
 					}
 				linked_org = org_row.get("name")
-			else:
-				# Create new organization
-				org_doc = frappe.get_doc({
-					"doctype": "CRM Organization",
-					"organization_name": org_name_in,
-				})
-				org_doc.insert(ignore_permissions=True)
-				linked_org = org_doc.name
-				org_created = True
+			# If not found, do NOT create organization during contact update
 
 		# Ensure link from Contact to CRM Organization (Contact.links Dynamic Link)
 		if linked_org:
