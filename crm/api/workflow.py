@@ -882,3 +882,296 @@ def update_contact_from_thread(
 		)
 		frappe.response["http_status_code"] = 500
 		return {"success": False, "error": _(str(e))}
+
+
+def search_products(
+	filter_value: str,
+	filter_type: Optional[str] = None,
+	limit: int = 50
+) -> Dict[str, Any]:
+	"""Search CRM Products by tag, price, or name.
+	
+	This function allows AI agents to search for products using flexible filtering.
+	The AI can determine the filter type automatically or specify it explicitly.
+	
+	Args:
+		filter_value: The value to search for (tag name, price, or product name)
+		filter_type: Optional filter type ("tag", "price", "name"). If None, auto-detects
+		limit: Maximum number of results to return (default: 50)
+	
+	Returns:
+		{
+			"success": bool,
+			"products": [
+				{
+					"name": str,           # Product name
+					"product_code": str,   # Product code
+					"standard_rate": float, # Price
+					"tags": [str],         # List of tag names
+					"description": str,    # Product description
+					"disabled": bool        # Is disabled
+				}
+			],
+			"total_found": int,
+			"filter_applied": str,
+			"message": str
+		}
+	
+	Example:
+		result = search_products("Elettronica", "tag")
+		result = search_products("100", "price") 
+		result = search_products("iPhone", "name")
+		result = search_products("50")  # Auto-detect filter type
+	"""
+	try:
+		# Parse request data if not provided
+		if not filter_value and frappe.request and frappe.request.method == "POST":
+			data = frappe.parse_json(frappe.request.data or {}) or {}
+			filter_value = data.get("filter_value", "")
+			filter_type = data.get("filter_type")
+			limit = data.get("limit", 50)
+		
+		# Validate inputs
+		filter_value = (filter_value or "").strip()
+		if not filter_value:
+			frappe.response["http_status_code"] = 400
+			return {"success": False, "error": _("Valore di filtro richiesto")}
+		
+		limit = max(1, min(int(limit or 50), 200))  # Clamp between 1-200
+		
+		# Auto-detect filter type if not specified
+		if not filter_type:
+			filter_type = _detect_filter_type(filter_value)
+		
+		_log().info(f"Searching products: filter='{filter_value}' type='{filter_type}' limit={limit}")
+		
+		# Build query based on filter type
+		products = _build_product_query(filter_value, filter_type, limit)
+		
+		# Format results for AI consumption
+		formatted_products = []
+		for product in products:
+			formatted_product = _format_product_for_ai(product)
+			formatted_products.append(formatted_product)
+		
+		frappe.response["http_status_code"] = 200
+		return {
+			"success": True,
+			"products": formatted_products,
+			"total_found": len(formatted_products),
+			"filter_applied": filter_type,
+			"message": _("Trovati {0} prodotti").format(len(formatted_products))
+		}
+	
+	except Exception as e:
+		frappe.log_error(
+			message=frappe.get_traceback(),
+			title="workflow.search_products"
+		)
+		frappe.response["http_status_code"] = 500
+		return {"success": False, "error": _(str(e))}
+
+
+def _detect_filter_type(filter_value: str) -> str:
+	"""Auto-detect filter type based on input value.
+	
+	Args:
+		filter_value: The filter value to analyze
+	
+	Returns:
+		Filter type: "price", "tag", or "name"
+	"""
+	# Check if it's a price (numeric with optional currency symbols)
+	price_pattern = r'^[\d\s.,€$£¥]+$'
+	if re.match(price_pattern, filter_value.replace(' ', '')):
+		return "price"
+	
+	# Check if it's likely a tag (short, single word, title case)
+	if len(filter_value.split()) == 1 and filter_value.istitle():
+		return "tag"
+	
+	# Default to name search
+	return "name"
+
+
+def _build_product_query(filter_value: str, filter_type: str, limit: int) -> List[Dict[str, Any]]:
+	"""Build and execute product search query.
+	
+	Args:
+		filter_value: The filter value
+		filter_type: Type of filter ("tag", "price", "name")
+		limit: Maximum results
+	
+	Returns:
+		List of product dictionaries
+	"""
+	base_filters = {"disabled": 0}  # Only active products
+	
+	if filter_type == "price":
+		return _query_by_price(filter_value, base_filters, limit)
+	elif filter_type == "tag":
+		return _query_by_tag(filter_value, base_filters, limit)
+	else:  # name
+		return _query_by_name(filter_value, base_filters, limit)
+
+
+def _query_by_price(filter_value: str, base_filters: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+	"""Query products by price range.
+	
+	Args:
+		filter_value: Price value (e.g., "100", "50-200")
+		base_filters: Base filters to apply
+		limit: Maximum results
+	
+	Returns:
+		List of product dictionaries
+	"""
+	# Extract numeric value from price string
+	price_str = re.sub(r'[^\d.,]', '', filter_value)
+	try:
+		price_value = float(price_str.replace(',', '.'))
+	except ValueError:
+		_log().warning(f"Invalid price format: {filter_value}")
+		return []
+	
+	# Search for products with price close to the target (±20%)
+	tolerance = price_value * 0.2
+	min_price = max(0, price_value - tolerance)
+	max_price = price_value + tolerance
+	
+	filters = {
+		**base_filters,
+		"standard_rate": [">=", min_price]
+	}
+	
+	# Use frappe.get_all with range filter
+	products = frappe.get_all(
+		"CRM Product",
+		filters=filters,
+		fields=[
+			"name", "product_code", "product_name", "standard_rate",
+			"description", "disabled"
+		],
+		order_by="standard_rate asc",
+		limit=limit
+	)
+	
+	# Filter by max price in Python (since frappe doesn't support range filters well)
+	products = [p for p in products if float(p.get("standard_rate", 0)) <= max_price]
+	
+	# Get tags for each product
+	return _enrich_products_with_tags(products)
+
+
+def _query_by_tag(filter_value: str, base_filters: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+	"""Query products by tag name.
+	
+	Args:
+		filter_value: Tag name to search for
+		base_filters: Base filters to apply
+		limit: Maximum results
+	
+	Returns:
+		List of product dictionaries
+	"""
+	# Find products that have the specified tag
+	products = frappe.db.sql("""
+		SELECT DISTINCT p.name, p.product_code, p.product_name, 
+		       p.standard_rate, p.description, p.disabled
+		FROM `tabCRM Product` p
+		INNER JOIN `tabCRM Product Tag` pt ON pt.parent = p.name
+		INNER JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
+		WHERE p.disabled = 0
+		AND ptm.tag_name LIKE %s
+		ORDER BY p.product_name
+		LIMIT %s
+	""", (f"%{filter_value}%", limit), as_dict=True)
+	
+	return _enrich_products_with_tags(products)
+
+
+def _query_by_name(filter_value: str, base_filters: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+	"""Query products by name (LIKE search).
+	
+	Args:
+		filter_value: Product name to search for
+		base_filters: Base filters to apply
+		limit: Maximum results
+	
+	Returns:
+		List of product dictionaries
+	"""
+	filters = {
+		**base_filters,
+		"product_name": ["like", f"%{filter_value}%"]
+	}
+	
+	products = frappe.get_all(
+		"CRM Product",
+		filters=filters,
+		fields=[
+			"name", "product_code", "product_name", "standard_rate",
+			"description", "disabled"
+		],
+		order_by="product_name",
+		limit=limit
+	)
+	
+	return _enrich_products_with_tags(products)
+
+
+def _enrich_products_with_tags(products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+	"""Enrich product list with tag information.
+	
+	Args:
+		products: List of product dictionaries
+	
+	Returns:
+		List of enriched product dictionaries
+	"""
+	if not products:
+		return []
+	
+	product_names = [p["name"] for p in products]
+	
+	# Get all tags for these products
+	tags_query = frappe.db.sql("""
+		SELECT pt.parent, ptm.tag_name
+		FROM `tabCRM Product Tag` pt
+		INNER JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
+		WHERE pt.parent IN %s
+		ORDER BY pt.parent, ptm.tag_name
+	""", (product_names,), as_dict=True)
+	
+	# Group tags by product
+	tags_by_product = {}
+	for tag in tags_query:
+		parent = tag["parent"]
+		if parent not in tags_by_product:
+			tags_by_product[parent] = []
+		tags_by_product[parent].append(tag["tag_name"])
+	
+	# Enrich products with tags
+	for product in products:
+		product["tags"] = tags_by_product.get(product["name"], [])
+	
+	return products
+
+
+def _format_product_for_ai(product: Dict[str, Any]) -> Dict[str, Any]:
+	"""Format product data for AI consumption.
+	
+	Args:
+		product: Raw product dictionary
+	
+	Returns:
+		Formatted product dictionary
+	"""
+	return {
+		"name": product.get("product_name", ""),
+		"product_code": product.get("product_code", ""),
+		"standard_rate": float(product.get("standard_rate", 0)),
+		"tags": product.get("tags", []),
+		"description": product.get("description", ""),
+		"disabled": bool(product.get("disabled", 0))
+	}
