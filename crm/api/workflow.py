@@ -1219,11 +1219,23 @@ def _format_product_for_ai(product: Dict[str, Any]) -> Dict[str, Any]:
 	Returns:
 		Formatted product dictionary
 	"""
+	import re
+	
+	# Clean HTML from description
+	description = product.get("description", "")
+	if description:
+		# Remove HTML tags
+		description = re.sub(r'<[^>]+>', '', description)
+		# Decode HTML entities
+		description = description.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+		# Clean up extra whitespace
+		description = re.sub(r'\s+', ' ', description).strip()
+	
 	return {
 		"name": product.get("product_name", ""),
 		"product_code": product.get("product_code", ""),
 		"standard_rate": float(product.get("standard_rate", 0)),
 		"tags": product.get("tags", []),
-		"description": product.get("description", ""),
+		"description": description,
 		"disabled": bool(product.get("disabled", 0))
 	}
