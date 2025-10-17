@@ -885,17 +885,18 @@ def update_contact_from_thread(
 
 
 def search_products(
-	filter_value: str,
+	filter_value: Optional[str] = None,
 	filter_type: Optional[str] = None,
-	limit: int = 50
+	limit: Optional[int] = None
 ) -> Dict[str, Any]:
 	"""Search CRM Products by tag, price, or name.
 	
 	This function allows AI agents to search for products using flexible filtering.
 	The AI can determine the filter type automatically or specify it explicitly.
+	If no filter_value is provided, returns ALL active products.
 	
 	Args:
-		filter_value: The value to search for (tag name, price, or product name)
+		filter_value: Optional value to search for (tag name, price, or product name). If empty, returns ALL products
 		filter_type: Optional filter type ("tag", "price", "name"). If None, auto-detects
 		limit: Maximum number of results to return (default: 50)
 	
@@ -922,6 +923,7 @@ def search_products(
 		result = search_products("100", "price") 
 		result = search_products("iPhone", "name")
 		result = search_products("50")  # Auto-detect filter type
+		result = search_products()  # Returns ALL products
 	"""
 	try:
 		# Parse request data if not provided
@@ -931,13 +933,48 @@ def search_products(
 			filter_type = data.get("filter_type")
 			limit = data.get("limit", 50)
 		
-		# Validate inputs
-		filter_value = (filter_value or "").strip()
-		if not filter_value:
-			frappe.response["http_status_code"] = 400
-			return {"success": False, "error": _("Valore di filtro richiesto")}
+		# Set defaults for optional parameters
+		filter_value = filter_value or ""
+		filter_type = filter_type or None
+		limit = limit or 50
 		
-		limit = max(1, min(int(limit or 50), 200))  # Clamp between 1-200
+		# Validate inputs
+		filter_value = filter_value.strip()
+		limit = max(1, min(int(limit), 200))  # Clamp between 1-200
+		
+		# If no filter_value provided, return ALL products
+		if not filter_value:
+			_log().info(f"Searching ALL products: limit={limit}")
+			try:
+				products = frappe.get_all(
+					"CRM Product",
+					filters={"disabled": 0},  # Only active products
+					fields=[
+						"name", "product_code", "product_name", "standard_rate",
+						"description", "disabled"
+					],
+					order_by="product_name",
+					limit=limit
+				)
+				products = _enrich_products_with_tags(products)
+				
+				formatted_products = []
+				for product in products:
+					formatted_product = _format_product_for_ai(product)
+					formatted_products.append(formatted_product)
+				
+				frappe.response["http_status_code"] = 200
+				return {
+					"success": True,
+					"products": formatted_products,
+					"total_found": len(formatted_products),
+					"filter_applied": "all",
+					"message": _("Trovati {0} prodotti (tutti)").format(len(formatted_products))
+				}
+			except Exception as query_error:
+				_log().error(f"Query failed for ALL products: {query_error}")
+				frappe.response["http_status_code"] = 500
+				return {"success": False, "error": f"Query failed: {str(query_error)}"}
 		
 		# Auto-detect filter type if not specified
 		if not filter_type:
@@ -946,8 +983,13 @@ def search_products(
 		_log().info(f"Searching products: filter='{filter_value}' type='{filter_type}' limit={limit}")
 		
 		# Build query based on filter type
-		products = _build_product_query(filter_value, filter_type, limit)
-		
+		try:
+			products = _build_product_query(filter_value, filter_type, limit)
+		except Exception as query_error:
+			_log().error(f"Query failed for filter '{filter_value}' type '{filter_type}': {query_error}")
+			frappe.response["http_status_code"] = 500
+			return {"success": False, "error": f"Query failed: {str(query_error)}"}
+			
 		# Format results for AI consumption
 		formatted_products = []
 		for product in products:
@@ -1053,11 +1095,14 @@ def _query_by_price(filter_value: str, base_filters: Dict[str, Any], limit: int)
 			"description", "disabled"
 		],
 		order_by="standard_rate asc",
-		limit=limit
+		limit=limit * 2  # Get more to account for Python filtering
 	)
 	
 	# Filter by max price in Python (since frappe doesn't support range filters well)
 	products = [p for p in products if float(p.get("standard_rate", 0)) <= max_price]
+	
+	# Apply final limit
+	products = products[:limit]
 	
 	# Get tags for each product
 	return _enrich_products_with_tags(products)
@@ -1132,30 +1177,37 @@ def _enrich_products_with_tags(products: List[Dict[str, Any]]) -> List[Dict[str,
 	if not products:
 		return []
 	
-	product_names = [p["name"] for p in products]
-	
-	# Get all tags for these products
-	tags_query = frappe.db.sql("""
-		SELECT pt.parent, ptm.tag_name
-		FROM `tabCRM Product Tag` pt
-		INNER JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
-		WHERE pt.parent IN %s
-		ORDER BY pt.parent, ptm.tag_name
-	""", (product_names,), as_dict=True)
-	
-	# Group tags by product
-	tags_by_product = {}
-	for tag in tags_query:
-		parent = tag["parent"]
-		if parent not in tags_by_product:
-			tags_by_product[parent] = []
-		tags_by_product[parent].append(tag["tag_name"])
-	
-	# Enrich products with tags
-	for product in products:
-		product["tags"] = tags_by_product.get(product["name"], [])
-	
-	return products
+	try:
+		product_names = [p["name"] for p in products]
+		
+		# Get all tags for these products
+		tags_query = frappe.db.sql("""
+			SELECT pt.parent, ptm.tag_name
+			FROM `tabCRM Product Tag` pt
+			INNER JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
+			WHERE pt.parent IN %s
+			ORDER BY pt.parent, ptm.tag_name
+		""", (product_names,), as_dict=True)
+		
+		# Group tags by product
+		tags_by_product = {}
+		for tag in tags_query:
+			parent = tag["parent"]
+			if parent not in tags_by_product:
+				tags_by_product[parent] = []
+			tags_by_product[parent].append(tag["tag_name"])
+		
+		# Enrich products with tags
+		for product in products:
+			product["tags"] = tags_by_product.get(product["name"], [])
+		
+		return products
+	except Exception as exc:
+		_log().warning(f"Failed to enrich products with tags: {exc}")
+		# Return products without tags if enrichment fails
+		for product in products:
+			product["tags"] = []
+		return products
 
 
 def _format_product_for_ai(product: Dict[str, Any]) -> Dict[str, Any]:
