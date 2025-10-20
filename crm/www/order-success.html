@@ -1,0 +1,27 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Ordine Confermato{% endblock %}
+
+{% block page_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="card-title text-success">✅ Ordine Confermato!</h2>
+                    <p class="card-text">
+                        Grazie per aver confermato il tuo ordine. 
+                        Riceverai una conferma via WhatsApp a breve.
+                    </p>
+                    <div class="mt-4">
+                        <a href="/crm" class="btn btn-primary">Torna al CRM</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

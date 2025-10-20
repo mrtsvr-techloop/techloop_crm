@@ -1,0 +1,144 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Conferma Ordine{% endblock %}
+
+{% block page_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">📋 Conferma Ordine</h3>
+                </div>
+                <div class="card-body">
+                    <form id="orderForm" method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_name">Nome Cliente *</label>
+                                    <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                                           value="{{ customer_name or '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone_number">Numero Telefono *</label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                           value="{{ phone_number or '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="product_name">Prodotto *</label>
+                                    <input type="text" class="form-control" id="product_name" name="product_name" 
+                                           value="{{ product_name or '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quantity">Quantità *</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           value="{{ quantity or 1 }}" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="unit_price">Prezzo Unitario (€)</label>
+                                    <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                           value="{{ unit_price or '' }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="total_price">Prezzo Totale (€)</label>
+                                    <input type="number" class="form-control" id="total_price" name="total_price" 
+                                           value="{{ total_price or '' }}" step="0.01" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="delivery_address">Indirizzo di Consegna</label>
+                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3">{{ delivery_address or '' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notes">Note Aggiuntive</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2">{{ notes or '' }}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="terms_accepted" name="terms_accepted" required>
+                                <label class="form-check-label" for="terms_accepted">
+                                    Accetto i termini e condizioni *
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                ✅ Conferma Ordine
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-calculate total price
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const unitPriceInput = document.getElementById('unit_price');
+    const totalPriceInput = document.getElementById('total_price');
+    
+    function calculateTotal() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPrice = parseFloat(unitPriceInput.value) || 0;
+        const total = quantity * unitPrice;
+        totalPriceInput.value = total.toFixed(2);
+    }
+    
+    quantityInput.addEventListener('input', calculateTotal);
+    unitPriceInput.addEventListener('input', calculateTotal);
+    
+    // Calculate on page load
+    calculateTotal();
+});
+
+// Form submission
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('/api/method/crm.www.order_confirmation.submit_order', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message && data.message.success) {
+            alert('✅ Ordine confermato con successo!');
+            // Redirect to CRM success page
+            window.location.href = data.message.redirect_url || '/crm/order-success';
+        } else {
+            alert('❌ Errore: ' + (data.message?.error || 'Errore sconosciuto'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Errore di connessione');
+    });
+});
+</script>
+{% endblock %}
