@@ -3,15 +3,37 @@
 {% block title %}Conferma Ordine{% endblock %}
 
 {% block page_content %}
+<style>
+/* Remove Frappe website header/footer for a clean landing */
+header.navbar, .web-footer, .navbar, .page-head, .page-head-content { display: none !important; }
+body { background: #f7f9fc; }
+.card-header { background: #ffffff !important; border-bottom: 1px solid #e5e7eb; }
+.card-header h3 { color: #1f2937; }
+.btn-success { background-color: #10b981; border-color: #10b981; }
+.btn-success:hover { background-color: #059669; border-color: #059669; }
+.product-item { border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 10px; }
+.product-name { font-weight: 600; color: #1f2937; }
+.product-price { color: #059669; font-weight: 600; }
+.error-message { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+</style>
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            {% if not order_valid %}
+            <div class="error-message">
+                <h4>❌ Link Ordine Non Valido</h4>
+                <p>{{ error_message or "Il link dell'ordine è scaduto o non è valido." }}</p>
+                <p><strong>Soluzione:</strong> Genera un nuovo link ordine in chat con l'AI.</p>
+            </div>
+            {% else %}
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h3 class="mb-0">📋 Conferma Ordine</h3>
                 </div>
                 <div class="card-body">
                     <form id="orderForm" method="POST">
+                        <input type="hidden" name="temp_order_id" value="{{ temp_order_id }}">
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -29,36 +51,41 @@
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="product_name">Prodotto *</label>
-                                    <input type="text" class="form-control" id="product_name" name="product_name" 
-                                           value="{{ product_name or '' }}" required>
+                        <!-- Products Section -->
+                        <div class="form-group">
+                            <label>Prodotti Ordinati</label>
+                            {% for product in product_details %}
+                            <div class="product-item">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="product-name">{{ product.name }}</div>
+                                        <small class="text-muted">ID: {{ product.id }}</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Quantità</label>
+                                        <input type="number" class="form-control product-quantity" 
+                                               name="product_quantities" value="{{ product.quantity }}" 
+                                               min="1" data-product-id="{{ product.id }}">
+                                        <input type="hidden" name="product_ids" value="{{ product.id }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="product-price">
+                                            <div>€{{ "%.2f"|format(product.unit_price) }}/pz</div>
+                                            <div><strong>Tot: €{{ "%.2f"|format(product.total_price) }}</strong></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="quantity">Quantità *</label>
-                                    <input type="number" class="form-control" id="quantity" name="quantity" 
-                                           value="{{ quantity or 1 }}" min="1" required>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="unit_price">Prezzo Unitario (€)</label>
-                                    <input type="number" class="form-control" id="unit_price" name="unit_price" 
-                                           value="{{ unit_price or '' }}" step="0.01">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="total_price">Prezzo Totale (€)</label>
+                                    <label for="total_price">Prezzo Totale Ordine (€)</label>
                                     <input type="number" class="form-control" id="total_price" name="total_price" 
-                                           value="{{ total_price or '' }}" step="0.01" readonly>
+                                           value="{{ "%.2f"|format(total_price) }}" step="0.01" readonly 
+                                           style="font-size: 1.2rem; font-weight: bold; color: #059669;">
                                 </div>
                             </div>
                         </div>
@@ -90,26 +117,48 @@
                     </form>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <script>
-// Auto-calculate total price
+// Auto-calculate total price for multiple products
 document.addEventListener('DOMContentLoaded', function() {
-    const quantityInput = document.getElementById('quantity');
-    const unitPriceInput = document.getElementById('unit_price');
     const totalPriceInput = document.getElementById('total_price');
     
     function calculateTotal() {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const unitPrice = parseFloat(unitPriceInput.value) || 0;
-        const total = quantity * unitPrice;
-        totalPriceInput.value = total.toFixed(2);
+        let total = 0;
+        const productItems = document.querySelectorAll('.product-item');
+        
+        productItems.forEach(item => {
+            const quantityInput = item.querySelector('.product-quantity');
+            const priceText = item.querySelector('.product-price div:first-child').textContent;
+            
+            if (quantityInput && priceText) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const unitPrice = parseFloat(priceText.replace('€', '').replace('/pz', '')) || 0;
+                const productTotal = quantity * unitPrice;
+                
+                // Update individual product total
+                const productTotalElement = item.querySelector('.product-price div:last-child');
+                if (productTotalElement) {
+                    productTotalElement.innerHTML = `<strong>Tot: €${productTotal.toFixed(2)}</strong>`;
+                }
+                
+                total += productTotal;
+            }
+        });
+        
+        if (totalPriceInput) {
+            totalPriceInput.value = total.toFixed(2);
+        }
     }
     
-    quantityInput.addEventListener('input', calculateTotal);
-    unitPriceInput.addEventListener('input', calculateTotal);
+    // Add event listeners to all quantity inputs
+    document.querySelectorAll('.product-quantity').forEach(input => {
+        input.addEventListener('input', calculateTotal);
+    });
     
     // Calculate on page load
     calculateTotal();
@@ -123,14 +172,17 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
     
     fetch('/api/method/crm.www.order_confirmation.submit_order', {
         method: 'POST',
+        headers: {
+            'X-Frappe-CSRF-Token': '{{ csrf_token or "" }}'
+        },
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.message && data.message.success) {
             alert('✅ Ordine confermato con successo!');
-            // Redirect to CRM success page
-            window.location.href = data.message.redirect_url || '/crm/order-success';
+            // Redirect to success page
+            window.location.href = data.message.redirect_url || '/order-success';
         } else {
             alert('❌ Errore: ' + (data.message?.error || 'Errore sconosciuto'));
         }

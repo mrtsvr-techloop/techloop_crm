@@ -3,6 +3,14 @@
 {% block title %}Ordine Confermato{% endblock %}
 
 {% block page_content %}
+<style>
+/* Remove website chrome for public success page */
+header.navbar, .web-footer, .navbar, .page-head, .page-head-content { display: none !important; }
+body { background: #f7f9fc; }
+.card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.btn-primary { background-color: #2563eb; border-color: #2563eb; }
+.btn-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
+</style>
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -12,16 +20,23 @@
                         <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
                     </div>
                     <h2 class="card-title text-success">✅ Ordine Confermato!</h2>
-                    <p class="card-text">
-                        Grazie per aver confermato il tuo ordine. 
-                        Riceverai una conferma via WhatsApp a breve.
+                    <p class="card-text" id="orderNumber" style="font-size:1.25rem; font-weight:600;">
+                        Questo è il tuo numero Ordine: <span></span>
                     </p>
-                    <div class="mt-4">
-                        <a href="/crm" class="btn btn-primary">Torna al CRM</a>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+// Read order_no from query string and display as 25-00002 format
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    const orderNo = params.get('order_no') || '';
+    if (orderNo) {
+        const span = document.querySelector('#orderNumber span');
+        if (span) span.textContent = orderNo;
+    }
+});
+</script>
 {% endblock %}
