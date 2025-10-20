@@ -167,7 +167,7 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 	"all": [
 		"crm.fcrm.doctype.temp_ordine.temp_ordine.cleanup_expired_temp_orders"
 	],
