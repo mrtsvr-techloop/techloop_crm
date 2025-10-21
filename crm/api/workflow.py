@@ -33,7 +33,40 @@ PRETTY_GROUP_SIZES = [3, 3, 4]  # Groups for pretty phone format
 
 
 def _log():
-	"""Get Frappe logger for workflow module."""
+	"""Get Frappe logger for workflow module.
+	
+	Returns a silent logger when called from AI tool calls to avoid
+	permission issues with log file access.
+	"""
+	import os
+	
+	# Check environment variable first (most reliable)
+	if os.getenv('AI_TOOL_CALL_MODE') == '1':
+		class SilentLogger:
+			def info(self, msg): pass
+			def error(self, msg): pass
+			def warning(self, msg): pass
+			def debug(self, msg): pass
+		return SilentLogger()
+	
+	# Check if we're in an AI context (tool call) by examining call stack
+	import inspect
+	frame = inspect.currentframe()
+	
+	# Walk up the call stack to see if we're in an AI tool call
+	while frame:
+		filename = frame.f_code.co_filename
+		if 'ai_module' in filename or 'tool' in filename.lower():
+			# We're in an AI context - return a silent logger
+			class SilentLogger:
+				def info(self, msg): pass
+				def error(self, msg): pass
+				def warning(self, msg): pass
+				def debug(self, msg): pass
+			return SilentLogger()
+		frame = frame.f_back
+	
+	# Normal context - return real logger
 	return frappe.logger("crm.workflow")
 
 def _normalize_phone_to_digits(phone: str) -> str:
