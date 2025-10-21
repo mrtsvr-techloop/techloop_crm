@@ -64,7 +64,7 @@
 	"links": [],
 	"modified": "2025-01-20 10:30:00.000000",
 	"modified_by": "Administrator",
-	"module": "CRM",
+	"module": "FCRM",
 	"name": "Temp Ordine",
 	"naming_rule": "By \"Naming Series\" field",
 	"owner": "Administrator",
