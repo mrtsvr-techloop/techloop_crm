@@ -12,14 +12,14 @@ def get_context():
     """Get context for order confirmation form."""
     context = frappe._dict()
     
-    # Get Temp_Ordine ID from URL path
+    # Get FCRM TEMP ORDINE ID from URL path
     temp_order_id = frappe.request.path.split('/')[-1] if '/' in frappe.request.path else None
     
     if temp_order_id:
-        # Import Temp_Ordine functions
-        from crm.fcrm.doctype.temp_ordine.temp_ordine import get_temp_order_data
+        # Import FCRM TEMP ORDINE functions
+        from crm.fcrm.doctype.fcrm_temp_ordine.fcrm_temp_ordine import get_temp_order_data
         
-        # Get order data from Temp_Ordine
+        # Get order data from FCRM TEMP ORDINE
         order_data, error = get_temp_order_data(temp_order_id)
         
         if order_data:
@@ -74,15 +74,15 @@ def submit_order():
         # Get form data
         data = frappe.form_dict
         
-        # Get Temp_Ordine ID
+        # Get FCRM TEMP ORDINE ID
         temp_order_id = data.get('temp_order_id')
         if not temp_order_id:
             frappe.throw(_("Temp Order ID mancante"))
         
-        # Import Temp_Ordine functions
-        from crm.fcrm.doctype.temp_ordine.temp_ordine import get_temp_order_data, consume_temp_order
+        # Import FCRM TEMP ORDINE functions
+        from crm.fcrm.doctype.fcrm_temp_ordine.fcrm_temp_ordine import get_temp_order_data, consume_temp_order
         
-        # Get and validate Temp_Ordine
+        # Get and validate FCRM TEMP ORDINE
         order_data, error = get_temp_order_data(temp_order_id)
         if not order_data:
             frappe.throw(_("Ordine scaduto o non valido: {0}").format(error or "Unknown error"))
@@ -151,7 +151,7 @@ def submit_order():
         
         lead_doc.insert(ignore_permissions=True)
         
-        # Mark Temp_Ordine as consumed
+        # Mark FCRM TEMP ORDINE as consumed
         consume_temp_order(temp_order_id)
         
         # Compute public order number from Lead name, e.g. CRM-LEAD-2025-00002 -> 25-00002

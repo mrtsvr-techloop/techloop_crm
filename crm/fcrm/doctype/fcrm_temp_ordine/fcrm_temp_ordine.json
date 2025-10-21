@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-21 10:51:54.168665",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "order_data_section",
+  "content",
+  "created_at",
+  "expires_at",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "order_data_section",
+   "fieldtype": "Section Break",
+   "label": "order_data"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "JSON",
+   "in_list_view": 1,
+   "label": "content",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "created_at",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "created_at",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "expires_at",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "expires_at",
+   "reqd": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "status",
+   "options": "Active\nConsumed\nExpired",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-21 10:56:41.214261",
+ "modified_by": "Administrator",
+ "module": "FCRM",
+ "name": "FCRM TEMP ORDINE",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
