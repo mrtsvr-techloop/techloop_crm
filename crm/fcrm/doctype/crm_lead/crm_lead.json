@@ -24,7 +24,11 @@
   "last_name",
   "email",
   "mobile_no",
-  "organization_tab",
+  "prodotti_ordinati_tab",
+  "products",
+  "total",
+  "column_break_uisv",
+  "net_total",
   "section_break_uixv",
   "naming_series",
   "lead_name",
@@ -37,12 +41,6 @@
   "annual_revenue",
   "image",
   "converted",
-  "products_tab",
-  "products",
-  "section_break_ggwh",
-  "total",
-  "column_break_uisv",
-  "net_total",
   "sla_tab",
   "sla",
   "sla_creation",
@@ -293,19 +291,15 @@
    "options": "CRM Status Change Log"
   },
   {
-   "fieldname": "products_tab",
+   "fieldname": "prodotti_ordinati_tab",
    "fieldtype": "Tab Break",
-   "label": "Products"
+   "label": "PRODOTTI ORDINATI"
   },
   {
    "fieldname": "products",
    "fieldtype": "Table",
    "label": "Products",
    "options": "CRM Products"
-  },
-  {
-   "fieldname": "section_break_ggwh",
-   "fieldtype": "Section Break"
   },
   {
    "fieldname": "total",

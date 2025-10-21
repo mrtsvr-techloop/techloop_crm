@@ -31,6 +31,7 @@
   {
    "fieldname": "product_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Product Name",
    "reqd": 1
   },
@@ -46,7 +47,7 @@
    "bold": 1,
    "fieldname": "discount_percentage",
    "fieldtype": "Percent",
-   "label": "Discount %"
+   "label": "Sconto"
   },
   {
    "fieldname": "discount_amount",
@@ -76,7 +77,8 @@
    "bold": 1,
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "label": "Amount",
+   "in_list_view": 1,
+   "label": "Totale",
    "options": "currency",
    "read_only": 1
   },
@@ -104,6 +106,7 @@
    "default": "1",
    "fieldname": "qty",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Quantity"
   },
   {

@@ -1,0 +1,243 @@
+<template>
+  <div class="flex flex-col flex-1 overflow-y-auto">
+    <div class="px-3 pb-3 sm:px-10 sm:pb-5">
+      <div class="my-3 flex items-center justify-between text-lg font-medium sm:mb-4 sm:mt-8">
+        <div class="flex h-8 items-center text-xl font-semibold text-ink-gray-8">
+          Prodotti Ordinati
+        </div>
+        <button 
+          @click="addProduct" 
+          class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          + Aggiungi Prodotto
+        </button>
+      </div>
+      
+      <!-- Tabella Custom -->
+      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Prodotto</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Quantità</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Prezzo</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Sconto</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Totale</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Azione</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="(product, index) in products" :key="index" class="hover:bg-gray-50">
+              <td class="px-4 py-3">
+                <select 
+                  v-model="product.product_code" 
+                  @change="onProductChange(index)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleziona prodotto</option>
+                  <option v-for="prod in availableProducts" :key="prod.name" :value="prod.name">
+                    {{ prod.product_name }} ({{ prod.name }})
+                  </option>
+                </select>
+              </td>
+              <td class="px-4 py-3">
+                <input 
+                  type="number" 
+                  v-model.number="product.qty" 
+                  @input="calculateTotals(index)"
+                  min="1"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <input 
+                  type="number" 
+                  v-model.number="product.rate" 
+                  @input="calculateTotals(index)"
+                  step="0.01"
+                  min="0"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-4 py-3">
+                <div class="relative">
+                  <input 
+                    type="number" 
+                    v-model.number="product.discount_percentage" 
+                    @input="calculateTotals(index)"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-medium">{{ formatCurrency(product.amount || 0) }}</span>
+              </td>
+              <td class="px-4 py-3">
+                <button 
+                  @click="removeProduct(index)"
+                  class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                >
+                  Rimuovi
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Stato vuoto -->
+        <div v-if="products.length === 0" class="p-8 text-center text-gray-500">
+          <ProductsIcon class="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>Nessun prodotto aggiunto</p>
+          <p class="text-sm">Clicca "Aggiungi Prodotto" per iniziare</p>
+        </div>
+      </div>
+      
+      <!-- Totali -->
+      <div v-if="products.length > 0" class="mt-6 bg-gray-50 rounded-lg p-4">
+        <div class="flex justify-end gap-6 text-lg font-semibold">
+          <div class="text-center">
+            <div class="text-sm text-gray-600">Totale</div>
+            <div class="text-xl text-gray-900">{{ formatCurrency(total) }}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm text-gray-600">Totale Netto</div>
+            <div class="text-xl text-gray-900">{{ formatCurrency(netTotal) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { createResource } from 'frappe-ui'
+import ProductsIcon from '@/components/Icons/ProductsIcon.vue'
+import { formatCurrency } from '@/utils/numberFormat'
+
+// Disabilita completamente i toast per questa pagina
+let originalToastFunction = null
+let originalMessageFunction = null
+let originalMsgprintFunction = null
+
+// Debounce per evitare troppi aggiornamenti
+let updateTimeout = null
+
+const props = defineProps({
+  doc: {
+    type: Object,
+    required: true,
+  },
+})
+
+const emit = defineEmits(['update'])
+
+// Prodotti dal documento
+const products = ref(props.doc.products || [])
+
+// Resource per caricare i prodotti disponibili
+const productsResource = createResource({
+  url: 'crm.fcrm.doctype.crm_product.crm_product.get_products_for_selection',
+  cache: ['crm_products_for_selection'],
+  auto: true,
+})
+
+const availableProducts = computed(() => {
+  return productsResource.data || []
+})
+
+const total = computed(() => {
+  return products.value.reduce((sum, product) => sum + (product.amount || 0), 0)
+})
+
+const netTotal = computed(() => {
+  return products.value.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
+})
+
+function addProduct() {
+  products.value.push({
+    product_code: '',
+    product_name: '',
+    qty: 1,
+    rate: 0,
+    discount_percentage: 0,
+    amount: 0,
+    net_amount: 0
+  })
+  emit('update', products.value)
+}
+
+function removeProduct(index) {
+  products.value.splice(index, 1)
+  emit('update', products.value)
+}
+
+function onProductChange(index) {
+  const product = products.value[index]
+  const selectedProduct = availableProducts.value.find(p => p.name === product.product_code)
+  
+  if (selectedProduct) {
+    product.product_name = selectedProduct.product_name
+    product.rate = selectedProduct.standard_rate || 0
+    calculateTotals(index)
+  }
+}
+
+function calculateTotals(index) {
+  const product = products.value[index]
+  
+  // Calcola amount (quantità × prezzo)
+  product.amount = (product.qty || 0) * (product.rate || 0)
+  
+  // Calcola discount_amount
+  const discountAmount = product.amount * ((product.discount_percentage || 0) / 100)
+  
+  // Calcola net_amount (amount - discount)
+  product.net_amount = product.amount - discountAmount
+  
+  // Debounce per evitare troppi aggiornamenti rapidi
+  if (updateTimeout) {
+    clearTimeout(updateTimeout)
+  }
+  updateTimeout = setTimeout(() => {
+    emit('update', products.value)
+  }, 300) // 300ms di delay
+}
+
+onMounted(() => {
+  // Disabilita completamente i toast per questa pagina
+  if (window.frappe) {
+    // Salva le funzioni originali
+    originalToastFunction = window.frappe.show_alert
+    originalMessageFunction = window.frappe.show_message
+    originalMsgprintFunction = window.frappe.msgprint
+    
+    // Sostituisci con funzioni vuote
+    window.frappe.show_alert = () => {}
+    window.frappe.show_message = () => {}
+    window.frappe.msgprint = () => {}
+  }
+  
+  // Disabilita anche i toast di Frappe UI se disponibili
+  if (window.frappe && window.frappe.ui && window.frappe.ui.show_alert) {
+    window.frappe.ui.show_alert = () => {}
+  }
+  
+  if (props.doc.products) {
+    products.value = [...props.doc.products]
+  }
+})
+
+onUnmounted(() => {
+  // Ripristina le funzioni originali quando il componente viene distrutto
+  if (window.frappe && originalToastFunction) {
+    window.frappe.show_alert = originalToastFunction
+    window.frappe.show_message = originalMessageFunction
+    window.frappe.msgprint = originalMsgprintFunction
+  }
+})
+</script>

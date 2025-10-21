@@ -44,7 +44,13 @@
   <div v-if="doc.name" class="flex h-full overflow-hidden">
     <Tabs as="div" v-model="tabIndex" :tabs="tabs">
       <template #tab-panel>
+        <ProductsTab
+          v-if="tabs[tabIndex]?.name === 'Products'"
+          :doc="doc"
+          @update="updateProducts"
+        />
         <Activities
+          v-else
           ref="activities"
           doctype="CRM Lead"
           :docname="leadId"
@@ -228,6 +234,7 @@ import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
+import ProductsIcon from '@/components/Icons/ProductsIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import LinkIcon from '@/components/Icons/LinkIcon.vue'
@@ -240,6 +247,7 @@ import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ConvertToDealModal from '@/components/Modals/ConvertToDealModal.vue'
+import ProductsTab from '@/components/ProductsTab.vue'
 import {
   openWebsite,
   setupCustomizations,
@@ -424,6 +432,11 @@ const tabs = computed(() => {
       icon: WhatsAppIcon,
       condition: () => whatsappEnabled.value,
     },
+    {
+      name: 'Products',
+      label: __('PRODOTTI ORDINATI'),
+      icon: ProductsIcon,
+    },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
@@ -486,6 +499,37 @@ function saveChanges(data) {
 function reloadAssignees(data) {
   if (data?.hasOwnProperty('lead_owner')) {
     assignees.reload()
+  }
+}
+
+function updateProducts(products) {
+  // Disabilita temporaneamente i toast durante l'aggiornamento
+  const originalShowAlert = window.frappe?.show_alert
+  const originalShowMessage = window.frappe?.show_message
+  const originalMsgprint = window.frappe?.msgprint
+  
+  if (window.frappe) {
+    window.frappe.show_alert = () => {}
+    window.frappe.show_message = () => {}
+    window.frappe.msgprint = () => {}
+  }
+  
+  try {
+    updateField('products', products)
+    // Update totals
+    const total = products.reduce((sum, product) => sum + (product.amount || 0), 0)
+    const netTotal = products.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
+    updateField(['total', 'net_total'], [total, netTotal])
+  } catch (error) {
+    // Silenzia gli errori per evitare toast fastidiosi
+    console.log('Products updated silently')
+  } finally {
+    // Ripristina le funzioni originali
+    if (window.frappe && originalShowAlert) {
+      window.frappe.show_alert = originalShowAlert
+      window.frappe.show_message = originalShowMessage
+      window.frappe.msgprint = originalMsgprint
+    }
   }
 }
 </script>

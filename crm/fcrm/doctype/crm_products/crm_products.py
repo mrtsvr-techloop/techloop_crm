@@ -6,105 +6,53 @@ from frappe.model.document import Document
 
 
 class CRMProducts(Document):
-	pass
+	def validate(self):
+		self.calculate_amounts()
 
+	def calculate_amounts(self):
+		"""Calculate amount, discount_amount and net_amount"""
+		if not self.qty or not self.rate:
+			self.amount = 0
+			self.discount_amount = 0
+			self.net_amount = 0
+			return
 
-def create_product_details_script(doctype):
-	if not frappe.db.exists("CRM Form Script", "Product Details Script for " + doctype):
-		script = get_product_details_script(doctype)
-		frappe.get_doc(
-			{
-				"doctype": "CRM Form Script",
-				"name": "Product Details Script for " + doctype,
-				"dt": doctype,
-				"view": "Form",
-				"script": script,
-				"enabled": 1,
-				"is_standard": 1,
-			}
-		).insert()
+		# Calculate base amount
+		self.amount = self.qty * self.rate
 
+		# Calculate discount amount
+		if self.discount_percentage:
+			self.discount_amount = self.amount * (self.discount_percentage / 100)
+		else:
+			self.discount_amount = 0
 
-def get_product_details_script(doctype):
-	doctype_class = "class " + doctype.replace(" ", "")
+		# Calculate net amount (after discount)
+		self.net_amount = self.amount - self.discount_amount
 
-	return (
-		doctype_class
-		+ " {"
-		+ """
-  update_total() {
-    let total = 0
-    let total_qty = 0
-    let net_total = 0
-    let discount_applied = false
+	def on_update(self):
+		"""Update parent document totals when child row is updated"""
+		self.update_parent_totals()
 
-    this.doc.products.forEach((d) => {
-      total += d.amount
-      net_total += d.net_amount
-      if (d.discount_percentage > 0) {
-        discount_applied = true
-      }
-    })
+	def update_parent_totals(self):
+		"""Update totals in parent CRM Lead document"""
+		if not self.parent:
+			return
 
-    this.doc.total = total
-    this.doc.net_total = net_total || total
-
-    if (!net_total && discount_applied) {
-      this.doc.net_total = net_total
-    }
-  }
-}
-
-class CRMProducts {
-  products_add() {
-    let row = this.doc.getRow('products')
-    row.trigger('qty')
-    this.doc.trigger('update_total')
-  }
-
-  products_remove() {
-    this.doc.trigger('update_total')
-  }
-
-  async product_code(idx) {
-    let row = this.doc.getRow('products', idx)
-
-    let a = await call("frappe.client.get_value", {
-        doctype: "CRM Product",
-        filters: { name: row.product_code },
-        fieldname: ["product_name", "standard_rate"],
-    })
-
-    row.product_name = a.product_name
-    if (a.standard_rate && !row.rate) {
-        row.rate = a.standard_rate
-        row.trigger("rate")
-    }
-  }
-
-  qty(idx) {
-    let row = this.doc.getRow('products', idx)
-    row.amount = row.qty * row.rate
-    row.trigger('discount_percentage', idx)
-  }
-
-  rate() {
-    let row = this.doc.getRow('products')
-    row.amount = row.qty * row.rate
-    row.trigger('discount_percentage')
-  }
-
-  discount_percentage(idx) {
-    let row = this.doc.getRow('products', idx)
-    if (!row.discount_percentage) {
-      row.net_amount = row.amount
-      row.discount_amount = 0
-    }
-    if (row.discount_percentage && row.amount) {
-      row.discount_amount = (row.discount_percentage / 100) * row.amount
-      row.net_amount = row.amount - row.discount_amount
-    }
-    this.doc.trigger('update_total')
-  }
-}"""
-	)
+		try:
+			parent_doc = frappe.get_doc("CRM Lead", self.parent)
+			
+			# Calculate totals from all products
+			total_amount = 0
+			total_net_amount = 0
+			
+			for product in parent_doc.products:
+				total_amount += product.amount or 0
+				total_net_amount += product.net_amount or 0
+			
+			# Update parent totals
+			parent_doc.total = total_amount
+			parent_doc.net_total = total_net_amount
+			parent_doc.save(ignore_permissions=True)
+			
+		except Exception as e:
+			frappe.log_error(f"Error updating parent totals: {str(e)}", "CRM Products Update Error")

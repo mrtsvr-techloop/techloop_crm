@@ -27,3 +27,13 @@ class CRMProduct(Document):
 			self.product_name = self.product_code
 		else:
 			self.product_name = self.product_name.strip()
+
+@frappe.whitelist()
+def get_products_for_selection():
+	"""Get all CRM Products for selection in frontend"""
+	products = frappe.get_all("CRM Product", 
+		fields=["name", "product_name", "product_code", "standard_rate"],
+		filters={"disabled": 0},
+		order_by="product_name"
+	)
+	return products

@@ -12,8 +12,8 @@ def get_context():
     """Get context for order confirmation form."""
     context = frappe._dict()
     
-    # Get FCRM TEMP ORDINE ID from URL path
-    temp_order_id = frappe.request.path.split('/')[-1] if '/' in frappe.request.path else None
+    # Get FCRM TEMP ORDINE ID from query parameter (order_id)
+    temp_order_id = frappe.form_dict.get('order_id')
     
     if temp_order_id:
         # Import FCRM TEMP ORDINE functions
@@ -51,6 +51,12 @@ def get_context():
             
             context.total_price = total_price
             context.order_valid = True
+            
+            # Get all available products for the add product functionality
+            context.all_products = frappe.get_all("CRM Product", 
+                fields=["name", "product_name", "standard_rate"],
+                filters={"disabled": 0}
+            )
         else:
             context.order_valid = False
             context.error_message = error or "Order not found"
@@ -97,8 +103,8 @@ def submit_order():
         if not data.get('terms_accepted'):
             frappe.throw(_("Devi accettare i termini e condizioni"))
         
-        # Prepare products data from form
-        products_data = []
+        # Prepare products data for CRM Lead table
+        products_table = []
         total_price = 0
         
         # Get products from form (they can be modified by user)
@@ -118,12 +124,14 @@ def submit_order():
                     unit_price = float(product_doc.standard_rate or 0)
                     product_total = unit_price * quantity
                     
-                    products_data.append({
-                        "product_id": product_id,
+                    # Add to CRM Products table format
+                    products_table.append({
+                        "product_code": product_id,
                         "product_name": product_doc.product_name,
-                        "quantity": quantity,
-                        "unit_price": unit_price,
-                        "total_price": product_total
+                        "qty": quantity,
+                        "rate": unit_price,
+                        "amount": product_total,
+                        "net_amount": product_total  # No discount for now
                     })
                     total_price += product_total
                 except Exception as e:
@@ -135,12 +143,13 @@ def submit_order():
             "first_name": data.get('customer_name'),
             "phone": data.get('phone_number'),
             "lead_source": "WhatsApp AI",
-            "status": "Confirmed Order",
+            "status": "New",
             "company_name": data.get('customer_name'),
             "email_id": f"whatsapp_{data.get('phone_number', '').replace('+', '')}@techloop.local",
+            "products": products_table,  # Use the table instead of JSON
+            "total": total_price,
+            "net_total": total_price,
             "custom_order_details": frappe.as_json({
-                "products": products_data,
-                "total_price": total_price,
                 "delivery_address": data.get('delivery_address'),
                 "notes": data.get('notes'),
                 "confirmation_method": "WhatsApp Form",
