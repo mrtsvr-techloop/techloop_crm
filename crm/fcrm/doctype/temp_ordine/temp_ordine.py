@@ -12,7 +12,7 @@ def cleanup_expired_temp_orders():
 	try:
 		current_time = int(time.time())
 		expired_records = frappe.get_all(
-			"Temp Ordine",
+			"Temp_Ordine",
 			filters={
 				"expires_at": ["<", current_time],
 				"status": "Active"
@@ -21,7 +21,7 @@ def cleanup_expired_temp_orders():
 		)
 		
 		for record in expired_records:
-			frappe.db.set_value("Temp Ordine", record.name, "status", "Expired")
+			frappe.db.set_value("Temp_Ordine", record.name, "status", "Expired")
 		
 		frappe.db.commit()
 		
@@ -37,14 +37,14 @@ def get_temp_order_data(temp_order_id):
 	try:
 		# Check if record exists and is not expired
 		current_time = int(time.time())
-		record = frappe.get_doc("Temp Ordine", temp_order_id)
+		record = frappe.get_doc("Temp_Ordine", temp_order_id)
 		
 		if record.status != "Active":
 			return None, "Order already processed or expired"
 		
 		if record.expires_at < current_time:
 			# Mark as expired
-			frappe.db.set_value("Temp Ordine", temp_order_id, "status", "Expired")
+			frappe.db.set_value("Temp_Ordine", temp_order_id, "status", "Expired")
 			frappe.db.commit()
 			return None, "Order link has expired"
 		
@@ -62,7 +62,7 @@ def get_temp_order_data(temp_order_id):
 def consume_temp_order(temp_order_id):
 	"""Mark Temp Ordine as consumed."""
 	try:
-		frappe.db.set_value("Temp Ordine", temp_order_id, "status", "Consumed")
+		frappe.db.set_value("Temp_Ordine", temp_order_id, "status", "Consumed")
 		frappe.db.commit()
 		return True
 	except Exception as e:
