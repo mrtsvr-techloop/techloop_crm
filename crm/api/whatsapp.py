@@ -258,6 +258,7 @@ def create_whatsapp_message(
 	attach,
 	reply_to,
 	content_type="text",
+	label=None,
 ):
 	doc = frappe.new_doc("WhatsApp Message")
 
@@ -278,6 +279,8 @@ def create_whatsapp_message(
 			"to": to,
 			"attach": attach,
 			"content_type": content_type,
+			"message_type": "Manual",
+			"label": label or "Manual",
 		}
 	)
 	doc.insert(ignore_permissions=True)
