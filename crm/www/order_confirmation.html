@@ -2,19 +2,190 @@
 
 {% block title %}Conferma Ordine{% endblock %}
 
+{% block head_include %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+
 {% block page_content %}
 <style>
 /* Remove Frappe website header/footer for a clean landing */
 header.navbar, .web-footer, .navbar, .page-head, .page-head-content { display: none !important; }
-body { background: #f7f9fc; }
-.card-header { background: #ffffff !important; border-bottom: 1px solid #e5e7eb; }
-.card-header h3 { color: #1f2937; }
-.btn-success { background-color: #10b981; border-color: #10b981; }
-.btn-success:hover { background-color: #059669; border-color: #059669; }
-.product-item { border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 10px; }
-.product-name { font-weight: 600; color: #1f2937; }
-.product-price { color: #059669; font-weight: 600; }
-.error-message { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+body { 
+    background: #ffffff !important; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 100%;
+    padding: 10px;
+}
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    background: #ffffff;
+}
+.card-header { 
+    background: #ffffff !important; 
+    border-bottom: 2px solid #e5e7eb; 
+    border-radius: 12px 12px 0 0 !important;
+    padding: 20px;
+}
+.card-header h3 { 
+    color: #1f2937; 
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+}
+.card-body {
+    padding: 20px;
+}
+.btn-success { 
+    background-color: #10b981; 
+    border-color: #10b981; 
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+}
+.btn-success:hover { 
+    background-color: #059669; 
+    border-color: #059669; 
+}
+.btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    border-radius: 6px;
+}
+.btn-danger {
+    background-color: #ef4444;
+    border-color: #ef4444;
+    border-radius: 6px;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    padding: 12px 16px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    display: block;
+}
+.product-item { 
+    border: 1px solid #e5e7eb; 
+    border-radius: 8px; 
+    padding: 15px; 
+    margin-bottom: 10px; 
+    background: #f9fafb;
+}
+.product-name { 
+    font-weight: 600; 
+    color: #1f2937; 
+}
+.product-price { 
+    color: #059669; 
+    font-weight: 600; 
+}
+.error-message { 
+    background: #fef2f2; 
+    border: 1px solid #fecaca; 
+    color: #dc2626; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+}
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+.table thead th {
+    background: #f3f4f6;
+    border: none;
+    font-weight: 600;
+    color: #374151;
+    padding: 12px;
+}
+.table tbody td {
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px;
+    vertical-align: middle;
+}
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 5px;
+    }
+    .card-header {
+        padding: 15px;
+    }
+    .card-header h3 {
+        font-size: 20px;
+    }
+    .card-body {
+        padding: 15px;
+    }
+    .form-control {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 14px 16px;
+    }
+    .btn-success {
+        width: 100%;
+        padding: 16px;
+        font-size: 18px;
+    }
+    .table-responsive {
+        font-size: 14px;
+    }
+    .table thead th,
+    .table tbody td {
+        padding: 8px;
+    }
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Vertical layout for mobile */
+@media (max-width: 576px) {
+    .row {
+        margin: 0;
+    }
+    .col-md-6 {
+        width: 100%;
+        padding: 0;
+        margin-bottom: 15px;
+    }
+    .col-md-8 {
+        width: 100%;
+        padding: 0;
+    }
+    .table th,
+    .table td {
+        padding: 6px 4px;
+        font-size: 13px;
+    }
+    .product-quantity {
+        width: 80px;
+    }
+}
 </style>
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -37,16 +208,33 @@ body { background: #f7f9fc; }
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="customer_name">Nome Cliente *</label>
+                                    <label for="customer_name">Nome *</label>
                                     <input type="text" class="form-control" id="customer_name" name="customer_name" 
                                            value="{{ customer_name or '' }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="customer_surname">Cognome *</label>
+                                    <input type="text" class="form-control" id="customer_surname" name="customer_surname" 
+                                           value="{{ customer_surname or '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="phone_number">Numero Telefono *</label>
                                     <input type="tel" class="form-control" id="phone_number" name="phone_number" 
                                            value="{{ phone_number or '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="company_name">Azienda</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           value="{{ company_name or '' }}">
                                 </div>
                             </div>
                         </div>
@@ -59,8 +247,10 @@ body { background: #f7f9fc; }
                                     <thead class="thead-light">
                                         <tr>
                                             <th>Prodotto</th>
-                                            <th width="100">Quantità</th>
-                                            <th width="100">Azione</th>
+                                            <th width="80">Quantità</th>
+                                            <th width="80">Prezzo</th>
+                                            <th width="80">Totale</th>
+                                            <th width="80">Azione</th>
                                         </tr>
                                     </thead>
                                     <tbody id="productsTableBody">
@@ -68,7 +258,11 @@ body { background: #f7f9fc; }
                                         <tr data-product-id="{{ product.id }}">
                                             <td>
                                                 <strong>{{ product.name }}</strong>
-                                                <br><small class="text-muted">ID: {{ product.id }}</small>
+                                                <br><small class="text-muted">
+                                                    {% for tag in product.tags %}
+                                                        <span class="badge badge-secondary" style="background-color: {{ tag.color }}; margin-right: 3px;">{{ tag.name }}</span>
+                                                    {% endfor %}
+                                                </small>
                                             </td>
                                             <td>
                                                 <input type="number" class="form-control product-quantity" 
@@ -77,13 +271,26 @@ body { background: #f7f9fc; }
                                                 <input type="hidden" name="product_ids" value="{{ product.id }}">
                                             </td>
                                             <td>
+                                                <span class="product-unit-price" data-product-id="{{ product.id }}">€{{ "%.2f"|format(product.unit_price) }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="product-total-price" data-product-id="{{ product.id }}">€{{ "%.2f"|format(product.total_price) }}</span>
+                                            </td>
+                                            <td>
                                                 <button type="button" class="btn btn-sm btn-danger remove-product">
-                                                    <i class="fa fa-trash"></i>
+                                                    <i class="fa fa-trash"></i> Rimuovi
                                                 </button>
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
+                                    <tfoot>
+                                        <tr style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                                            <td colspan="3"><strong>Totale Ordine:</strong></td>
+                                            <td><strong id="grand-total" style="color: #28a745; font-size: 1.1em;">€{{ "%.2f"|format(total_price) }}</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                             <div class="mt-2">
@@ -94,8 +301,8 @@ body { background: #f7f9fc; }
                         </div>
                         
                         <div class="form-group">
-                            <label for="delivery_address">Indirizzo di Consegna</label>
-                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3">{{ delivery_address or '' }}</textarea>
+                            <label for="delivery_address">Indirizzo di Consegna *</label>
+                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3" required>{{ delivery_address or '' }}</textarea>
                         </div>
                         
                         <div class="form-group">
@@ -103,14 +310,6 @@ body { background: #f7f9fc; }
                             <textarea class="form-control" id="notes" name="notes" rows="2">{{ notes or '' }}</textarea>
                         </div>
                         
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="terms_accepted" name="terms_accepted" required>
-                                <label class="form-check-label" for="terms_accepted">
-                                    Accetto i termini e condizioni *
-                                </label>
-                            </div>
-                        </div>
                         
                         <div class="text-center">
                             <button type="submit" class="btn btn-success btn-lg">
@@ -133,21 +332,29 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: "{{ product.name }}",
             name: "{{ product.product_name }}",
-            rate: {{ product.standard_rate or 0 }}
+            rate: {{ product.standard_rate or 0 }},
+            tags: {{ product.tags | tojson }}
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
     
     // Add product to table
-    function addProductToTable(productId, productName, quantity = 1) {
+    function addProductToTable(productId, productName, quantity = 1, unitPrice = 0, tags = []) {
         const tbody = document.getElementById('productsTableBody');
         const row = document.createElement('tr');
         row.setAttribute('data-product-id', productId);
         
+        // Create tags HTML
+        const tagsHtml = tags.map(tag => 
+            `<span class="badge badge-secondary" style="background-color: ${tag.color}; margin-right: 3px;">${tag.name}</span>`
+        ).join('');
+        
+        const totalPrice = unitPrice * quantity;
+        
         row.innerHTML = `
             <td>
                 <strong>${productName}</strong>
-                <br><small class="text-muted">ID: ${productId}</small>
+                <br><small class="text-muted">${tagsHtml}</small>
             </td>
             <td>
                 <input type="number" class="form-control product-quantity" 
@@ -156,8 +363,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" name="product_ids" value="${productId}">
             </td>
             <td>
+                <span class="product-unit-price" data-product-id="${productId}">€${unitPrice.toFixed(2)}</span>
+            </td>
+            <td>
+                <span class="product-total-price" data-product-id="${productId}">€${totalPrice.toFixed(2)}</span>
+            </td>
+            <td>
                 <button type="button" class="btn btn-sm btn-danger remove-product">
-                    <i class="fa fa-trash"></i>
+                    <i class="fa fa-trash"></i> Rimuovi
                 </button>
             </td>
         `;
@@ -166,16 +379,50 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add event listener to quantity input
         const quantityInput = row.querySelector('.product-quantity');
-        quantityInput.addEventListener('input', validateForm);
+        quantityInput.addEventListener('input', function() {
+            updateProductTotal(productId, unitPrice);
+            updateGrandTotal();
+            validateForm();
+        });
         
         // Add event listener to remove button
         const removeBtn = row.querySelector('.remove-product');
         removeBtn.addEventListener('click', function() {
             row.remove();
+            updateGrandTotal();
             validateForm();
         });
         
+        updateGrandTotal();
         validateForm();
+    }
+    
+    // Update product total when quantity changes
+    function updateProductTotal(productId, unitPrice) {
+        const row = document.querySelector(`tr[data-product-id="${productId}"]`);
+        if (row) {
+            const quantityInput = row.querySelector('.product-quantity');
+            const totalSpan = row.querySelector('.product-total-price');
+            const quantity = parseInt(quantityInput.value) || 0;
+            const total = unitPrice * quantity;
+            totalSpan.textContent = `€${total.toFixed(2)}`;
+        }
+    }
+    
+    // Update grand total
+    function updateGrandTotal() {
+        const totalSpans = document.querySelectorAll('.product-total-price');
+        let grandTotal = 0;
+        
+        totalSpans.forEach(span => {
+            const text = span.textContent.replace('€', '').replace(',', '.');
+            grandTotal += parseFloat(text) || 0;
+        });
+        
+        const grandTotalSpan = document.getElementById('grand-total');
+        if (grandTotalSpan) {
+            grandTotalSpan.textContent = `€${grandTotal.toFixed(2)}`;
+        }
     }
     
     // Remove product from table
@@ -203,9 +450,75 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add product button click handler
     document.getElementById('addProductBtn').addEventListener('click', function() {
-        // Create a simple product selection dialog
-        const productId = prompt('Inserisci l\'ID del prodotto (es: PROD-0001):');
-        if (productId) {
+        // Create a product selection modal/dialog
+        showProductSelectionModal();
+    });
+    
+    // Show product selection modal
+    function showProductSelectionModal() {
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="productSelectionModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleziona Prodotto</h5>
+                            <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="productSelect">Scegli un prodotto:</label>
+                                <select class="form-control" id="productSelect">
+                                    <option value="">-- Seleziona prodotto --</option>
+                                    ${availableProducts.map(product => 
+                                        `<option value="${product.id}" data-name="${product.name}" data-rate="${product.rate}">${product.name} - €${product.rate}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="productQuantity">Quantità:</label>
+                                <input type="number" class="form-control" id="productQuantity" value="1" min="1">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                            <button type="button" class="btn btn-primary" id="addSelectedProduct">Aggiungi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('productSelectionModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('productSelectionModal'));
+        modal.show();
+        
+        // Add event listener for add button
+        document.getElementById('addSelectedProduct').addEventListener('click', function() {
+            const productSelect = document.getElementById('productSelect');
+            const quantityInput = document.getElementById('productQuantity');
+            
+            if (!productSelect.value) {
+                alert('Seleziona un prodotto');
+                return;
+            }
+            
+            const productId = productSelect.value;
+            const productName = productSelect.options[productSelect.selectedIndex].dataset.name;
+            const productRate = parseFloat(productSelect.options[productSelect.selectedIndex].dataset.rate) || 0;
+            const quantity = parseInt(quantityInput.value) || 1;
+            
             // Check if product already exists
             const existingRow = document.querySelector(`tr[data-product-id="${productId}"]`);
             if (existingRow) {
@@ -213,18 +526,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Find product in available products
-            const product = availableProducts.find(p => p.id === productId);
-            if (product) {
-                const quantity = prompt('Inserisci la quantità:', '1');
-                if (quantity && parseInt(quantity) > 0) {
-                    addProductToTable(productId, product.name, parseInt(quantity));
-                }
-            } else {
-                alert('Prodotto non trovato. Verifica l\'ID del prodotto.');
-            }
-        }
-    });
+            // Get product tags from available products data
+            const selectedProduct = availableProducts.find(p => p.id === productId);
+            const productTags = selectedProduct ? selectedProduct.tags || [] : [];
+            
+            // Add product to table
+            addProductToTable(productId, productName, quantity, productRate, productTags);
+            
+            // Hide modal
+            modal.hide();
+        });
+        
+        // Clear selection when modal is hidden
+        document.getElementById('productSelectionModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('productSelect').value = '';
+            document.getElementById('productQuantity').value = '1';
+        });
+    }
     
     // Add event listeners to existing remove buttons
     document.querySelectorAll('.remove-product').forEach(btn => {
@@ -237,7 +555,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners to existing quantity inputs
     document.querySelectorAll('.product-quantity').forEach(input => {
-        input.addEventListener('input', validateForm);
+        input.addEventListener('input', function() {
+            const productId = this.dataset.productId;
+            const row = this.closest('tr');
+            const unitPriceSpan = row.querySelector('.product-unit-price');
+            const unitPrice = parseFloat(unitPriceSpan.textContent.replace('€', '').replace(',', '.')) || 0;
+            updateProductTotal(productId, unitPrice);
+            updateGrandTotal();
+            validateForm();
+        });
     });
     
     // Initial validation
@@ -248,7 +574,44 @@ document.addEventListener('DOMContentLoaded', function() {
 document.getElementById('orderForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const formData = new FormData(this);
+    // Collect all products data properly
+    const products = [];
+    const productRows = document.querySelectorAll('#productsTableBody tr');
+    
+    productRows.forEach(row => {
+        const productId = row.querySelector('input[name="product_ids"]').value;
+        const quantity = row.querySelector('.product-quantity').value;
+        const unitPriceSpan = row.querySelector('.product-unit-price');
+        const unitPrice = parseFloat(unitPriceSpan.textContent.replace('€', '').replace(',', '.')) || 0;
+        
+        products.push({
+            product_id: productId,
+            quantity: parseInt(quantity),
+            unit_price: unitPrice
+        });
+    });
+    
+    // Create form data
+    const formData = new FormData();
+    
+    // Add basic form fields
+    formData.append('temp_order_id', document.querySelector('input[name="temp_order_id"]').value);
+    formData.append('customer_name', document.getElementById('customer_name').value);
+    formData.append('customer_surname', document.getElementById('customer_surname').value);
+    formData.append('phone_number', document.getElementById('phone_number').value);
+    formData.append('company_name', document.getElementById('company_name').value);
+    formData.append('delivery_address', document.getElementById('delivery_address').value);
+    formData.append('notes', document.getElementById('notes').value);
+    
+    // Add products as JSON
+    formData.append('products_json', JSON.stringify(products));
+    
+    // Debug: Log form data before submission
+    console.log('Form data being submitted:');
+    console.log('Products:', products);
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
     
     fetch('/api/method/crm.www.order_confirmation.submit_order', {
         method: 'POST',
@@ -259,6 +622,7 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Response from server:', data);
         if (data.message && data.message.success) {
             alert('✅ Ordine confermato con successo!');
             // Redirect to success page
