@@ -256,6 +256,15 @@ label {
                             </div>
                         </div>
                         
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="delivery_date">Data di Consegna</label>
+                                    <input type="date" class="form-control" id="delivery_date" name="delivery_date" value="{{ delivery_date or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Products Section -->
                         <div class="form-group">
                             <label>Prodotti Ordinati</label>
@@ -585,6 +594,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial validation
     validateForm();
+    // Set min date for delivery_date = today (YYYY-MM-DD)
+    try {
+        const dd = document.getElementById('delivery_date');
+        if (dd) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const ddStr = String(today.getDate()).padStart(2, '0');
+            dd.setAttribute('min', `${yyyy}-${mm}-${ddStr}`);
+        }
+    } catch (e) {}
 });
 
 // Form submission
@@ -627,6 +647,7 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
     formData.append('website', document.getElementById('website').value);
     formData.append('delivery_address', document.getElementById('delivery_address').value);
     formData.append('notes', document.getElementById('notes').value);
+    formData.append('delivery_date', document.getElementById('delivery_date').value);
     
     // Add products as JSON
     formData.append('products_json', JSON.stringify(products));

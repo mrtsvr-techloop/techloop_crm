@@ -31,6 +31,7 @@
   "source",
   "column_break_wsde",
   "lead_name",
+  "delivery_date",
   "organization_details_section",
   "organization_name",
   "website",
@@ -280,6 +281,11 @@
   {
    "fieldname": "column_break_wsde",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date"
   },
   {
    "fieldname": "organization_details_section",

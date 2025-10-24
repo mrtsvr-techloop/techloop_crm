@@ -274,6 +274,18 @@ def submit_order():
         digits = _normalize_phone_to_digits(raw_phone)
         pretty_phone = _format_pretty_number(digits) if digits else raw_phone
         
+        # Validate delivery_date (if provided) must be today or future
+        delivery_date = (data.get('delivery_date') or '').strip()
+        if delivery_date:
+            try:
+                # Compare dates as YYYY-MM-DD strings with today
+                today = frappe.utils.today()
+                if delivery_date < today:
+                    frappe.throw(_("La data di consegna non può essere antecedente ad oggi"))
+            except Exception:
+                # If invalid format, raise
+                frappe.throw(_("Formato data di consegna non valido"))
+        
         # Create the lead document
         lead_doc = frappe.get_doc({
             "doctype": "CRM Lead",
@@ -284,9 +296,13 @@ def submit_order():
             "status": "New",
             "total": total_price,
             "net_total": total_price,
+            "delivery_date": delivery_date,
+            "delivery_address": data.get('delivery_address'),
+            "order_notes": data.get('notes'),
             "custom_order_details": frappe.as_json({
                 "delivery_address": data.get('delivery_address'),
                 "notes": data.get('notes'),
+                "delivery_date": delivery_date,
                 "confirmation_method": "WhatsApp Form",
                 "temp_order_id": temp_order_id,
                 "form_submission_time": frappe.utils.now(),

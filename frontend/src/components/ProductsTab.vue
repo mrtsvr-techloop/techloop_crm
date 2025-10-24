@@ -74,7 +74,7 @@
                 </div>
               </td>
               <td class="px-4 py-3">
-                <span class="font-medium">{{ formatCurrency(product.amount || 0) }}</span>
+                <span class="font-medium">{{ formatCurrency(product.amount || 0, '', 'EUR') }}</span>
               </td>
               <td class="px-4 py-3">
                 <button 
@@ -101,19 +101,20 @@
         <div class="flex justify-end gap-6 text-lg font-semibold">
           <div class="text-center">
             <div class="text-sm text-gray-600">Totale</div>
-            <div class="text-xl text-gray-900">{{ formatCurrency(total) }}</div>
+            <div class="text-xl text-gray-900">{{ formatCurrency(total, '', 'EUR') }}</div>
           </div>
           <div class="text-center">
             <div class="text-sm text-gray-600">Totale Netto</div>
-            <div class="text-xl text-gray-900">{{ formatCurrency(netTotal) }}</div>
+            <div class="text-xl text-gray-900">{{ formatCurrency(netTotal, '', 'EUR') }}</div>
           </div>
         </div>
       </div>
       
-      <!-- Note dal Form -->
-      <div v-if="orderNotes" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div class="text-sm font-semibold text-blue-900 mb-2">📝 Note Ordine</div>
-        <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ orderNotes }}</div>
+      <!-- Info Ordine dal Form -->
+      <div v-if="orderNotes || deliveryDate" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div class="text-sm font-semibold text-blue-900 mb-2">📝 Dettagli Ordine</div>
+        <div v-if="deliveryDate" class="text-sm text-gray-700 mb-1">Data di Consegna: <strong>{{ deliveryDate }}</strong></div>
+        <div v-if="orderNotes" class="text-sm text-gray-700 whitespace-pre-wrap">{{ orderNotes }}</div>
       </div>
     </div>
   </div>
@@ -177,6 +178,18 @@ const orderNotes = computed(() => {
   } catch (e) {
     console.error('Error parsing custom_order_details:', e)
     return null
+  }
+})
+
+const deliveryDate = computed(() => {
+  if (!props.doc.custom_order_details) return null
+  try {
+    const orderDetails = typeof props.doc.custom_order_details === 'string'
+      ? JSON.parse(props.doc.custom_order_details)
+      : props.doc.custom_order_details
+    return orderDetails?.delivery_date || props.doc.delivery_date || null
+  } catch (e) {
+    return props.doc.delivery_date || null
   }
 })
 

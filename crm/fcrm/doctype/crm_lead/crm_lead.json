@@ -24,12 +24,6 @@
   "last_name",
   "email",
   "mobile_no",
-  "prodotti_ordinati_tab",
-  "products",
-  "total",
-  "column_break_uisv",
-  "net_total",
-  "section_break_uixv",
   "naming_series",
   "lead_name",
   "middle_name",
@@ -41,6 +35,16 @@
   "annual_revenue",
   "image",
   "converted",
+  "prodotti_ordinati_tab",
+  "products",
+  "delivery_date",
+  "delivery_address",
+  "order_notes",
+  "custom_order_details",
+  "section_break_uixv",
+  "total",
+  "column_break_uisv",
+  "net_total",
   "sla_tab",
   "sla",
   "sla_creation",
@@ -319,6 +323,30 @@
    "label": "Net Total",
    "options": "currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_address",
+   "fieldtype": "Small Text",
+   "label": "Delivery Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "order_notes",
+   "fieldtype": "Long Text",
+   "label": "Order Notes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "custom_order_details",
+   "fieldtype": "JSON",
+   "label": "Custom Order Details",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,

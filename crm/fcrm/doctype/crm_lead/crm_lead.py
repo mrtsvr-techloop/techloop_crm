@@ -263,11 +263,18 @@ class CRMLead(Document):
 			if field.fieldname in lead_deal_map:
 				fieldname = lead_deal_map[field.fieldname]
 
-			if hasattr(new_deal, fieldname):
-				if fieldname == "organization":
-					new_deal.update({fieldname: organization})
-				else:
-					new_deal.update({fieldname: self.get(field.fieldname)})
+				if hasattr(new_deal, fieldname):
+					if fieldname == "organization":
+						new_deal.update({fieldname: organization})
+					else:
+						new_deal.update({fieldname: self.get(field.fieldname)})
+
+		# Ensure delivery_date is copied if exists on lead and deal
+		try:
+			if hasattr(self, "delivery_date") and getattr(self, "delivery_date", None):
+				new_deal.update({"delivery_date": self.delivery_date})
+		except Exception:
+			pass
 
 		new_deal.update(
 			{
