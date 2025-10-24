@@ -109,6 +109,12 @@
           </div>
         </div>
       </div>
+      
+      <!-- Note dal Form -->
+      <div v-if="orderNotes" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div class="text-sm font-semibold text-blue-900 mb-2">📝 Note Ordine</div>
+        <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ orderNotes }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -156,6 +162,22 @@ const total = computed(() => {
 
 const netTotal = computed(() => {
   return products.value.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
+})
+
+// Estrai note dal custom_order_details
+const orderNotes = computed(() => {
+  if (!props.doc.custom_order_details) return null
+  
+  try {
+    const orderDetails = typeof props.doc.custom_order_details === 'string' 
+      ? JSON.parse(props.doc.custom_order_details) 
+      : props.doc.custom_order_details
+    
+    return orderDetails?.notes || null
+  } catch (e) {
+    console.error('Error parsing custom_order_details:', e)
+    return null
+  }
 })
 
 function addProduct() {

@@ -8,6 +8,63 @@ import frappe.utils
 no_cache = 1
 
 
+def find_product_by_id(product_id_raw):
+    """Find CRM Product by ID with multiple fallback strategies.
+    
+    Tries:
+    1. Direct uppercase lookup
+    2. Underscore to dash conversion + uppercase
+    3. Search by product name (fuzzy matching)
+    
+    Returns:
+        Product document or None
+    """
+    # Try 1: Direct ID lookup (uppercase)
+    try:
+        return frappe.get_doc("CRM Product", product_id_raw.upper())
+    except Exception:
+        pass
+    
+    # Try 2: Direct ID lookup with underscore to dash conversion
+    try:
+        product_id_converted = product_id_raw.replace('_', '-').upper()
+        return frappe.get_doc("CRM Product", product_id_converted)
+    except Exception:
+        pass
+    
+    # Try 3: Search by product name (convert underscore to space for better matching)
+    try:
+        search_term = product_id_raw.replace('_', ' ')
+        
+        # Search in product_name field
+        products_by_name = frappe.get_all("CRM Product", 
+            filters=[
+                ["disabled", "=", 0],
+                ["product_name", "like", f"%{search_term}%"]
+            ],
+            fields=["name"],
+            limit=1
+        )
+        
+        if not products_by_name:
+            # Fallback: search in name field
+            products_by_name = frappe.get_all("CRM Product", 
+                filters=[
+                    ["disabled", "=", 0],
+                    ["name", "like", f"%{search_term}%"]
+                ],
+                fields=["name"],
+                limit=1
+            )
+        
+        if products_by_name:
+            return frappe.get_doc("CRM Product", products_by_name[0].name)
+    except Exception as e:
+        frappe.logger("crm").error(f"Error searching product {product_id_raw}: {str(e)}")
+    
+    return None
+
+
 def get_context():
     """Get context for order confirmation form."""
     context = frappe._dict()
@@ -38,27 +95,12 @@ def get_context():
             
             for product in context.products:
                 try:
-                    # Debug logging
-                    frappe.logger("crm").info(f"Loading product from temp_ordine: {product}")
+                    product_id_raw = product['product_id']
+                    product_doc = find_product_by_id(product_id_raw)
                     
-                    # Try to find product by ID first, then by name if ID fails
-                    product_doc = None
-                    try:
-                        product_doc = frappe.get_doc("CRM Product", product['product_id'])
-                        frappe.logger("crm").info(f"Found product by ID: {product['product_id']}")
-                    except Exception:
-                        # Try to find by product name
-                        frappe.logger("crm").info(f"Product ID {product['product_id']} not found, searching by name")
-                        products_by_name = frappe.get_all("CRM Product", 
-                            filters={"product_name": ["like", f"%{product['product_id']}%"], "disabled": 0},
-                            fields=["name", "product_name", "standard_rate"]
-                        )
-                        if products_by_name:
-                            product_doc = frappe.get_doc("CRM Product", products_by_name[0].name)
-                            frappe.logger("crm").info(f"Found product by name: {products_by_name[0].name}")
-                        else:
-                            frappe.logger("crm").error(f"Product not found by ID or name: {product['product_id']}")
-                            continue
+                    if not product_doc:
+                        frappe.logger("crm").error(f"Product not found: {product_id_raw}")
+                        continue
                     
                     # Get product tags
                     product_tags = []
@@ -79,10 +121,8 @@ def get_context():
                     }
                     context.product_details.append(product_detail)
                     total_price += product_detail['total_price']
-                    
-                    frappe.logger("crm").info(f"Added product to form: {product_detail}")
                 except Exception as e:
-                    frappe.logger("crm").error(f"Error loading product {product['product_id']}: {str(e)}")
+                    frappe.logger("crm").error(f"Error loading product {product.get('product_id')}: {str(e)}")
             
             context.total_price = total_price
             context.order_valid = True
@@ -162,7 +202,6 @@ def submit_order():
         if products_json:
             try:
                 products_data = frappe.parse_json(products_json)
-                frappe.logger("crm").info(f"Processing products from JSON: {products_data}")
                 
                 for product_data in products_data:
                     product_id = product_data.get('product_id')
@@ -184,8 +223,6 @@ def submit_order():
                         }
                         products_table.append(product_row)
                         total_price += product_total
-                        
-                        frappe.logger("crm").info(f"Added product to table: {product_row}")
                     except Exception as e:
                         frappe.logger("crm").error(f"Error processing product {product_id}: {str(e)}")
                         
@@ -204,9 +241,6 @@ def submit_order():
                 product_ids = [product_ids]
             if isinstance(product_quantities, str):
                 product_quantities = [int(product_quantities)]
-            
-            # Debug logging
-            frappe.logger("crm").info(f"Processing products - IDs: {product_ids}, Quantities: {product_quantities}")
             
             for i, product_id in enumerate(product_ids):
                 if i < len(product_quantities):
@@ -227,27 +261,27 @@ def submit_order():
                         }
                         products_table.append(product_row)
                         total_price += product_total
-                        
-                        frappe.logger("crm").info(f"Added product to table: {product_row}")
                     except Exception as e:
                         frappe.logger("crm").error(f"Error processing product {product_id}: {str(e)}")
-        
-        frappe.logger("crm").info(f"Final products table: {products_table}")
         
         # Create CRM Lead with order details
         customer_full_name = f"{data.get('customer_name', '')} {data.get('customer_surname', '')}".strip()
         company_name = data.get('company_name', '') or customer_full_name
+        
+        # Normalize phone number to pretty format
+        from crm.api.workflow import _normalize_phone_to_digits, _format_pretty_number
+        raw_phone = data.get('phone_number', '')
+        digits = _normalize_phone_to_digits(raw_phone)
+        pretty_phone = _format_pretty_number(digits) if digits else raw_phone
         
         # Create the lead document
         lead_doc = frappe.get_doc({
             "doctype": "CRM Lead",
             "first_name": data.get('customer_name'),
             "last_name": data.get('customer_surname'),
-            "phone": data.get('phone_number'),
+            "mobile_no": pretty_phone,
             "lead_source": "WhatsApp AI",
             "status": "New",
-            "company_name": company_name,
-            "email_id": f"whatsapp_{data.get('phone_number', '').replace('+', '')}@techloop.local",
             "total": total_price,
             "net_total": total_price,
             "custom_order_details": frappe.as_json({
@@ -261,12 +295,21 @@ def submit_order():
             })
         })
         
+        # Add optional fields only if provided
+        if data.get('email'):
+            lead_doc.email = data.get('email')
+        
+        if data.get('website'):
+            lead_doc.website = data.get('website')
+        
+        if data.get('company_name'):
+            lead_doc.organization = data.get('company_name')
+        
         # Insert the lead first
         lead_doc.insert(ignore_permissions=True)
         
         # Now add products to the lead
         if products_table:
-            frappe.logger("crm").info(f"Adding {len(products_table)} products to lead {lead_doc.name}")
             for product_row in products_table:
                 try:
                     # Create CRM Products child document
@@ -283,7 +326,6 @@ def submit_order():
                         "net_amount": product_row["net_amount"]
                     })
                     product_child.insert(ignore_permissions=True)
-                    frappe.logger("crm").info(f"Added product {product_row['product_name']} to lead")
                 except Exception as e:
                     frappe.logger("crm").error(f"Error adding product {product_row['product_name']} to lead: {str(e)}")
         
@@ -295,17 +337,26 @@ def submit_order():
         lead_doc.net_total = total_price
         lead_doc.save(ignore_permissions=True)
         
-        # Update contact with form data
+        # Update contact with form data (only if provided)
         try:
             from crm.api.workflow import update_contact_from_thread
-            update_contact_from_thread(
-                phone_from=data.get('phone_number'),
-                first_name=data.get('customer_name'),
-                last_name=data.get('customer_surname'),
-                organization=data.get('company_name', ''),
-                confirm_organization=bool(data.get('company_name'))
-            )
-            frappe.logger("crm").info(f"Updated contact for phone: {data.get('phone_number')}")
+            
+            # Build parameters dict with only provided values
+            contact_params = {
+                'phone_from': data.get('phone_number'),
+                'first_name': data.get('customer_name'),
+                'last_name': data.get('customer_surname'),
+            }
+            
+            # Add optional fields only if provided
+            if data.get('email'):
+                contact_params['email'] = data.get('email')
+            
+            if data.get('company_name'):
+                contact_params['organization'] = data.get('company_name')
+                contact_params['confirm_organization'] = True
+            
+            update_contact_from_thread(**contact_params)
         except Exception as e:
             frappe.logger("crm").error(f"Error updating contact: {str(e)}")
         
