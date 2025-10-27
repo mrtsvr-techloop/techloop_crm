@@ -100,7 +100,7 @@ import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
 import { useOnboarding } from 'frappe-ui/frappe'
 import { Switch, Dialog, createResource, call } from 'frappe-ui'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -128,6 +128,115 @@ const error = ref('')
 
 const { triggerConvertToDeal } = useDocument('CRM Lead', props.lead.name)
 const { document: deal } = useDocument('CRM Deal')
+
+// Auto-populate existing organization and contact when modal opens
+watch(show, async (isOpen) => {
+  if (isOpen) {
+    // Reset values
+    existingContactChecked.value = false
+    existingOrganizationChecked.value = false
+    existingContact.value = ''
+    existingOrganization.value = ''
+    error.value = ''
+    
+    console.log('[Convert to Deal] Modal opened, Lead data:', {
+      organization: props.lead.organization,
+      email: props.lead.email,
+      mobile_no: props.lead.mobile_no,
+      phone: props.lead.phone
+    })
+    
+    // Run both searches in parallel for better performance
+    const promises = []
+    
+    // Check for existing organization
+    if (props.lead.organization) {
+      console.log('[Convert to Deal] Searching for organization:', props.lead.organization)
+      promises.push(
+        call('frappe.client.get_list', {
+          doctype: 'CRM Organization',
+          filters: { organization_name: props.lead.organization },
+          fields: ['name'],
+          limit: 1
+        }).then(orgExists => {
+          console.log('[Convert to Deal] Organization search result:', orgExists)
+          if (orgExists && orgExists.length > 0) {
+            existingOrganization.value = orgExists[0].name
+            existingOrganizationChecked.value = true
+            console.log('[Convert to Deal] Organization found and set:', orgExists[0].name)
+          } else {
+            console.log('[Convert to Deal] No organization found')
+          }
+        }).catch(err => {
+          console.error('[Convert to Deal] Error checking for existing organization:', err)
+        })
+      )
+    }
+    
+    // Check for existing contact by email or phone
+    if (props.lead.email || props.lead.mobile_no || props.lead.phone) {
+      const contactPromises = []
+      
+      // Try to find by email
+      if (props.lead.email) {
+        contactPromises.push(
+          call('frappe.client.get_list', {
+            doctype: 'Contact Email',
+            filters: { email_id: props.lead.email },
+            fields: ['parent'],
+            limit: 1
+          }).then(result => result && result.length > 0 ? result[0].parent : null)
+        )
+      }
+      
+      // Try to find by mobile
+      if (props.lead.mobile_no) {
+        contactPromises.push(
+          call('frappe.client.get_list', {
+            doctype: 'Contact Phone',
+            filters: { phone: props.lead.mobile_no },
+            fields: ['parent'],
+            limit: 1
+          }).then(result => result && result.length > 0 ? result[0].parent : null)
+        )
+      }
+      
+      // Try to find by phone
+      if (props.lead.phone) {
+        contactPromises.push(
+          call('frappe.client.get_list', {
+            doctype: 'Contact Phone',
+            filters: { phone: props.lead.phone },
+            fields: ['parent'],
+            limit: 1
+          }).then(result => result && result.length > 0 ? result[0].parent : null)
+        )
+      }
+      
+      if (contactPromises.length > 0) {
+        promises.push(
+          Promise.all(contactPromises).then(results => {
+            console.log('[Convert to Deal] Contact search results:', results)
+            // Find the first non-null result
+            const contactName = results.find(name => name !== null)
+            if (contactName) {
+              existingContact.value = contactName
+              existingContactChecked.value = true
+              console.log('[Convert to Deal] Contact found and set:', contactName)
+            } else {
+              console.log('[Convert to Deal] No contact found')
+            }
+          }).catch(err => {
+            console.error('[Convert to Deal] Error checking for existing contact:', err)
+          })
+        )
+      }
+    }
+    
+    // Wait for all searches to complete
+    await Promise.all(promises)
+  }
+})
 
 async function convertToDeal() {
   error.value = ''
@@ -177,11 +286,6 @@ async function convertToDeal() {
   })
   if (_deal) {
     show.value = false
-    existingContactChecked.value = false
-    existingOrganizationChecked.value = false
-    existingContact.value = ''
-    existingOrganization.value = ''
-    error.value = ''
     updateOnboardingStep('convert_lead_to_deal', true, false, () => {
       localStorage.setItem('firstDeal' + user, _deal)
     })

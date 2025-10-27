@@ -263,16 +263,27 @@ class CRMLead(Document):
 			if field.fieldname in lead_deal_map:
 				fieldname = lead_deal_map[field.fieldname]
 
-				if hasattr(new_deal, fieldname):
-					if fieldname == "organization":
-						new_deal.update({fieldname: organization})
-					else:
-						new_deal.update({fieldname: self.get(field.fieldname)})
+			if hasattr(new_deal, fieldname):
+				if fieldname == "organization":
+					new_deal.update({fieldname: organization})
+				else:
+					new_deal.update({fieldname: self.get(field.fieldname)})
 
-		# Ensure delivery_date is copied if exists on lead and deal
+		# Ensure delivery fields are copied if they exist on lead and deal
 		try:
 			if hasattr(self, "delivery_date") and getattr(self, "delivery_date", None):
 				new_deal.update({"delivery_date": self.delivery_date})
+			if hasattr(self, "delivery_address") and getattr(self, "delivery_address", None):
+				new_deal.update({"delivery_address": self.delivery_address})
+			# Copy order notes from custom_order_details JSON field
+			if hasattr(self, "custom_order_details") and self.custom_order_details:
+				import json
+				try:
+					order_details = json.loads(self.custom_order_details) if isinstance(self.custom_order_details, str) else self.custom_order_details
+					if order_details and order_details.get("notes"):
+						new_deal.update({"order_notes": order_details.get("notes")})
+				except (json.JSONDecodeError, AttributeError):
+					pass
 		except Exception:
 			pass
 

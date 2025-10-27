@@ -31,7 +31,6 @@
   "source",
   "column_break_wsde",
   "lead_name",
-  "delivery_date",
   "organization_details_section",
   "organization_name",
   "website",
@@ -58,6 +57,12 @@
   "total",
   "column_break_udbq",
   "net_total",
+  "section_break_delivery",
+  "delivery_date",
+  "column_break_delivery",
+  "delivery_address",
+  "section_break_notes",
+  "order_notes",
   "sla_tab",
   "sla",
   "sla_creation",
@@ -283,11 +288,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "delivery_date",
-   "fieldtype": "Date",
-   "label": "Delivery Date"
-  },
-  {
    "fieldname": "organization_details_section",
    "fieldtype": "Section Break",
    "label": "Organization Details"
@@ -383,6 +383,35 @@
    "label": "Net Total",
    "options": "currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_delivery",
+   "fieldtype": "Section Break",
+   "label": "Delivery Information"
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date"
+  },
+  {
+   "fieldname": "column_break_delivery",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "delivery_address",
+   "fieldtype": "Small Text",
+   "label": "Delivery Address"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Order Notes"
+  },
+  {
+   "fieldname": "order_notes",
+   "fieldtype": "Long Text",
+   "label": "Notes"
   },
   {
    "fieldname": "section_break_jgpm",
