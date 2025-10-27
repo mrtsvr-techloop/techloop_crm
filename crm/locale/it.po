@@ -6390,3 +6390,27 @@ msgstr ""
 msgid "⚠️ No row found for idx: {0} in parent field: {1}"
 msgstr ""
 
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Delivery Information"
+msgstr "Informazioni di Consegna"
+
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Delivery Date"
+msgstr "Data di Consegna"
+
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Delivery Address"
+msgstr "Indirizzo di Consegna"
+
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Order Notes"
+msgstr "Note Ordine"
+
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Enter delivery address..."
+msgstr "Inserisci indirizzo di consegna..."
+
+#: frontend/src/components/Activities/DataFields.vue
+msgid "Enter order notes..."
+msgstr "Inserisci note ordine..."
+

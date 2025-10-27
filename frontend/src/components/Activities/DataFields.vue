@@ -46,10 +46,10 @@
     <div v-if="doctype === 'CRM Deal'" class="mt-6 space-y-6">
       <!-- Delivery Information Section -->
       <div class="border-t border-outline-gray-modals pt-6">
-        <div class="text-base font-medium text-ink-gray-8 mb-4">Delivery Information</div>
+        <div class="text-base font-medium text-ink-gray-8 mb-4">{{ __('Delivery Information') }}</div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm text-ink-gray-6 mb-2">Delivery Date</label>
+            <label class="block text-sm text-ink-gray-6 mb-2">{{ __('Delivery Date') }}</label>
             <input
               type="date"
               v-model="document.doc.delivery_date"
@@ -57,12 +57,12 @@
             />
           </div>
           <div>
-            <label class="block text-sm text-ink-gray-6 mb-2">Delivery Address</label>
+            <label class="block text-sm text-ink-gray-6 mb-2">{{ __('Delivery Address') }}</label>
             <textarea
               v-model="document.doc.delivery_address"
               rows="3"
               class="w-full px-3 py-2 text-sm border border-outline-gray-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter delivery address..."
+              :placeholder="__('Enter delivery address...')"
             ></textarea>
           </div>
         </div>
@@ -70,12 +70,12 @@
       
       <!-- Order Notes Section -->
       <div class="border-t border-outline-gray-modals pt-6">
-        <div class="text-base font-medium text-ink-gray-8 mb-4">Order Notes</div>
+        <div class="text-base font-medium text-ink-gray-8 mb-4">{{ __('Order Notes') }}</div>
         <textarea
           v-model="document.doc.order_notes"
           rows="4"
           class="w-full px-3 py-2 text-sm border border-outline-gray-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter order notes..."
+          :placeholder="__('Enter order notes...')"
         ></textarea>
       </div>
     </div>

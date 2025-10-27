@@ -158,8 +158,8 @@ class CRMDeal(Document):
 		if (
 			frappe.db.get_single_value("FCRM Settings", "auto_update_expected_deal_value")
 			and (self.net_total or self.total)
-			and self.expected_deal_value
 		):
+			# Auto-set expected_deal_value from net_total/total
 			self.expected_deal_value = self.net_total or self.total
 
 	def validate_forecasting_fields(self):

@@ -309,6 +309,10 @@ class CRMLead(Document):
 		if deal:
 			new_deal.update(deal)
 
+		# Set expected_deal_value for forecasting if not already set
+		if not new_deal.get("expected_deal_value"):
+			new_deal.update({"expected_deal_value": new_deal.get("net_total") or new_deal.get("total") or 0})
+
 		new_deal.insert(ignore_permissions=True)
 		return new_deal.name
 
