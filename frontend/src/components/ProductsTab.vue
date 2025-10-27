@@ -2,12 +2,12 @@
   <div class="flex flex-col flex-1 overflow-y-auto">
     <div class="px-3 pb-3 sm:px-10 sm:pb-5">
       <div class="my-3 flex items-center justify-between text-lg font-medium sm:mb-4 sm:mt-8">
-        <div class="flex h-8 items-center text-xl font-semibold text-ink-gray-8">
+        <div class="flex h-8 items-center text-lg font-semibold text-ink-gray-8">
           Prodotti Ordinati
         </div>
         <button 
           @click="addProduct" 
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           + Aggiungi Prodotto
         </button>
@@ -15,24 +15,24 @@
       
       <!-- Tabella Custom -->
       <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full">
+        <table class="w-full text-sm">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Prodotto</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Quantità</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Prezzo</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Sconto</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Totale</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Azione</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Prodotto</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Quantità</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Prezzo</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Sconto</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Totale</th>
+              <th class="px-2 py-2 text-left text-xs font-medium text-gray-700">Azione</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-for="(product, index) in products" :key="index" class="hover:bg-gray-50">
-              <td class="px-4 py-3">
+              <td class="px-2 py-2">
                 <select 
                   v-model="product.product_code" 
                   @change="onProductChange(index)"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="">Seleziona prodotto</option>
                   <option v-for="prod in availableProducts" :key="prod.name" :value="prod.name">
@@ -40,26 +40,26 @@
                   </option>
                 </select>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-2 py-2">
                 <input 
                   type="number" 
                   v-model.number="product.qty" 
                   @input="calculateTotals(index)"
                   min="1"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </td>
-              <td class="px-4 py-3">
+              <td class="px-2 py-2">
                 <input 
                   type="number" 
                   v-model.number="product.rate" 
                   @input="calculateTotals(index)"
                   step="0.01"
                   min="0"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </td>
-              <td class="px-4 py-3">
+              <td class="px-2 py-2">
                 <div class="relative">
                   <input 
                     type="number" 
@@ -68,18 +68,18 @@
                     step="0.01"
                     min="0"
                     max="100"
-                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-2 py-1.5 pr-6 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
-                  <span class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                  <span class="absolute right-1.5 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">%</span>
                 </div>
               </td>
-              <td class="px-4 py-3">
-                <span class="font-medium">{{ formatCurrency(product.amount || 0, '', 'EUR') }}</span>
+              <td class="px-2 py-2">
+                <span class="font-medium text-sm">{{ formatCurrency(product.amount || 0, '', 'EUR') }}</span>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-2 py-2">
                 <button 
                   @click="removeProduct(index)"
-                  class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  class="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                 >
                   Rimuovi
                 </button>
@@ -96,25 +96,39 @@
         </div>
       </div>
       
-      <!-- Totali -->
+      <!-- Totali e Dettagli Consegna -->
       <div v-if="products.length > 0" class="mt-6 bg-gray-50 rounded-lg p-4">
-        <div class="flex justify-end gap-6 text-lg font-semibold">
-          <div class="text-center">
-            <div class="text-sm text-gray-600">Totale</div>
-            <div class="text-xl text-gray-900">{{ formatCurrency(total, '', 'EUR') }}</div>
+        <div class="flex justify-between items-start gap-6">
+          <!-- Sinistra: Dettagli Consegna -->
+          <div class="flex flex-col gap-3">
+            <div v-if="deliveryAddress">
+              <div class="text-sm text-gray-600 font-medium">Indirizzo di Consegna</div>
+              <div class="text-base text-gray-900">{{ deliveryAddress }}</div>
+            </div>
+            <div v-if="deliveryDate">
+              <div class="text-sm text-gray-600 font-medium">Data di Consegna</div>
+              <div class="text-base text-gray-900">{{ deliveryDate }}</div>
+            </div>
           </div>
-          <div class="text-center">
-            <div class="text-sm text-gray-600">Totale Netto</div>
-            <div class="text-xl text-gray-900">{{ formatCurrency(netTotal, '', 'EUR') }}</div>
+          
+          <!-- Destra: Totali -->
+          <div class="flex gap-6 text-lg font-semibold">
+            <div class="text-center">
+              <div class="text-sm text-gray-600">Totale</div>
+              <div class="text-xl text-gray-900">{{ formatCurrency(total, '', 'EUR') }}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-sm text-gray-600">Totale Netto</div>
+              <div class="text-xl text-gray-900">{{ formatCurrency(netTotal, '', 'EUR') }}</div>
+            </div>
           </div>
         </div>
       </div>
       
-      <!-- Info Ordine dal Form -->
-      <div v-if="orderNotes || deliveryDate" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div class="text-sm font-semibold text-blue-900 mb-2">📝 Dettagli Ordine</div>
-        <div v-if="deliveryDate" class="text-sm text-gray-700 mb-1">Data di Consegna: <strong>{{ deliveryDate }}</strong></div>
-        <div v-if="orderNotes" class="text-sm text-gray-700 whitespace-pre-wrap">{{ orderNotes }}</div>
+      <!-- Note Ordine -->
+      <div v-if="orderNotes" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div class="text-sm font-semibold text-blue-900 mb-2">📝 Note</div>
+        <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ orderNotes }}</div>
       </div>
     </div>
   </div>
@@ -191,6 +205,10 @@ const deliveryDate = computed(() => {
   } catch (e) {
     return props.doc.delivery_date || null
   }
+})
+
+const deliveryAddress = computed(() => {
+  return props.doc.delivery_address || null
 })
 
 function addProduct() {
