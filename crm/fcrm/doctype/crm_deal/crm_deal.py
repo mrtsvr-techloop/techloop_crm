@@ -18,6 +18,7 @@ class CRMDeal(Document):
 	def validate(self):
 		self.set_primary_contact()
 		self.set_primary_email_mobile_no()
+		self.recalculate_totals()  # Recalculate totals from products
 		if not self.is_new() and self.has_value_changed("deal_owner") and self.deal_owner:
 			self.share_with_agent(self.deal_owner)
 			self.assign_agent(self.deal_owner)
@@ -136,6 +137,41 @@ class CRMDeal(Document):
 		sla = frappe.get_last_doc("CRM Service Level Agreement", {"name": self.sla})
 		if sla:
 			sla.apply(self)
+
+	def recalculate_totals(self):
+		"""
+		Recalculate total and net_total from products table.
+		Also recalculates amount and net_amount for each product row.
+		"""
+		if not self.products:
+			self.total = 0
+			self.net_total = 0
+			return
+
+		total = 0
+		net_total = 0
+
+		for product in self.products:
+			# Recalculate amount from qty and rate
+			if product.qty and product.rate:
+				product.amount = product.qty * product.rate
+			else:
+				product.amount = 0
+
+			# Recalculate net_amount with discount
+			if product.discount_percentage and product.amount:
+				discount_amount = (product.discount_percentage / 100) * product.amount
+				product.discount_amount = discount_amount
+				product.net_amount = product.amount - discount_amount
+			else:
+				product.discount_amount = 0
+				product.net_amount = product.amount
+
+			total += product.amount or 0
+			net_total += product.net_amount or 0
+
+		self.total = total
+		self.net_total = net_total
 
 	def update_closed_date(self):
 		"""
