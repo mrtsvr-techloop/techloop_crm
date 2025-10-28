@@ -12,103 +12,125 @@
 /* Remove Frappe website header/footer for a clean landing */
 header.navbar, .web-footer, .navbar, .page-head, .page-head-content { display: none !important; }
 body { 
-    background: #ffffff !important; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) fixed !important; 
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
-    padding: 0;
+    padding: 20px 0;
+    min-height: 100vh;
 }
 .container {
-    max-width: 100%;
-    padding: 10px;
+    max-width: 900px;
+    padding: 20px;
 }
 .card {
     border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-radius: 20px;
     background: #ffffff;
+    overflow: hidden;
 }
 .card-header { 
-    background: #ffffff !important; 
-    border-bottom: 2px solid #e5e7eb; 
-    border-radius: 12px 12px 0 0 !important;
-    padding: 20px;
+    background: #667eea !important; 
+    border-bottom: none;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 30px;
+    text-align: center;
 }
 .card-header h3 { 
-    color: #1f2937; 
-    font-size: 24px;
-    font-weight: 600;
+    color: #ffffff; 
+    font-size: 28px;
+    font-weight: 700;
     margin: 0;
 }
 .card-body {
-    padding: 20px;
+    padding: 30px;
+    background: #ffffff;
 }
 .btn-success { 
-    background-color: #10b981; 
-    border-color: #10b981; 
-    border-radius: 8px;
-    padding: 12px 24px;
+    background: #10b981;
+    border: none;
+    border-radius: 10px;
+    padding: 16px 40px;
     font-weight: 600;
+    font-size: 18px;
+    color: white;
+    transition: all 0.2s ease;
 }
 .btn-success:hover { 
-    background-color: #059669; 
-    border-color: #059669; 
+    background: #059669;
 }
 .btn-primary {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-    border-radius: 6px;
+    background: #667eea;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.2s ease;
+}
+.btn-primary:hover {
+    background: #5568d3;
 }
 .btn-danger {
-    background-color: #ef4444;
-    border-color: #ef4444;
-    border-radius: 6px;
+    background: #ef4444;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.2s ease;
+}
+.btn-danger:hover {
+    background: #dc2626;
+}
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 14px;
 }
 .form-group {
     margin-bottom: 20px;
 }
 .form-control {
     border-radius: 8px;
-    border: 2px solid #e5e7eb;
+    border: 1px solid #d1d5db;
     padding: 12px 16px;
     font-size: 16px;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s ease;
+    background: white;
 }
 .form-control:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
 }
 label {
     font-weight: 600;
     color: #374151;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: block;
-}
-.product-item { 
-    border: 1px solid #e5e7eb; 
-    border-radius: 8px; 
-    padding: 15px; 
-    margin-bottom: 10px; 
-    background: #f9fafb;
-}
-.product-name { 
-    font-weight: 600; 
-    color: #1f2937; 
-}
-.product-price { 
-    color: #059669; 
-    font-weight: 600; 
+    font-size: 14px;
 }
 .error-message { 
-    background: #fef2f2; 
+    background: #fef2f2;
     border: 1px solid #fecaca; 
     color: #dc2626; 
-    padding: 15px; 
-    border-radius: 8px; 
-    margin-bottom: 20px; 
+    padding: 20px; 
+    border-radius: 12px; 
+    margin-bottom: 20px;
+}
+.error-message h4 {
+    margin-top: 0;
+    font-weight: 700;
+}
+
+/* Desktop table view */
+.table-responsive {
+    display: block;
 }
 .table {
     border-radius: 8px;
     overflow: hidden;
+    width: 100%;
 }
 .table thead th {
     background: #f3f4f6;
@@ -116,49 +138,156 @@ label {
     font-weight: 600;
     color: #374151;
     padding: 12px;
+    font-size: 14px;
 }
 .table tbody td {
     border: none;
     border-bottom: 1px solid #e5e7eb;
     padding: 12px;
     vertical-align: middle;
+    background: white;
 }
 .table tbody tr:last-child td {
     border-bottom: none;
 }
+.table tbody tr:hover td {
+    background: #f9fafb;
+}
+.table tfoot tr {
+    background: #f9fafb;
+    border-top: 2px solid #e5e7eb;
+}
+.table tfoot td {
+    padding: 14px 12px;
+    font-size: 16px;
+    font-weight: 700;
+}
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 4px;
+}
+
+/* Mobile product cards */
+.products-mobile {
+    display: none;
+}
+.product-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.product-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.product-card-title {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 16px;
+    flex: 1;
+}
+.product-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.product-card-field {
+    display: flex;
+    flex-direction: column;
+}
+.product-card-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+.product-card-value {
+    font-size: 15px;
+    color: #1f2937;
+    font-weight: 600;
+}
+.product-card-total {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 8px;
+}
+.product-card-total-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+.product-card-total-value {
+    font-size: 18px;
+    color: #10b981;
+    font-weight: 700;
+}
 
 /* Mobile-first responsive design */
 @media (max-width: 768px) {
+    body {
+        background: #f3f4f6 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .page-content-wrapper .container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
     .container {
-        padding: 5px;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+    .card {
+        border-radius: 0 !important;
+        box-shadow: none;
+        min-height: 100vh;
+        margin: 0 !important;
     }
     .card-header {
-        padding: 15px;
+        padding: 20px 16px;
+        border-radius: 0 !important;
+        margin: 0 !important;
     }
     .card-header h3 {
-        font-size: 20px;
+        font-size: 22px;
     }
     .card-body {
-        padding: 15px;
+        padding: 16px !important;
+        margin: 0 !important;
     }
     .form-control {
         font-size: 16px; /* Prevents zoom on iOS */
-        padding: 14px 16px;
+        padding: 12px 14px;
     }
     .btn-success {
         width: 100%;
         padding: 16px;
         font-size: 18px;
     }
+    
+    /* Hide desktop table, show mobile cards */
     .table-responsive {
-        font-size: 14px;
+        display: none !important;
     }
-    .table thead th,
-    .table tbody td {
-        padding: 8px;
+    .products-mobile {
+        display: block !important;
     }
+    
     .btn-sm {
-        padding: 6px 12px;
+        padding: 8px 14px;
         font-size: 14px;
     }
 }
@@ -198,8 +327,8 @@ label {
             </div>
             {% else %}
             <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">📋 Conferma Ordine</h3>
+                <div class="card-header">
+                    <h3 class="mb-0">🛒 Completa il Tuo Ordine</h3>
                 </div>
                 <div class="card-body">
                     <form id="orderForm" method="POST">
@@ -268,6 +397,8 @@ label {
                         <!-- Products Section -->
                         <div class="form-group">
                             <label>Prodotti Ordinati</label>
+                            
+                            <!-- Desktop Table View -->
                             <div class="table-responsive">
                                 <table class="table table-bordered" id="productsTable">
                                     <thead class="thead-light">
@@ -319,6 +450,60 @@ label {
                                     </tfoot>
                                 </table>
                             </div>
+                            
+                            <!-- Mobile Card View -->
+                            <div class="products-mobile" id="productsMobile">
+                                {% for product in product_details %}
+                                <div class="product-card" data-product-id="{{ product.id }}">
+                                    <div class="product-card-header">
+                                        <div class="product-card-title">
+                                            {{ product.name }}
+                                            <div style="margin-top: 4px;">
+                                                {% for tag in product.tags %}
+                                                <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-danger remove-product-mobile" data-product-id="{{ product.id }}">
+                                            ✕
+                                        </button>
+                                    </div>
+                                    <div class="product-card-body">
+                                        <div class="product-card-field">
+                                            <div class="product-card-label">Quantità</div>
+                                            <input type="number" class="form-control product-quantity-mobile" 
+                                                   value="{{ product.quantity }}" min="1" 
+                                                   data-product-id="{{ product.id }}"
+                                                   style="padding: 8px; font-size: 14px;">
+                                            <input type="hidden" name="product_ids" value="{{ product.id }}">
+                                            <input type="hidden" name="product_quantities" value="{{ product.quantity }}">
+                                        </div>
+                                        <div class="product-card-field">
+                                            <div class="product-card-label">Prezzo Unitario</div>
+                                            <div class="product-card-value product-unit-price-mobile" data-product-id="{{ product.id }}">
+                                                €{{ "%.2f"|format(product.unit_price) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="product-card-total">
+                                        <div class="product-card-total-label">Totale</div>
+                                        <div class="product-card-total-value product-total-price-mobile" data-product-id="{{ product.id }}">
+                                            €{{ "%.2f"|format(product.total_price) }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <div class="product-card" style="background: white; border: 2px solid #e5e7eb;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="font-weight: 700; font-size: 16px; color: #374151;">Totale Ordine</div>
+                                        <div id="grand-total-mobile" style="font-size: 20px; color: #10b981; font-weight: 700;">
+                                            €{{ "%.2f"|format(total_price) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="mt-2">
                                 <button type="button" class="btn btn-sm btn-primary" id="addProductBtn">
                                     <i class="fa fa-plus"></i> Aggiungi Prodotto
@@ -337,9 +522,9 @@ label {
                         </div>
                         
                         
-                        <div class="text-center">
+                        <div class="text-center mt-4">
                             <button type="submit" class="btn btn-success btn-lg">
-                                ✅ Conferma Ordine
+                                ✅ Conferma e Completa l'Ordine
                             </button>
                         </div>
                     </form>
@@ -419,8 +604,86 @@ document.addEventListener('DOMContentLoaded', function() {
             validateForm();
         });
         
+        // Also add to mobile view
+        addProductToMobile(productId, productName, quantity, unitPrice, tags);
+        
         updateGrandTotal();
         validateForm();
+    }
+    
+    // Add product to mobile cards
+    function addProductToMobile(productId, productName, quantity = 1, unitPrice = 0, tags = []) {
+        const mobileContainer = document.getElementById('productsMobile');
+        const grandTotalCard = mobileContainer.querySelector('.product-card:not([data-product-id])');
+        
+        // Create tags HTML
+        const tagsHtml = tags.map(tag => 
+            `<span class="badge" style="background-color: ${tag.color}; margin-right: 4px;">${tag.name}</span>`
+        ).join('');
+        
+        const totalPrice = unitPrice * quantity;
+        
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.dataset.productId = productId;
+        card.innerHTML = `
+            <div class="product-card-header">
+                <div class="product-card-title">
+                    ${productName}
+                    ${tagsHtml ? `<div style="margin-top: 4px;">${tagsHtml}</div>` : ''}
+                </div>
+                <button type="button" class="btn btn-sm btn-danger remove-product-mobile" data-product-id="${productId}">
+                    ✕
+                </button>
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-field">
+                    <div class="product-card-label">Quantità</div>
+                    <input type="number" class="form-control product-quantity-mobile" 
+                           value="${quantity}" min="1" 
+                           data-product-id="${productId}"
+                           style="padding: 8px; font-size: 14px;">
+                </div>
+                <div class="product-card-field">
+                    <div class="product-card-label">Prezzo Unitario</div>
+                    <div class="product-card-value product-unit-price-mobile" data-product-id="${productId}">
+                        €${unitPrice.toFixed(2)}
+                    </div>
+                </div>
+            </div>
+            <div class="product-card-total">
+                <div class="product-card-total-label">Totale</div>
+                <div class="product-card-total-value product-total-price-mobile" data-product-id="${productId}">
+                    €${totalPrice.toFixed(2)}
+                </div>
+            </div>
+        `;
+        
+        // Insert before grand total card
+        if (grandTotalCard) {
+            mobileContainer.insertBefore(card, grandTotalCard);
+        } else {
+            mobileContainer.appendChild(card);
+        }
+        
+        // Add event listener to quantity input
+        const quantityInput = card.querySelector('.product-quantity-mobile');
+        quantityInput.addEventListener('input', function() {
+            const qty = parseInt(this.value) || 0;
+            const total = unitPrice * qty;
+            const totalDiv = card.querySelector('.product-total-price-mobile');
+            totalDiv.textContent = `€${total.toFixed(2)}`;
+            updateGrandTotal();
+            validateForm();
+        });
+        
+        // Add event listener to remove button
+        const removeBtn = card.querySelector('.remove-product-mobile');
+        removeBtn.addEventListener('click', function() {
+            card.remove();
+            updateGrandTotal();
+            validateForm();
+        });
     }
     
     // Update product total when quantity changes
@@ -437,17 +700,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update grand total
     function updateGrandTotal() {
-        const totalSpans = document.querySelectorAll('.product-total-price');
-        let grandTotal = 0;
-        
-        totalSpans.forEach(span => {
+        // Desktop total
+        const desktopTotalSpans = document.querySelectorAll('.product-total-price');
+        let desktopTotal = 0;
+        desktopTotalSpans.forEach(span => {
             const text = span.textContent.replace('€', '').replace(',', '.');
-            grandTotal += parseFloat(text) || 0;
+            desktopTotal += parseFloat(text) || 0;
         });
         
+        // Mobile total
+        const mobileTotalDivs = document.querySelectorAll('.product-total-price-mobile');
+        let mobileTotal = 0;
+        mobileTotalDivs.forEach(div => {
+            const text = div.textContent.replace('€', '').replace(',', '.');
+            mobileTotal += parseFloat(text) || 0;
+        });
+        
+        // Update both totals
         const grandTotalSpan = document.getElementById('grand-total');
         if (grandTotalSpan) {
-            grandTotalSpan.textContent = `€${grandTotal.toFixed(2)}`;
+            grandTotalSpan.textContent = `€${desktopTotal.toFixed(2)}`;
+        }
+        
+        const grandTotalMobile = document.getElementById('grand-total-mobile');
+        if (grandTotalMobile) {
+            grandTotalMobile.textContent = `€${mobileTotal.toFixed(2)}`;
         }
     }
     
@@ -462,15 +739,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Validate form
     function validateForm() {
-        const productRows = document.querySelectorAll('#productsTableBody tr');
+        const desktopRows = document.querySelectorAll('#productsTableBody tr');
+        const mobileCards = document.querySelectorAll('.products-mobile .product-card[data-product-id]');
         const submitBtn = document.querySelector('button[type="submit"]');
         
-        if (productRows.length === 0) {
+        // Count products from either desktop or mobile view
+        const productCount = Math.max(desktopRows.length, mobileCards.length);
+        
+        if (productCount === 0) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Aggiungi almeno un prodotto';
+            submitBtn.innerHTML = '❌ Aggiungi almeno un prodotto';
         } else {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Salva Ordine';
+            submitBtn.innerHTML = '✅ Conferma e Completa l\'Ordine';
         }
     }
     
@@ -579,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add event listeners to existing quantity inputs
+    // Add event listeners to existing quantity inputs (desktop)
     document.querySelectorAll('.product-quantity').forEach(input => {
         input.addEventListener('input', function() {
             const productId = this.dataset.productId;
@@ -589,6 +870,44 @@ document.addEventListener('DOMContentLoaded', function() {
             updateProductTotal(productId, unitPrice);
             updateGrandTotal();
             validateForm();
+        });
+    });
+    
+    // Add event listeners for mobile quantity inputs
+    document.querySelectorAll('.product-quantity-mobile').forEach(input => {
+        input.addEventListener('input', function() {
+            const productId = this.dataset.productId;
+            const card = this.closest('.product-card');
+            const unitPriceDiv = card.querySelector('.product-unit-price-mobile');
+            const unitPrice = parseFloat(unitPriceDiv.textContent.replace('€', '').replace(',', '.')) || 0;
+            const quantity = parseInt(this.value) || 0;
+            const total = unitPrice * quantity;
+            
+            // Update total in card
+            const totalDiv = card.querySelector('.product-total-price-mobile');
+            totalDiv.textContent = `€${total.toFixed(2)}`;
+            
+            // Update hidden input for form submission
+            const hiddenQuantity = card.querySelector('input[name="product_quantities"]');
+            if (hiddenQuantity) {
+                hiddenQuantity.value = quantity;
+            }
+            
+            updateGrandTotal();
+            validateForm();
+        });
+    });
+    
+    // Add event listeners for mobile remove buttons
+    document.querySelectorAll('.remove-product-mobile').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const card = this.closest('.product-card');
+            if (card) {
+                card.remove();
+                updateGrandTotal();
+                validateForm();
+            }
         });
     });
     

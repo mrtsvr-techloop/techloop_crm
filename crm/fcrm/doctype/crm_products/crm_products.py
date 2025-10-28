@@ -34,12 +34,13 @@ class CRMProducts(Document):
 		self.update_parent_totals()
 
 	def update_parent_totals(self):
-		"""Update totals in parent CRM Lead document"""
-		if not self.parent:
+		"""Update totals in parent CRM Lead or CRM Deal document"""
+		if not self.parent or not self.parenttype:
 			return
 
 		try:
-			parent_doc = frappe.get_doc("CRM Lead", self.parent)
+			# Use parenttype instead of hardcoded "CRM Lead"
+			parent_doc = frappe.get_doc(self.parenttype, self.parent)
 			
 			# Calculate totals from all products
 			total_amount = 0
@@ -55,4 +56,4 @@ class CRMProducts(Document):
 			parent_doc.save(ignore_permissions=True)
 			
 		except Exception as e:
-			frappe.log_error(f"Error updating parent totals: {str(e)}", "CRM Products Update Error")
+			frappe.log_error(f"Error updating parent totals for {self.parenttype} {self.parent}: {str(e)}", "CRM Products Update Error")

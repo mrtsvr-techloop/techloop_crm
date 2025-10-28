@@ -168,14 +168,14 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-	"all": [
+	# "all": [
+	# 	"crm.fcrm.doctype.fcrm_temp_ordine.fcrm_temp_ordine.cleanup_expired_temp_orders"
+	# ],
+	"hourly": [
 		"crm.fcrm.doctype.fcrm_temp_ordine.fcrm_temp_ordine.cleanup_expired_temp_orders"
 	],
 # "daily": [
 # "crm.tasks.daily"
-# ],
-# "hourly": [
-# "crm.tasks.hourly"
 # ],
 # "weekly": [
 # "crm.tasks.weekly"

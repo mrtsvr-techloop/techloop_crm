@@ -761,6 +761,7 @@ def update_contact_from_thread(
 	organization: Optional[str] = None,
 	confirm_organization: Optional[bool] = None,
 	phone_from: Optional[str] = None,
+	delivery_address: Optional[str] = None,
 ) -> Dict[str, Any]:
 	"""Update or create Contact tied to current AI thread (by phone).
 	
@@ -777,10 +778,11 @@ def update_contact_from_thread(
 		- organization: Organization name
 		- confirm_organization: If True, link to existing org
 		- phone_from: Phone number (injected by AI runtime)
+		- delivery_address: Delivery address
 	
 	Behavior:
 		1. Finds Contact by phone (or creates new)
-		2. Updates name and email
+		2. Updates name, email, and address
 		3. If organization provided:
 		   - Existing org + confirm=True: Link contact to org
 		   - Existing org + confirm=False: Return needs_confirmation
@@ -802,7 +804,8 @@ def update_contact_from_thread(
 			email="mario@example.com",
 			organization="Acme Corp",
 			confirm_organization=True,
-			phone_from="+393331234567"  # Injected by AI runtime
+			phone_from="+393331234567",  # Injected by AI runtime
+			delivery_address="Via Roma 123"
 		)
 	"""
 	try:
@@ -866,6 +869,19 @@ def update_contact_from_thread(
 		# Update email if provided
 		if email:
 			_update_contact_email(contact, email)
+		
+		# Update delivery address if provided
+		if delivery_address and hasattr(contact, 'address'):
+			# Save address in custom field or first address line
+			if not contact.address:
+				contact.address = delivery_address
+			else:
+				# Update existing address or append if different
+				if delivery_address not in contact.address:
+					contact.address = delivery_address
+		elif delivery_address and not hasattr(contact, 'address'):
+			# If address field doesn't exist, try to add to Contact
+			frappe.db.set_value("Contact", contact.name, "address", delivery_address, update_modified=False)
 		
 		contact.save(ignore_permissions=True)
 		_log().info(f"Updated contact: {contact.name}")

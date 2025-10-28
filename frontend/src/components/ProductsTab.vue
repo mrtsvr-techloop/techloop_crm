@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { createResource } from 'frappe-ui'
 import ProductsIcon from '@/components/Icons/ProductsIcon.vue'
 import { formatCurrency } from '@/utils/numberFormat'
@@ -159,6 +159,13 @@ const emit = defineEmits(['update'])
 
 // Prodotti dal documento
 const products = ref(props.doc.products || [])
+
+// Watch per aggiornare i prodotti quando il documento si carica
+watch(() => props.doc.products, (newProducts) => {
+  if (newProducts && newProducts.length > 0 && products.value.length === 0) {
+    products.value = newProducts
+  }
+}, { immediate: true, deep: true })
 
 // Resource per caricare i prodotti disponibili
 const productsResource = createResource({

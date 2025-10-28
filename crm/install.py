@@ -26,6 +26,7 @@ def after_install(force=False):
 	create_default_manager_dashboard(force)
 	create_assignment_rule_custom_fields()
 	add_assignment_rule_property_setters()
+	add_default_quick_filters(force)
 	frappe.db.commit()
 
 
@@ -497,3 +498,32 @@ def create_assignment_rule_custom_fields():
 		)
 
 		frappe.clear_cache(doctype="Assignment Rule")
+
+
+def add_default_quick_filters(force=False):
+	"""
+	Add default quick filters for CRM Deal to ensure delivery_date and other important fields
+	are always available as quick filters.
+	"""
+	quick_filters = [
+		"status",
+		"organization",
+		"email",
+		"mobile_no",
+		"delivery_date",
+		"delivery_address",
+		"order_date",
+	]
+
+	# Create or update CRM Global Settings for quick filters
+	name = frappe.db.exists("CRM Global Settings", {"dt": "CRM Deal", "type": "Quick Filters"})
+	if name:
+		doc = frappe.get_doc("CRM Global Settings", name)
+		doc.json = frappe.as_json(quick_filters)
+		doc.save()
+	else:
+		doc = frappe.new_doc("CRM Global Settings")
+		doc.dt = "CRM Deal"
+		doc.type = "Quick Filters"
+		doc.json = frappe.as_json(quick_filters)
+		doc.insert()

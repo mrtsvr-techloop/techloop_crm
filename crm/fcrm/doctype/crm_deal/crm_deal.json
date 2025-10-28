@@ -61,6 +61,7 @@
   "delivery_date",
   "column_break_delivery",
   "delivery_address",
+  "order_date",
   "section_break_notes",
   "order_notes",
   "sla_tab",
@@ -392,6 +393,7 @@
   {
    "fieldname": "delivery_date",
    "fieldtype": "Date",
+   "in_standard_filter": 1,
    "label": "Delivery Date"
   },
   {
@@ -402,6 +404,14 @@
    "fieldname": "delivery_address",
    "fieldtype": "Small Text",
    "label": "Delivery Address"
+  },
+  {
+   "fieldname": "order_date",
+   "fieldtype": "Datetime",
+   "label": "Order Date",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
   },
   {
    "fieldname": "section_break_notes",

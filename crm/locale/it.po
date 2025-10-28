@@ -3701,7 +3701,7 @@ msgstr ""
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 #: crm/fcrm/doctype/crm_lead/crm_lead.json
 msgid "Net Total"
-msgstr ""
+msgstr "Totale Netto"
 
 #: frontend/src/components/Activities/ActivityHeader.vue:76
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRules.vue:19
@@ -4156,7 +4156,7 @@ msgstr ""
 #: frontend/src/pages/Organization.vue:467
 #: frontend/src/pages/Organization.vue:521
 msgid "Organization"
-msgstr ""
+msgstr "Organizzazione"
 
 #. Label of the organization_details_section (Section Break) field in DocType
 #. 'CRM Deal'
@@ -4376,12 +4376,12 @@ msgstr ""
 #. Label of the email (Data) field in DocType 'CRM Deal'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 msgid "Primary Email"
-msgstr ""
+msgstr "Email Principale"
 
 #. Label of the mobile_no (Data) field in DocType 'CRM Deal'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 msgid "Primary Mobile No"
-msgstr ""
+msgstr "Cellulare Principale"
 
 #. Label of the phone (Data) field in DocType 'CRM Deal'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
@@ -6406,6 +6406,10 @@ msgstr "Indirizzo di Consegna"
 msgid "Order Notes"
 msgstr "Note Ordine"
 
+#: crm/fcrm/doctype/crm_deal/crm_deal.json
+msgid "Order Date"
+msgstr "Data Ordine"
+
 #: frontend/src/components/Activities/DataFields.vue
 msgid "Enter delivery address..."
 msgstr "Inserisci indirizzo di consegna..."
@@ -6413,4 +6417,15 @@ msgstr "Inserisci indirizzo di consegna..."
 #: frontend/src/components/Activities/DataFields.vue
 msgid "Enter order notes..."
 msgstr "Inserisci note ordine..."
+
+
+# Custom translations for CRM views
+msgid "Company Name"
+msgstr "Nome Azienda"
+
+msgid "Email Address"
+msgstr "Indirizzo Email"
+
+msgid "Created On"
+msgstr "Creato Il"
 

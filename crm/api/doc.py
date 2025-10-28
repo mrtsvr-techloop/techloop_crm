@@ -353,39 +353,56 @@ def get_data(
 			columns = frappe.parse_json(list_view_settings.columns)
 			rows = frappe.parse_json(list_view_settings.rows)
 			is_default = False
-		elif not custom_view or (is_default and hasattr(_list, "default_list_data")):
-			rows = default_rows
-			columns = _list.default_list_data().get("columns")
+	elif not custom_view or (is_default and hasattr(_list, "default_list_data")):
+		rows = default_rows
+		columns = _list.default_list_data().get("columns")
 
-		# check if rows has all keys from columns if not add them
-		for column in columns:
-			if column.get("key") not in rows:
-				rows.append(column.get("key"))
-			column["label"] = _(column.get("label"))
+	# Force include order_date for CRM Deal if not already present
+	if doctype == "CRM Deal":
+		order_date_exists = any(col.get("key") == "order_date" for col in columns)
+		if not order_date_exists:
+			# Find the position of delivery_date to insert order_date before it
+			delivery_date_index = next((i for i, col in enumerate(columns) if col.get("key") == "delivery_date"), None)
+			order_date_column = {
+				"label": "Order Date",
+				"type": "Datetime",
+				"key": "order_date",
+				"width": "12rem",
+			}
+			if delivery_date_index is not None:
+				columns.insert(delivery_date_index, order_date_column)
+			else:
+				columns.append(order_date_column)
 
-			if column.get("key") == "_liked_by" and column.get("width") == "10rem":
-				column["width"] = "50px"
+	# check if rows has all keys from columns if not add them
+	for column in columns:
+		if column.get("key") not in rows:
+			rows.append(column.get("key"))
+		column["label"] = _(column.get("label"))
 
-			# remove column if column.hidden is True
-			column_meta = meta.get_field(column.get("key"))
-			if column_meta and column_meta.get("hidden"):
-				columns.remove(column)
+		if column.get("key") == "_liked_by" and column.get("width") == "10rem":
+			column["width"] = "50px"
 
-		# check if rows has group_by_field if not add it
-		if group_by_field and group_by_field not in rows:
-			rows.append(group_by_field)
+		# remove column if column.hidden is True
+		column_meta = meta.get_field(column.get("key"))
+		if column_meta and column_meta.get("hidden"):
+			columns.remove(column)
 
-		data = (
-			frappe.get_list(
-				doctype,
-				fields=rows,
-				filters=filters,
-				order_by=order_by,
-				page_length=page_length,
-			)
-			or []
+	# check if rows has group_by_field if not add it
+	if group_by_field and group_by_field not in rows:
+		rows.append(group_by_field)
+
+	data = (
+		frappe.get_list(
+			doctype,
+			fields=rows,
+			filters=filters,
+			order_by=order_by,
+			page_length=page_length,
 		)
-		data = parse_list_data(data, doctype)
+		or []
+	)
+	data = parse_list_data(data, doctype)
 
 	if view_type == "kanban":
 		if not rows:

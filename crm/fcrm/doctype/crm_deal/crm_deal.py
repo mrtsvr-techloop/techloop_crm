@@ -18,7 +18,6 @@ class CRMDeal(Document):
 	def validate(self):
 		self.set_primary_contact()
 		self.set_primary_email_mobile_no()
-		self.recalculate_totals()  # Recalculate totals from products
 		if not self.is_new() and self.has_value_changed("deal_owner") and self.deal_owner:
 			self.share_with_agent(self.deal_owner)
 			self.assign_agent(self.deal_owner)
@@ -138,40 +137,6 @@ class CRMDeal(Document):
 		if sla:
 			sla.apply(self)
 
-	def recalculate_totals(self):
-		"""
-		Recalculate total and net_total from products table.
-		Also recalculates amount and net_amount for each product row.
-		"""
-		if not self.products:
-			self.total = 0
-			self.net_total = 0
-			return
-
-		total = 0
-		net_total = 0
-
-		for product in self.products:
-			# Recalculate amount from qty and rate
-			if product.qty and product.rate:
-				product.amount = product.qty * product.rate
-			else:
-				product.amount = 0
-
-			# Recalculate net_amount with discount
-			if product.discount_percentage and product.amount:
-				discount_amount = (product.discount_percentage / 100) * product.amount
-				product.discount_amount = discount_amount
-				product.net_amount = product.amount - discount_amount
-			else:
-				product.discount_amount = 0
-				product.net_amount = product.amount
-
-			total += product.amount or 0
-			net_total += product.net_amount or 0
-
-		self.total = total
-		self.net_total = net_total
 
 	def update_closed_date(self):
 		"""
@@ -201,7 +166,7 @@ class CRMDeal(Document):
 	def validate_forecasting_fields(self):
 		self.update_closed_date()
 		self.update_default_probability()
-		self.update_expected_deal_value()
+		# self.update_expected_deal_value()  # Disabled: no auto-update of expected deal value
 		if frappe.db.get_single_value("FCRM Settings", "enable_forecasting"):
 			if not self.expected_deal_value or self.expected_deal_value == 0:
 				frappe.throw(_("Expected Deal Value is required."), frappe.MandatoryError)
@@ -231,65 +196,82 @@ class CRMDeal(Document):
 	def default_list_data():
 		columns = [
 			{
-				"label": "Organization",
-				"type": "Link",
-				"key": "organization",
-				"options": "CRM Organization",
-				"width": "11rem",
-			},
-			{
-				"label": "Annual Revenue",
-				"type": "Currency",
-				"key": "annual_revenue",
-				"align": "right",
-				"width": "9rem",
-			},
-			{
-				"label": "Status",
-				"type": "Select",
-				"key": "status",
+				"label": _("First Name"),
+				"type": "Data",
+				"key": "first_name",
 				"width": "10rem",
 			},
 			{
-				"label": "Email",
+				"label": _("Last Name"),
+				"type": "Data",
+				"key": "last_name",
+				"width": "10rem",
+			},
+			{
+				"label": _("Organization"),
+				"type": "Link",
+				"key": "organization",
+				"options": "CRM Organization",
+				"width": "12rem",
+			},
+			{
+				"label": _("Primary Email"),
 				"type": "Data",
 				"key": "email",
 				"width": "12rem",
 			},
 			{
-				"label": "Mobile No",
+				"label": _("Primary Mobile No"),
 				"type": "Data",
 				"key": "mobile_no",
-				"width": "11rem",
+				"width": "12rem",
 			},
 			{
-				"label": "Assigned To",
-				"type": "Text",
-				"key": "_assign",
+				"label": _("Net Total"),
+				"type": "Currency",
+				"key": "net_total",
+				"align": "right",
 				"width": "10rem",
 			},
 			{
-				"label": "Last Modified",
+				"label": _("Delivery Address"),
+				"type": "Data",
+				"key": "delivery_address",
+				"width": "15rem",
+			},
+			{
+				"label": _("Order Date"),
 				"type": "Datetime",
-				"key": "modified",
-				"width": "8rem",
+				"key": "order_date",
+				"width": "12rem",
+			},
+			{
+				"label": _("Delivery Date"),
+				"type": "Date",
+				"key": "delivery_date",
+				"width": "12rem",
+			},
+			{
+				"label": _("Status"),
+				"type": "Select",
+				"key": "status",
+				"width": "10rem",
 			},
 		]
 		rows = [
 			"name",
+			"first_name",
+			"last_name",
 			"organization",
-			"annual_revenue",
-			"status",
 			"email",
-			"currency",
 			"mobile_no",
+			"currency",
+			"net_total",
+			"delivery_address",
+			"order_date",
+			"delivery_date",
+			"status",
 			"deal_owner",
-			"sla_status",
-			"response_by",
-			"first_response_time",
-			"first_responded_on",
-			"modified",
-			"_assign",
 		]
 		return {"columns": columns, "rows": rows}
 
@@ -297,8 +279,8 @@ class CRMDeal(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "organization",
-			"kanban_fields": '["annual_revenue", "email", "mobile_no", "_assign", "modified"]',
+			"title_field": "delivery_date",
+			"kanban_fields": '["order_date", "last_name", "first_name", "email", "mobile_no", "delivery_address"]',
 		}
 
 

@@ -186,11 +186,17 @@ def submit_order():
         if not order_data:
             frappe.throw(_("Ordine scaduto o non valido: {0}").format(error or "Unknown error"))
         
-        # Validate required fields
-        required_fields = ['customer_name', 'customer_surname', 'phone_number', 'delivery_address']
-        for field in required_fields:
-            if not data.get(field):
-                frappe.throw(_("Campo obbligatorio mancante: {0}").format(field))
+        # Validate required fields with user-friendly messages
+        field_names = {
+            'customer_name': 'il Nome',
+            'customer_surname': 'il Cognome',
+            'phone_number': 'il Numero di Telefono',
+            'delivery_address': "l'Indirizzo di Consegna"
+        }
+        
+        for field, friendly_name in field_names.items():
+            if not data.get(field) or not data.get(field).strip():
+                frappe.throw(_("Per favore inserisci {0} per completare l'ordine").format(friendly_name))
         
         # Prepare products data for CRM Lead table
         products_table = []
@@ -298,6 +304,7 @@ def submit_order():
             "net_total": total_price,
             "delivery_date": delivery_date,
             "delivery_address": data.get('delivery_address'),
+            "order_date": frappe.utils.now(),
             "order_notes": data.get('notes'),
             "custom_order_details": frappe.as_json({
                 "delivery_address": data.get('delivery_address'),
@@ -372,9 +379,16 @@ def submit_order():
                 contact_params['organization'] = data.get('company_name')
                 contact_params['confirm_organization'] = True
             
-            update_contact_from_thread(**contact_params)
+            if data.get('delivery_address'):
+                contact_params['delivery_address'] = data.get('delivery_address')
+            
+            result = update_contact_from_thread(**contact_params)
+            
+            # Save contact name for later use
+            contact_name = result.get('contact', {}).get('name') if result.get('success') else None
         except Exception as e:
             frappe.logger("crm").error(f"Error updating contact: {str(e)}")
+            contact_name = None
         
         # Mark FCRM TEMP ORDINE as consumed
         consume_temp_order(temp_order_id)
@@ -392,11 +406,23 @@ def submit_order():
         # Log the order confirmation
         frappe.logger("crm").info(f"Order confirmed via WhatsApp form: {lead_doc.name}")
         
+        # Build redirect URL with order summary data
+        import urllib.parse
+        redirect_params = {
+            "order_no": order_no,
+            "customer": f"{data.get('customer_name', '')} {data.get('customer_surname', '')}".strip(),
+            "total": f"{total_price:.2f}",
+            "delivery_date": delivery_date or "",
+            "delivery_address": data.get('delivery_address', '')[:50],  # Limit length
+            "products_count": len(products_table)
+        }
+        redirect_url = f"/order-success?{urllib.parse.urlencode(redirect_params)}"
+        
         return {
             "success": True,
             "message": _("Ordine confermato con successo"),
             "lead_id": lead_doc.name,
-            "redirect_url": f"/order-success?order_no={order_no}"
+            "redirect_url": redirect_url
         }
         
     except Exception as e:

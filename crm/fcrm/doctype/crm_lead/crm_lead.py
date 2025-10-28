@@ -275,6 +275,8 @@ class CRMLead(Document):
 				new_deal.update({"delivery_date": self.delivery_date})
 			if hasattr(self, "delivery_address") and getattr(self, "delivery_address", None):
 				new_deal.update({"delivery_address": self.delivery_address})
+			if hasattr(self, "order_date") and getattr(self, "order_date", None):
+				new_deal.update({"order_date": self.order_date})
 			# Copy order notes from custom_order_details JSON field
 			if hasattr(self, "custom_order_details") and self.custom_order_details:
 				import json
@@ -314,6 +316,30 @@ class CRMLead(Document):
 			new_deal.update({"expected_closure_date": self.delivery_date})
 
 		new_deal.insert(ignore_permissions=True)
+		
+		# Explicitly copy products from Lead to Deal
+		if self.products:
+			for lead_product in self.products:
+				deal_product = frappe.get_doc({
+					"doctype": "CRM Products",
+					"parent": new_deal.name,
+					"parenttype": "CRM Deal",
+					"parentfield": "products",
+					"product_code": lead_product.product_code,
+					"product_name": lead_product.product_name,
+					"qty": lead_product.qty,
+					"rate": lead_product.rate,
+					"amount": lead_product.amount,
+					"discount_percentage": lead_product.discount_percentage if hasattr(lead_product, "discount_percentage") else 0,
+					"discount_amount": lead_product.discount_amount if hasattr(lead_product, "discount_amount") else 0,
+					"net_amount": lead_product.net_amount if hasattr(lead_product, "net_amount") else lead_product.amount,
+				})
+				deal_product.insert(ignore_permissions=True)
+			
+			# Reload deal to get updated products and recalculate totals
+			new_deal.reload()
+			new_deal.save(ignore_permissions=True)
+		
 		return new_deal.name
 
 	def set_sla(self):
@@ -351,62 +377,71 @@ class CRMLead(Document):
 	def default_list_data():
 		columns = [
 			{
-				"label": "Name",
+				"label": _("Full Name"),
 				"type": "Data",
 				"key": "lead_name",
+				"width": "14rem",
+			},
+			{
+				"label": _("Mobile No"),
+				"type": "Data",
+				"key": "mobile_no",
 				"width": "12rem",
 			},
 			{
-				"label": "Organization",
+				"label": _("Email"),
+				"type": "Data",
+				"key": "email",
+				"width": "14rem",
+			},
+			{
+				"label": _("Organization"),
 				"type": "Link",
 				"key": "organization",
 				"options": "CRM Organization",
-				"width": "10rem",
-			},
-			{
-				"label": "Status",
-				"type": "Select",
-				"key": "status",
-				"width": "8rem",
-			},
-			{
-				"label": "Email",
-				"type": "Data",
-				"key": "email",
 				"width": "12rem",
 			},
 			{
-				"label": "Mobile No",
+				"label": _("Delivery Address"),
 				"type": "Data",
-				"key": "mobile_no",
-				"width": "11rem",
+				"key": "delivery_address",
+				"width": "15rem",
 			},
 			{
-				"label": "Assigned To",
-				"type": "Text",
-				"key": "_assign",
+				"label": _("Net Total"),
+				"type": "Currency",
+				"key": "net_total",
+				"align": "right",
 				"width": "10rem",
 			},
 			{
-				"label": "Last Modified",
+				"label": _("Order Date"),
 				"type": "Datetime",
-				"key": "modified",
-				"width": "8rem",
+				"key": "order_date",
+				"width": "12rem",
+			},
+			{
+				"label": _("Delivery Date"),
+				"type": "Date",
+				"key": "delivery_date",
+				"width": "12rem",
 			},
 		]
 		rows = [
 			"name",
 			"lead_name",
-			"organization",
-			"status",
-			"email",
 			"mobile_no",
+			"email",
+			"organization",
+			"delivery_address",
+			"net_total",
+			"currency",
+			"order_date",
+			"delivery_date",
+			"status",
 			"lead_owner",
 			"first_name",
-			"sla_status",
-			"response_by",
-			"first_response_time",
-			"first_responded_on",
+			"last_name",
 			"modified",
 			"_assign",
 			"image",

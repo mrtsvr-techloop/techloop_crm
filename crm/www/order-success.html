@@ -6,36 +6,170 @@
 <style>
 /* Remove website chrome for public success page */
 header.navbar, .web-footer, .navbar, .page-head, .page-head-content { display: none !important; }
-body { background: #f7f9fc; }
-.card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.btn-primary { background-color: #2563eb; border-color: #2563eb; }
-.btn-primary:hover { background-color: #1d4ed8; border-color: #1d4ed8; }
+body { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.success-card { 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border-radius: 20px;
+    background: white;
+    padding: 2rem;
+    max-width: 500px;
+    margin: 2rem auto;
+}
+.check-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: scaleIn 0.5s ease-out;
+}
+@keyframes scaleIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+.check-icon svg {
+    width: 50px;
+    height: 50px;
+    color: white;
+}
+.order-summary {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    text-align: left;
+}
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+.summary-row:last-child {
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #10b981;
+}
+.summary-label {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+.summary-value {
+    color: #1e293b;
+    font-weight: 500;
+}
 </style>
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card text-center">
-                <div class="card-body">
-                    <div class="mb-4">
-                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-                    </div>
-                    <h2 class="card-title text-success">✅ Ordine Confermato!</h2>
-                    <p class="card-text" id="orderNumber" style="font-size:1.25rem; font-weight:600;">
-                        Questo è il tuo numero Ordine: <span></span>
-                    </p>
-                </div>
+<div class="container">
+    <div class="success-card">
+        <div class="check-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        
+        <h2 class="text-center" style="color: #10b981; font-size: 2rem; margin-bottom: 0.5rem;">
+            Ordine Confermato!
+        </h2>
+        
+        <p class="text-center" style="color: #64748b; font-size: 1.1rem; margin-bottom: 0;">
+            Grazie per il tuo ordine <span id="customerName"></span>
+        </p>
+        
+        <div class="order-summary">
+            <div class="summary-row">
+                <span class="summary-label">📦 Numero Ordine</span>
+                <span class="summary-value" id="orderNumber">-</span>
+            </div>
+            <div class="summary-row" id="productsRow" style="display: none;">
+                <span class="summary-label">🛍️ Prodotti</span>
+                <span class="summary-value" id="productsCount">-</span>
+            </div>
+            <div class="summary-row" id="deliveryDateRow" style="display: none;">
+                <span class="summary-label">📅 Data Consegna</span>
+                <span class="summary-value" id="deliveryDate">-</span>
+            </div>
+            <div class="summary-row" id="deliveryAddressRow" style="display: none;">
+                <span class="summary-label">📍 Indirizzo</span>
+                <span class="summary-value" id="deliveryAddress" style="font-size: 0.9rem;">-</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">💰 Totale</span>
+                <span class="summary-value" id="totalAmount">€ 0.00</span>
             </div>
         </div>
+        
+        <p class="text-center" style="color: #94a3b8; font-size: 0.9rem; margin-top: 1.5rem; margin-bottom: 0;">
+            Riceverai una conferma via WhatsApp
+        </p>
     </div>
 </div>
+
 <script>
-// Read order_no from query string and display as 25-00002 format
 document.addEventListener('DOMContentLoaded', function() {
     const params = new URLSearchParams(window.location.search);
+    
+    // Order number
     const orderNo = params.get('order_no') || '';
     if (orderNo) {
-        const span = document.querySelector('#orderNumber span');
-        if (span) span.textContent = orderNo;
+        document.getElementById('orderNumber').textContent = orderNo;
+    }
+    
+    // Customer name
+    const customer = params.get('customer') || '';
+    if (customer) {
+        document.getElementById('customerName').textContent = customer;
+    }
+    
+    // Total amount
+    const total = params.get('total') || '0.00';
+    if (total) {
+        document.getElementById('totalAmount').textContent = '€ ' + parseFloat(total).toFixed(2);
+    }
+    
+    // Products count
+    const productsCount = params.get('products_count') || '';
+    if (productsCount) {
+        const row = document.getElementById('productsRow');
+        row.style.display = 'flex';
+        const countText = productsCount === '1' ? '1 prodotto' : productsCount + ' prodotti';
+        document.getElementById('productsCount').textContent = countText;
+    }
+    
+    // Delivery date
+    const deliveryDate = params.get('delivery_date') || '';
+    if (deliveryDate) {
+        const row = document.getElementById('deliveryDateRow');
+        row.style.display = 'flex';
+        // Format date as DD/MM/YYYY
+        try {
+            const date = new Date(deliveryDate);
+            const formatted = date.toLocaleDateString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            document.getElementById('deliveryDate').textContent = formatted;
+        } catch (e) {
+            document.getElementById('deliveryDate').textContent = deliveryDate;
+        }
+    }
+    
+    // Delivery address
+    const deliveryAddress = params.get('delivery_address') || '';
+    if (deliveryAddress) {
+        const row = document.getElementById('deliveryAddressRow');
+        row.style.display = 'flex';
+        document.getElementById('deliveryAddress').textContent = decodeURIComponent(deliveryAddress);
     }
 });
 </script>
