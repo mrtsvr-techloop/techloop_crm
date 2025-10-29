@@ -762,6 +762,8 @@ def update_contact_from_thread(
 	confirm_organization: Optional[bool] = None,
 	phone_from: Optional[str] = None,
 	delivery_address: Optional[str] = None,
+	website: Optional[str] = None,
+	company_name: Optional[str] = None,
 ) -> Dict[str, Any]:
 	"""Update or create Contact tied to current AI thread (by phone).
 	
@@ -805,8 +807,8 @@ def update_contact_from_thread(
 			organization="Acme Corp",
 			confirm_organization=True,
 			phone_from="+393331234567",  # Injected by AI runtime
-			delivery_address="Via Roma 123"
-		)
+		delivery_address="Via Roma 123"
+	)
 	"""
 	try:
 		# Validate required fields
@@ -870,18 +872,33 @@ def update_contact_from_thread(
 		if email:
 			_update_contact_email(contact, email)
 		
-		# Update delivery address if provided
-		if delivery_address and hasattr(contact, 'address'):
-			# Save address in custom field or first address line
-			if not contact.address:
-				contact.address = delivery_address
+		# Update website if provided
+		if website:
+			contact.website = website.strip()
+		
+		# Update company name if provided (custom field)
+		if company_name:
+			company = company_name.strip()
+			if hasattr(contact, 'company_name'):
+				contact.company_name = company
 			else:
-				# Update existing address or append if different
-				if delivery_address not in contact.address:
-					contact.address = delivery_address
-		elif delivery_address and not hasattr(contact, 'address'):
-			# If address field doesn't exist, try to add to Contact
-			frappe.db.set_value("Contact", contact.name, "address", delivery_address, update_modified=False)
+				# Try to set via db if field exists
+				try:
+					frappe.db.set_value("Contact", contact.name, "company_name", company, update_modified=False)
+				except Exception:
+					_log().warning(f"Could not set company_name on contact: field may not exist")
+		
+		# Update delivery address if provided
+		if delivery_address:
+			addr = delivery_address.strip()
+			if hasattr(contact, 'address'):
+				contact.address = addr
+			else:
+				# If address field doesn't exist, try to add to Contact
+				try:
+					frappe.db.set_value("Contact", contact.name, "address", addr, update_modified=False)
+				except Exception:
+					_log().warning(f"Could not set address on contact: field may not exist")
 		
 		contact.save(ignore_permissions=True)
 		_log().info(f"Updated contact: {contact.name}")

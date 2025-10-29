@@ -10,7 +10,7 @@
     >
       <template #item="{ element: column }">
         <div
-          v-if="!column.column.delete"
+          v-if="column.column && !column.column.delete"
           class="flex flex-col gap-2.5 min-w-72 w-72 hover:bg-surface-gray-2 rounded-lg p-2.5"
         >
           <div class="flex gap-2 items-center group justify-between">
@@ -198,7 +198,9 @@ const columns = computed(() => {
   let has_color = _columns.some((column) => column.column?.color)
   if (!has_color) {
     _columns.forEach((column, i) => {
-      column.column['color'] = colors[i % colors.length]
+      if (column.column) {
+        column.column['color'] = colors[i % colors.length]
+      }
     })
   }
   return _columns
@@ -206,7 +208,7 @@ const columns = computed(() => {
 
 const deletedColumns = computed(() => {
   return columns.value
-    .filter((col) => col.column['delete'])
+    .filter((col) => col.column && col.column['delete'])
     .map((col) => {
       return { label: col.column.name, value: col.column.name }
     })
@@ -222,8 +224,10 @@ function actions(column) {
           label: __('Delete'),
           icon: 'trash-2',
           onClick: () => {
-            column.column['delete'] = true
-            updateColumn()
+            if (column.column) {
+              column.column['delete'] = true
+              updateColumn()
+            }
           },
         },
       ],
@@ -232,9 +236,11 @@ function actions(column) {
 }
 
 function addColumn(e) {
-  let column = columns.value.find((col) => col.column.name == e.value)
-  column.column['delete'] = false
-  updateColumn()
+  let column = columns.value.find((col) => col.column && col.column.name == e.value)
+  if (column && column.column) {
+    column.column['delete'] = false
+    updateColumn()
+  }
 }
 
 function updateColumn(d) {
@@ -244,11 +250,13 @@ function updateColumn(d) {
 
   let _columns = []
   columns.value.forEach((col) => {
-    col.column['order'] = col.data.map((d) => d.name)
-    if (col.column.page_length) {
-      delete col.column.page_length
+    if (col.column) {
+      col.column['order'] = col.data.map((d) => d.name)
+      if (col.column.page_length) {
+        delete col.column.page_length
+      }
+      _columns.push(col.column)
     }
-    _columns.push(col.column)
   })
 
   let data = { kanban_columns: _columns }

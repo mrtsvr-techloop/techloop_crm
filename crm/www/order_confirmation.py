@@ -375,8 +375,12 @@ def submit_order():
             if data.get('email'):
                 contact_params['email'] = data.get('email')
             
+            if data.get('website'):
+                contact_params['website'] = data.get('website')
+            
             if data.get('company_name'):
                 contact_params['organization'] = data.get('company_name')
+                contact_params['company_name'] = data.get('company_name')
                 contact_params['confirm_organization'] = True
             
             if data.get('delivery_address'):

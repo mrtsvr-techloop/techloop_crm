@@ -251,6 +251,7 @@ class CRMLead(Document):
 			"communication_status",
 			"sla_creation",
 			"status_change_log",
+			"products",  # Don't copy products here - they're copied manually later
 		]
 
 		for field in self.meta.fields:
