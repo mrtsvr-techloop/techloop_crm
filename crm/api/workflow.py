@@ -977,7 +977,7 @@ def search_products(
 	try:
 		# Parse request data if not provided
 		if not filter_value and frappe.request and frappe.request.method == "POST":
-			data = frappe.parse_json(frappe.request.data or {}) or {}
+			data = frappe.form_dict or {}
 			filter_value = data.get("filter_value", "")
 			filter_type = data.get("filter_type")
 			limit = data.get("limit", 50)
