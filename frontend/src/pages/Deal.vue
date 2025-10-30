@@ -448,11 +448,25 @@ watch(
   () => doc.value.organization,
   (org) => {
     if (org && !organizationDocument.value?.doc) {
-      let { document: _organizationDocument } = useDocument(
+      let { document: _organizationDocument, error: orgError } = useDocument(
         'CRM Organization',
         org,
       )
       organizationDocument.value = _organizationDocument
+      
+      // Watch for errors (e.g., organization doesn't exist - 404)
+      watch(orgError, (err) => {
+        if (err && err.exc_type === 'DoesNotExistError') {
+          // Organization doesn't exist, clear the reference
+          console.warn(`Organization ${org} does not exist, clearing reference`)
+          organizationDocument.value = null
+          // Optionally clear the organization field on the deal
+          // This prevents the error from recurring
+          if (doc.value.organization === org) {
+            updateField('organization', '')
+          }
+        }
+      }, { immediate: true })
     }
   },
   { immediate: true },

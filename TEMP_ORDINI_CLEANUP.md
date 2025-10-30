@@ -110,3 +110,5 @@ twenty_four_hours_ago = frappe.utils.add_to_date(frappe.utils.now(), hours=-24) 
 - Retention 1h per Expired evita accumulo di link non usati
 - Monitora periodicamente con query SQL per verificare che funzioni
 
+
+

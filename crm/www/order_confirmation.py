@@ -270,10 +270,6 @@ def submit_order():
                     except Exception as e:
                         frappe.logger("crm").error(f"Error processing product {product_id}: {str(e)}")
         
-        # Create CRM Lead with order details
-        customer_full_name = f"{data.get('customer_name', '')} {data.get('customer_surname', '')}".strip()
-        company_name = data.get('company_name', '') or customer_full_name
-        
         # Normalize phone number to pretty format
         from crm.api.workflow import _normalize_phone_to_digits, _format_pretty_number
         raw_phone = data.get('phone_number', '')
@@ -291,6 +287,48 @@ def submit_order():
             except Exception:
                 # If invalid format, raise
                 frappe.throw(_("Formato data di consegna non valido"))
+        
+        # Update/Create contact BEFORE creating the lead
+        # This ensures the contact has the correct name instead of phone number
+        contact_name = None
+        try:
+            from crm.api.workflow import update_contact_from_thread
+            
+            # Build parameters dict with only provided values
+            contact_params = {
+                'phone_from': data.get('phone_number'),
+                'first_name': data.get('customer_name'),
+                'last_name': data.get('customer_surname'),
+            }
+            
+            # Add optional fields only if provided
+            if data.get('email'):
+                contact_params['email'] = data.get('email')
+            
+            if data.get('website'):
+                contact_params['website'] = data.get('website')
+            
+            if data.get('company_name'):
+                contact_params['organization'] = data.get('company_name')
+                contact_params['company_name'] = data.get('company_name')
+                contact_params['confirm_organization'] = True
+            
+            if data.get('delivery_address'):
+                contact_params['delivery_address'] = data.get('delivery_address')
+            
+            result = update_contact_from_thread(**contact_params)
+            
+            # Save contact name for later use
+            if result.get('success'):
+                contact_name = result.get('contact', {}).get('name')
+                frappe.logger("crm").info(f"Contact created/updated: {contact_name}")
+        except Exception as e:
+            frappe.logger("crm").error(f"Error updating contact: {str(e)}")
+            contact_name = None
+        
+        # Create CRM Lead with order details
+        customer_full_name = f"{data.get('customer_name', '')} {data.get('customer_surname', '')}".strip()
+        company_name = data.get('company_name', '') or customer_full_name
         
         # Create the lead document
         lead_doc = frappe.get_doc({
@@ -360,39 +398,28 @@ def submit_order():
         lead_doc.net_total = total_price
         lead_doc.save(ignore_permissions=True)
         
-        # Update contact with form data (only if provided)
-        try:
-            from crm.api.workflow import update_contact_from_thread
-            
-            # Build parameters dict with only provided values
-            contact_params = {
-                'phone_from': data.get('phone_number'),
-                'first_name': data.get('customer_name'),
-                'last_name': data.get('customer_surname'),
-            }
-            
-            # Add optional fields only if provided
-            if data.get('email'):
-                contact_params['email'] = data.get('email')
-            
-            if data.get('website'):
-                contact_params['website'] = data.get('website')
-            
-            if data.get('company_name'):
-                contact_params['organization'] = data.get('company_name')
-                contact_params['company_name'] = data.get('company_name')
-                contact_params['confirm_organization'] = True
-            
-            if data.get('delivery_address'):
-                contact_params['delivery_address'] = data.get('delivery_address')
-            
-            result = update_contact_from_thread(**contact_params)
-            
-            # Save contact name for later use
-            contact_name = result.get('contact', {}).get('name') if result.get('success') else None
-        except Exception as e:
-            frappe.logger("crm").error(f"Error updating contact: {str(e)}")
-            contact_name = None
+        # Link the contact to the lead if contact was created/updated successfully
+        if contact_name:
+            try:
+                contact_doc = frappe.get_doc("Contact", contact_name)
+                # Check if link already exists
+                link_exists = False
+                for link in contact_doc.links:
+                    if link.link_doctype == "CRM Lead" and link.link_name == lead_doc.name:
+                        link_exists = True
+                        break
+                
+                # Add link if it doesn't exist
+                if not link_exists:
+                    contact_doc.append("links", {
+                        "link_doctype": "CRM Lead",
+                        "link_name": lead_doc.name,
+                        "link_title": lead_doc.lead_name
+                    })
+                    contact_doc.save(ignore_permissions=True)
+                    frappe.logger("crm").info(f"Linked contact {contact_name} to lead {lead_doc.name}")
+            except Exception as e:
+                frappe.logger("crm").error(f"Error linking contact to lead: {str(e)}")
         
         # Mark FCRM TEMP ORDINE as consumed
         consume_temp_order(temp_order_id)

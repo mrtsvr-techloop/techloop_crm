@@ -156,13 +156,34 @@ class CRMLead(Document):
 		if not self.organization and not existing_organization:
 			return
 
-		existing_organization = existing_organization or frappe.db.exists(
+		# If existing_organization is provided, use it
+		if existing_organization:
+			self.db_set("organization", existing_organization)
+			return existing_organization
+
+		# Check if self.organization is already a valid ID (not a name)
+		# First, try to load it as an ID
+		org_id_exists = frappe.db.exists("CRM Organization", self.organization)
+		if org_id_exists:
+			# It's already a valid ID, just return it
+			return self.organization
+
+		# If it looks like an ID (starts with CRMORG-) but doesn't exist, clear it
+		if self.organization and self.organization.startswith("CRMORG-"):
+			# It's an ID that doesn't exist anymore, clear the reference
+			frappe.logger("crm").warning(f"Organization ID {self.organization} does not exist, clearing reference")
+			self.db_set("organization", None)
+			return None
+
+		# Otherwise, treat it as a name and search by organization_name
+		existing_organization = frappe.db.exists(
 			"CRM Organization", {"organization_name": self.organization}
 		)
 		if existing_organization:
 			self.db_set("organization", existing_organization)
 			return existing_organization
 
+		# Create new organization with the name
 		organization = frappe.new_doc("CRM Organization")
 		organization.update(
 			{

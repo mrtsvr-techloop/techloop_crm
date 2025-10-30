@@ -780,15 +780,20 @@ def update_contact_from_thread(
 		- organization: Organization name
 		- confirm_organization: If True, link to existing org
 		- phone_from: Phone number (injected by AI runtime)
-		- delivery_address: Delivery address
+		- website: Website URL
+		- company_name: Company name (saved as custom field if exists)
+		- delivery_address: Delivery address (parameter kept for compatibility, but NOT saved on Contact)
 	
 	Behavior:
 		1. Finds Contact by phone (or creates new)
-		2. Updates name, email, and address
+		2. Updates name, email, website, and company_name
 		3. If organization provided:
 		   - Existing org + confirm=True: Link contact to org
 		   - Existing org + confirm=False: Return needs_confirmation
 		   - Non-existing org: Do NOT create (security)
+	
+	Note: delivery_address is NOT saved on Contact because the 'address' field
+	      is a Link to Address doctype. Delivery address is saved on Lead/Deal instead.
 	
 	Returns:
 		{
@@ -807,8 +812,7 @@ def update_contact_from_thread(
 			organization="Acme Corp",
 			confirm_organization=True,
 			phone_from="+393331234567",  # Injected by AI runtime
-		delivery_address="Via Roma 123"
-	)
+		)
 	"""
 	try:
 		# Validate required fields
@@ -888,17 +892,9 @@ def update_contact_from_thread(
 				except Exception:
 					_log().warning(f"Could not set company_name on contact: field may not exist")
 		
-		# Update delivery address if provided
-		if delivery_address:
-			addr = delivery_address.strip()
-			if hasattr(contact, 'address'):
-				contact.address = addr
-			else:
-				# If address field doesn't exist, try to add to Contact
-				try:
-					frappe.db.set_value("Contact", contact.name, "address", addr, update_modified=False)
-				except Exception:
-					_log().warning(f"Could not set address on contact: field may not exist")
+		# Note: delivery_address is NOT saved on Contact because the 'address' field 
+		# is a Link field to Address doctype, not a text field.
+		# The delivery address is saved on the Lead/Deal documents instead.
 		
 		contact.save(ignore_permissions=True)
 		_log().info(f"Updated contact: {contact.name}")

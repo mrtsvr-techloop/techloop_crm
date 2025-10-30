@@ -100,7 +100,7 @@ import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
 import { useOnboarding } from 'frappe-ui/frappe'
 import { Switch, Dialog, createResource, call } from 'frappe-ui'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -128,22 +128,6 @@ const error = ref('')
 
 const { triggerConvertToDeal } = useDocument('CRM Lead', props.lead.name)
 const { document: deal } = useDocument('CRM Deal')
-
-// Auto-populate existing organization and contact when modal opens
-watch(show, async (isOpen) => {
-  if (isOpen) {
-    // Reset values
-    existingContactChecked.value = false
-    existingOrganizationChecked.value = false
-    existingContact.value = ''
-    existingOrganization.value = ''
-    error.value = ''
-    
-    // Auto-population of organization and contact removed
-    // This prevents errors when referenced entities no longer exist
-    // Users can manually select existing organization/contact if needed
-  }
-})
 
 async function convertToDeal() {
   error.value = ''
@@ -193,6 +177,11 @@ async function convertToDeal() {
   })
   if (_deal) {
     show.value = false
+    existingContactChecked.value = false
+    existingOrganizationChecked.value = false
+    existingContact.value = ''
+    existingOrganization.value = ''
+    error.value = ''
     updateOnboardingStep('convert_lead_to_deal', true, false, () => {
       localStorage.setItem('firstDeal' + user, _deal)
     })
