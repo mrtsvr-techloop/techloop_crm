@@ -27,46 +27,46 @@ def create_bakery_test_products():
         # Poi crea i prodotti
         products_data = [
             {
-                "product_code": "CROISSANT-CLASSICO",
-                "product_name": "Croissant Classico",
-                "standard_rate": 1.50,
-                "description": "Croissant tradizionale francese, croccante fuori e morbido dentro. Perfetto per la colazione.",
-                "tags": ["tradizionale", "colazione", "burro"]
+                "product_code": "EXTRA-CHOCOLATE",
+                "product_name": "Extra chocolate",
+                "standard_rate": 40.00,
+                "description": "Impasto al cioccolato con cubetti di cioccolato fondente. Disponibile solo in formato da 1KG.",
+                "tags": ["limited-edition", "cioccolato", "cioccolato-fondente", "1kg"]
             },
             {
-                "product_code": "BRIOCHE-VEGANA",
-                "product_name": "Brioche Vegana",
-                "standard_rate": 2.20,
-                "description": "Brioche soffice e profumata, completamente vegana. Realizzata con ingredienti naturali e senza derivati animali.",
-                "tags": ["vegano", "colazione", "naturale"]
+                "product_code": "CARAMELLO-CAFFE",
+                "product_name": "Caramello e caffè",
+                "standard_rate": 45.00,
+                "description": "Impasto al caramello con cubetti di caramello mau e glassa al caffè. Con vasetto di caramello salato al caffè. Disponibile solo in formato da 1KG.",
+                "tags": ["limited-edition", "caramello", "caffè", "1kg"]
             },
             {
-                "product_code": "PANETTONE-SENZA-GLUTINE",
-                "product_name": "Panettone Senza Glutine",
-                "standard_rate": 18.00,
-                "description": "Panettone artigianale senza glutine, perfetto per chi ha intolleranze. Stesso sapore tradizionale, ingredienti sicuri.",
-                "tags": ["senza-glutine", "natalizio", "artigianale"]
+                "product_code": "ORO-VERDE",
+                "product_name": "Oro verde",
+                "standard_rate": 50.00,
+                "description": "Pistacchio e cioccolato bianco Valrhona. Senza lattosio. Disponibile solo in formato da 1KG.",
+                "tags": ["limited-edition", "pistacchio", "cioccolato-bianco", "senza-lattosio", "1kg"]
             },
             {
-                "product_code": "CANNOLI-SICILIANI",
-                "product_name": "Cannoli Siciliani",
-                "standard_rate": 3.50,
-                "description": "Cannoli tradizionali siciliani con ricotta fresca e gocce di cioccolato. Croccanti e cremosi.",
-                "tags": ["tradizionale", "siciliano", "ricotta"]
+                "product_code": "DONNA-MARIA",
+                "product_name": "Donna Maria",
+                "standard_rate": 38.00,
+                "description": "Mela Annurca semicondita e impasto alla cannella. Senza lattosio. Disponibile solo in formato da 1KG.",
+                "tags": ["mela-annurca", "cannella", "senza-lattosio", "1kg"]
             },
             {
-                "product_code": "TIRAMISU-VEGANO",
-                "product_name": "Tiramisù Vegano",
-                "standard_rate": 4.80,
-                "description": "Tiramisù completamente vegano con mascarpone di anacardi e caffè espresso. Stesso sapore, ingredienti plant-based.",
-                "tags": ["vegano", "dolce", "caffè"]
+                "product_code": "PANDORO-ARTIGIANALE",
+                "product_name": "Pandoro Artigianale",
+                "standard_rate": 35.00,
+                "description": "Con vaniglia thaithiensis e scorza di arancia navel condita. Senza lattosio. Disponibile solo in formato da 1KG.",
+                "tags": ["limited-edition", "vaniglia", "arancia-navel", "senza-lattosio", "1kg", "artigianale"]
             },
             {
-                "product_code": "BISCOTTI-CHOCOLATE-CHIP",
-                "product_name": "Biscotti Chocolate Chip",
-                "standard_rate": 2.80,
-                "description": "Biscotti americani con gocce di cioccolato fondente. Croccanti fuori, morbidi dentro.",
-                "tags": ["americano", "cioccolato", "biscotti"]
+                "product_code": "PANETTONE-TRADIZIONALE",
+                "product_name": "Panettone tradizionale",
+                "standard_rate": 38.00,
+                "description": "Arancia Navel candita e uvetta. Senza lattosio. Disponibile solo in formato da 1KG.",
+                "tags": ["arancia-navel", "uvetta", "senza-lattosio", "1kg", "tradizionale"]
             }
         ]
         
@@ -134,21 +134,22 @@ def _create_bakery_tags():
     print("🏷️  Creazione tag per caratteristiche prodotti...")
     
     tags_data = [
-        {"tag_name": "tradizionale", "description": "Ricetta tradizionale", "color": "#f59e0b"},
-        {"tag_name": "vegano", "description": "Senza ingredienti di origine animale", "color": "#10b981"},
-        {"tag_name": "senza-glutine", "description": "Adatto a celiaci", "color": "#3b82f6"},
-        {"tag_name": "colazione", "description": "Perfetto per la colazione", "color": "#f97316"},
-        {"tag_name": "naturale", "description": "Ingredienti naturali", "color": "#84cc16"},
-        {"tag_name": "burro", "description": "Contiene burro", "color": "#fbbf24"},
-        {"tag_name": "natalizio", "description": "Prodotto natalizio", "color": "#dc2626"},
-        {"tag_name": "artigianale", "description": "Fatto a mano", "color": "#7c3aed"},
-        {"tag_name": "siciliano", "description": "Specialità siciliana", "color": "#ef4444"},
-        {"tag_name": "ricotta", "description": "Contiene ricotta", "color": "#f3f4f6"},
-        {"tag_name": "dolce", "description": "Prodotto dolce", "color": "#ec4899"},
-        {"tag_name": "caffè", "description": "Contiene caffè", "color": "#92400e"},
-        {"tag_name": "americano", "description": "Specialità americana", "color": "#1d4ed8"},
+        {"tag_name": "limited-edition", "description": "Edizione limitata", "color": "#dc2626"},
+        {"tag_name": "1kg", "description": "Formato da 1KG", "color": "#3b82f6"},
+        {"tag_name": "senza-lattosio", "description": "Senza lattosio", "color": "#10b981"},
         {"tag_name": "cioccolato", "description": "Contiene cioccolato", "color": "#7c2d12"},
-        {"tag_name": "biscotti", "description": "Tipo biscotti", "color": "#a3a3a3"}
+        {"tag_name": "cioccolato-fondente", "description": "Cioccolato fondente", "color": "#92400e"},
+        {"tag_name": "cioccolato-bianco", "description": "Cioccolato bianco", "color": "#fbbf24"},
+        {"tag_name": "caramello", "description": "Contiene caramello", "color": "#f59e0b"},
+        {"tag_name": "caffè", "description": "Contiene caffè", "color": "#92400e"},
+        {"tag_name": "pistacchio", "description": "Contiene pistacchio", "color": "#84cc16"},
+        {"tag_name": "mela-annurca", "description": "Mela Annurca", "color": "#f97316"},
+        {"tag_name": "cannella", "description": "Contiene cannella", "color": "#a16207"},
+        {"tag_name": "vaniglia", "description": "Contiene vaniglia", "color": "#fef3c7"},
+        {"tag_name": "arancia-navel", "description": "Arancia Navel", "color": "#f97316"},
+        {"tag_name": "uvetta", "description": "Contiene uvetta", "color": "#7c2d12"},
+        {"tag_name": "artigianale", "description": "Fatto a mano", "color": "#7c3aed"},
+        {"tag_name": "tradizionale", "description": "Ricetta tradizionale", "color": "#f59e0b"}
     ]
     
     created_tags = []
@@ -214,12 +215,12 @@ def cleanup_bakery_test_products():
         print("🧹 Pulizia prodotti di test bakery...")
         
         test_product_codes = [
-            "CROISSANT-CLASSICO",
-            "BRIOCHE-VEGANA", 
-            "PANETTONE-SENZA-GLUTINE",
-            "CANNOLI-SICILIANI",
-            "TIRAMISU-VEGANO",
-            "BISCOTTI-CHOCOLATE-CHIP"
+            "EXTRA-CHOCOLATE",
+            "CARAMELLO-CAFFE",
+            "ORO-VERDE",
+            "DONNA-MARIA",
+            "PANDORO-ARTIGIANALE",
+            "PANETTONE-TRADIZIONALE"
         ]
         
         deleted_count = 0
@@ -258,9 +259,9 @@ def cleanup_bakery_test_tags():
         print("🧹 Pulizia tag di test bakery...")
         
         test_tag_names = [
-            "tradizionale", "vegano", "senza-glutine", "colazione", "naturale",
-            "burro", "natalizio", "artigianale", "siciliano", "ricotta",
-            "dolce", "caffè", "americano", "cioccolato", "biscotti"
+            "limited-edition", "1kg", "senza-lattosio", "cioccolato", "cioccolato-fondente",
+            "cioccolato-bianco", "caramello", "caffè", "pistacchio", "mela-annurca",
+            "cannella", "vaniglia", "arancia-navel", "uvetta", "artigianale", "tradizionale"
         ]
         
         deleted_count = 0
