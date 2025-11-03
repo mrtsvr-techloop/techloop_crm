@@ -481,7 +481,7 @@ function getDealRowObject(deal) {
     },
     annual_revenue: getFormattedCurrency('annual_revenue', deal),
     status: {
-      label: deal.status,
+      label: __(deal.status),
       color: getDealStatus(deal.status)?.color,
     },
     email: deal.email,

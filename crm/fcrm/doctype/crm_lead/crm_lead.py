@@ -448,6 +448,12 @@ class CRMLead(Document):
 				"key": "delivery_date",
 				"width": "12rem",
 			},
+			{
+				"label": _("Custom Order Details"),
+				"type": "Data",
+				"key": "custom_order_details",
+				"width": "15rem",
+			},
 		]
 		rows = [
 			"name",
@@ -460,6 +466,7 @@ class CRMLead(Document):
 			"currency",
 			"order_date",
 			"delivery_date",
+			"custom_order_details",
 			"status",
 			"lead_owner",
 			"first_name",

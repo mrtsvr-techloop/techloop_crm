@@ -1,5 +1,6 @@
 # Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
+import json
 import click
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
@@ -40,21 +41,17 @@ def add_default_lead_statuses():
 			"color": "orange",
 			"position": 2,
 		},
-		"Nurture": {
+		"Negotiation": {
 			"color": "blue",
 			"position": 3,
 		},
-		"Qualified": {
-			"color": "green",
+		"Rescheduled": {
+			"color": "yellow",
 			"position": 4,
 		},
-		"Unqualified": {
+		"Rejected": {
 			"color": "red",
 			"position": 5,
-		},
-		"Junk": {
-			"color": "purple",
-			"position": 6,
 		},
 	}
 
@@ -71,47 +68,41 @@ def add_default_lead_statuses():
 
 def add_default_deal_statuses():
 	statuses = {
-		"Qualification": {
+		"New": {
 			"color": "gray",
 			"type": "Open",
 			"probability": 10,
 			"position": 1,
 		},
-		"Demo/Making": {
+		"Negotiation": {
 			"color": "orange",
 			"type": "Ongoing",
-			"probability": 25,
+			"probability": 50,
 			"position": 2,
 		},
-		"Proposal/Quotation": {
-			"color": "blue",
+		"Rescheduled": {
+			"color": "yellow",
 			"type": "Ongoing",
-			"probability": 50,
+			"probability": 30,
 			"position": 3,
 		},
-		"Negotiation": {
-			"color": "yellow",
+		"Preparation": {
+			"color": "blue",
 			"type": "Ongoing",
 			"probability": 70,
 			"position": 4,
 		},
-		"Ready to Close": {
-			"color": "purple",
-			"type": "Ongoing",
-			"probability": 90,
-			"position": 5,
-		},
-		"Won": {
+		"Completed": {
 			"color": "green",
 			"type": "Won",
 			"probability": 100,
-			"position": 6,
+			"position": 5,
 		},
 		"Lost": {
 			"color": "red",
 			"type": "Lost",
 			"probability": 0,
-			"position": 7,
+			"position": 6,
 		},
 	}
 
@@ -502,28 +493,64 @@ def create_assignment_rule_custom_fields():
 
 def add_default_quick_filters(force=False):
 	"""
-	Add default quick filters for CRM Deal to ensure delivery_date and other important fields
-	are always available as quick filters.
+	Add default quick filters for CRM Deal and CRM Lead to ensure delivery_date, order_date
+	and other important fields are always available as quick filters.
 	"""
 	quick_filters = [
 		"status",
 		"organization",
 		"email",
 		"mobile_no",
+		"order_date",
 		"delivery_date",
 		"delivery_address",
-		"order_date",
 	]
 
-	# Create or update CRM Global Settings for quick filters
-	name = frappe.db.exists("CRM Global Settings", {"dt": "CRM Deal", "type": "Quick Filters"})
-	if name:
-		doc = frappe.get_doc("CRM Global Settings", name)
-		doc.json = frappe.as_json(quick_filters)
-		doc.save()
-	else:
-		doc = frappe.new_doc("CRM Global Settings")
-		doc.dt = "CRM Deal"
-		doc.type = "Quick Filters"
-		doc.json = frappe.as_json(quick_filters)
-		doc.insert()
+	# Configure quick filters for both CRM Deal and CRM Lead
+	for doctype in ["CRM Deal", "CRM Lead"]:
+		name = frappe.db.exists("CRM Global Settings", {"dt": doctype, "type": "Quick Filters"})
+		if name:
+			if force:
+				# Force mode: replace with default filters
+				doc = frappe.get_doc("CRM Global Settings", name)
+				doc.json = frappe.as_json(quick_filters)
+				doc.save()
+			else:
+				# Normal mode: merge existing with default, ensuring required fields are present
+				doc = frappe.get_doc("CRM Global Settings", name)
+				existing_filters = json.loads(doc.json or "[]")
+				
+				# Always ensure required filters (order_date and delivery_date) are present
+				# Merge existing with default, keeping order but ensuring required fields
+				merged_filters = []
+				filter_set = set()
+				
+				# First add all existing filters
+				for f in existing_filters:
+					if f not in filter_set:
+						merged_filters.append(f)
+						filter_set.add(f)
+				
+				# Then add default filters that are missing, especially order_date and delivery_date
+				for f in quick_filters:
+					if f not in filter_set:
+						# For order_date and delivery_date, insert in the correct position
+						if f in ["order_date", "delivery_date"]:
+							# Find position after mobile_no
+							insert_idx = next((i for i, x in enumerate(merged_filters) if x == "mobile_no"), -1)
+							if insert_idx >= 0:
+								merged_filters.insert(insert_idx + 1, f)
+							else:
+								merged_filters.append(f)
+						else:
+							merged_filters.append(f)
+						filter_set.add(f)
+				
+				doc.json = frappe.as_json(merged_filters)
+				doc.save()
+		else:
+			doc = frappe.new_doc("CRM Global Settings")
+			doc.dt = doctype
+			doc.type = "Quick Filters"
+			doc.json = frappe.as_json(quick_filters)
+			doc.insert()

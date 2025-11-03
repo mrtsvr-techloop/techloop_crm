@@ -167,27 +167,47 @@ def create_or_update_standard_view(view):
 	view = frappe._dict(view)
 
 	filters = parse_json(view.filters) or {}
+	# Check if columns/rows were explicitly passed (even if empty)
+	columns_explicitly_passed = "columns" in view
+	rows_explicitly_passed = "rows" in view
+	
 	columns = parse_json(view.columns or "[]")
 	rows = parse_json(view.rows or "[]")
 	kanban_columns = parse_json(view.kanban_columns or "[]")
 	kanban_fields = parse_json(view.kanban_fields or "[]")
 	view.column_field = view.column_field or "status"
 
+	doc = frappe.db.exists(
+		"CRM View Settings",
+		{"dt": view.doctype, "type": view.type or "list", "is_standard": True, "user": frappe.session.user},
+	)
+	
+	existing_doc = None
+	# Preserve existing columns/rows only if they weren't explicitly passed (even if empty)
+	if doc:
+		existing_doc = frappe.get_doc("CRM View Settings", doc)
+		existing_columns = parse_json(existing_doc.columns or "[]")
+		existing_rows = parse_json(existing_doc.rows or "[]")
+		
+		# If columns/rows weren't explicitly passed, preserve existing ones
+		# This prevents reset during install/updates unless explicitly requested
+		if not columns_explicitly_passed and existing_columns:
+			columns = existing_columns
+		if not rows_explicitly_passed and existing_rows:
+			rows = existing_rows
+
 	default_rows = sync_default_rows(view.doctype, view.type)
 	rows = rows + default_rows if default_rows else rows
 	rows = remove_duplicates(rows)
 
+	# Only sync default columns if we don't have any columns yet
 	if not kanban_columns and view.type == "kanban":
 		kanban_columns = sync_default_columns(view)
 	elif not columns:
 		columns = sync_default_columns(view)
 
-	doc = frappe.db.exists(
-		"CRM View Settings",
-		{"dt": view.doctype, "type": view.type or "list", "is_standard": True, "user": frappe.session.user},
-	)
 	if doc:
-		doc = frappe.get_doc("CRM View Settings", doc)
+		doc = existing_doc
 		doc.label = view.label
 		doc.type = view.type or "list"
 		doc.route_name = view.route_name or get_route_name(view.doctype)

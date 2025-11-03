@@ -18,14 +18,14 @@
       />
       <AssignTo v-model="assignees.data" doctype="CRM Lead" :docname="leadId" />
       <Dropdown
-        v-if="doc && document.statuses"
+        v-if="doc && (document.statuses || document._statuses) && statuses?.length"
         :options="statuses"
         placement="right"
       >
         <template #default="{ open }">
           <Button
             v-if="doc.status"
-            :label="doc.status"
+            :label="__(doc.status)"
             :iconRight="open ? 'chevron-up' : 'chevron-down'"
           >
             <template #prefix>

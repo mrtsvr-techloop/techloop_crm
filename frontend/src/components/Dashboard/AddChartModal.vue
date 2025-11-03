@@ -74,37 +74,24 @@ const chartTypes = [
 const numberChart = ref('')
 const numberCharts = [
   { label: __('Total leads'), value: 'total_leads' },
-  { label: __('Ongoing deals'), value: 'ongoing_deals' },
-  { label: __('Avg ongoing deal value'), value: 'average_ongoing_deal_value' },
-  { label: __('Won deals'), value: 'won_deals' },
-  { label: __('Avg won deal value'), value: 'average_won_deal_value' },
-  { label: __('Avg deal value'), value: 'average_deal_value' },
-  {
-    label: __('Avg time to close a lead'),
-    value: 'average_time_to_close_a_lead',
-  },
-  {
-    label: __('Avg time to close a deal'),
-    value: 'average_time_to_close_a_deal',
-  },
+  { label: __('Total deals'), value: 'total_deals' },
+  { label: __('Avg lead value'), value: 'average_lead_value' },
+  { label: __('Avg deal value'), value: 'average_deal_value_new' },
 ]
 
-const axisChart = ref('sales_trend')
+const axisChart = ref('forecasted_revenue_new')
 const axisCharts = [
-  { label: __('Sales trend'), value: 'sales_trend' },
-  { label: __('Forecasted revenue'), value: 'forecasted_revenue' },
-  { label: __('Funnel conversion'), value: 'funnel_conversion' },
-  { label: __('Deals by ongoing & won stage'), value: 'deals_by_stage_axis' },
-  { label: __('Lost deal reasons'), value: 'lost_deal_reasons' },
-  { label: __('Deals by territory'), value: 'deals_by_territory' },
-  { label: __('Deals by salesperson'), value: 'deals_by_salesperson' },
+  { label: __('Forecasted revenue'), value: 'forecasted_revenue_new' },
+  { label: __('Products by tag (bar)'), value: 'products_by_tag_bar' },
+  { label: __('Products by type (bar)'), value: 'products_by_type_bar' },
 ]
 
-const donutChart = ref('deals_by_stage_donut')
+const donutChart = ref('total_leads_by_status')
 const donutCharts = [
-  { label: __('Deals by stage'), value: 'deals_by_stage_donut' },
-  { label: __('Leads by source'), value: 'leads_by_source' },
-  { label: __('Deals by source'), value: 'deals_by_source' },
+  { label: __('Leads by status'), value: 'total_leads_by_status' },
+  { label: __('Deals by status'), value: 'total_deals_by_status' },
+  { label: __('Products by tag (donut)'), value: 'products_by_tag_donut' },
+  { label: __('Products by type (donut)'), value: 'products_by_type_donut' },
 ]
 
 async function addChart() {

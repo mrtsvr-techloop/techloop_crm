@@ -1288,7 +1288,7 @@ msgstr ""
 #. Option for the 'Status' (Select) field in DocType 'CRM Call Log'
 #: crm/fcrm/doctype/crm_call_log/crm_call_log.json
 msgid "Completed"
-msgstr ""
+msgstr "Completato"
 
 #. Option for the 'Device' (Select) field in DocType 'CRM Telephony Agent'
 #: crm/fcrm/doctype/crm_telephony_agent/crm_telephony_agent.json
@@ -3428,7 +3428,7 @@ msgstr "Logo"
 #. Option for the 'Type' (Select) field in DocType 'CRM Deal Status'
 #: crm/fcrm/doctype/crm_deal_status/crm_deal_status.json
 msgid "Lost"
-msgstr ""
+msgstr "Perso"
 
 #. Label of the lost_notes (Text) field in DocType 'CRM Deal'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
@@ -3708,7 +3708,7 @@ msgstr "Totale Netto"
 #: frontend/src/components/Settings/EmailTemplate/EmailTemplates.vue:19
 #: frontend/src/components/Settings/Users.vue:30
 msgid "New"
-msgstr ""
+msgstr "Nuovo"
 
 #: frontend/src/components/Modals/AddressModal.vue:93
 msgid "New Address"
@@ -6428,4 +6428,20 @@ msgstr "Indirizzo Email"
 
 msgid "Created On"
 msgstr "Creato Il"
+
+# Translations for CRM Lead/Deal Statuses
+msgid "Contacted"
+msgstr "Contattato"
+
+msgid "Negotiation"
+msgstr "Contrattazione"
+
+msgid "Rescheduled"
+msgstr "Rischedulazione"
+
+msgid "Rejected"
+msgstr "Rifiutato"
+
+msgid "Preparation"
+msgstr "Preparazione"
 

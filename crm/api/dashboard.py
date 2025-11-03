@@ -1093,6 +1093,566 @@ def get_deals_by_salesperson(from_date="", to_date="", user=""):
 	}
 
 
+def get_total_leads_by_status(from_date, to_date, user=""):
+	"""
+	Get lead count grouped by status for donut chart.
+	"""
+	conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	if user:
+		conds += " AND lead_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			l.status,
+			COUNT(*) as count
+		FROM `tabCRM Lead` l
+		WHERE l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+		{conds}
+		GROUP BY l.status
+		ORDER BY l.status
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Translate status names
+	for row in result:
+		if row.get("status"):
+			row["status"] = _(row["status"])
+
+	return {
+		"data": result or [],
+		"title": _("Leads by Status"),
+		"subtitle": _("Distribution of leads by status"),
+		"labelKey": "status",
+		"valueKey": "count",
+	}
+
+
+def get_total_deals_by_status(from_date, to_date, user=""):
+	"""
+	Get deal count grouped by status for donut chart.
+	"""
+	conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	if user:
+		conds += " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			d.status,
+			COUNT(*) as count
+		FROM `tabCRM Deal` d
+		WHERE d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+		{conds}
+		GROUP BY d.status
+		ORDER BY d.status
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Translate status names
+	for row in result:
+		if row.get("status"):
+			row["status"] = _(row["status"])
+
+	return {
+		"data": result or [],
+		"title": _("Deals by Status"),
+		"subtitle": _("Distribution of deals by status"),
+		"labelKey": "status",
+		"valueKey": "count",
+	}
+
+
+def get_average_lead_value(from_date, to_date, user=""):
+	"""
+	Get average lead value (net_total) for the dashboard.
+	"""
+	diff = frappe.utils.date_diff(to_date, from_date)
+	if diff == 0:
+		diff = 1
+
+	conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+		"prev_from_date": frappe.utils.add_days(from_date, -diff),
+	}
+	if user:
+		conds += " AND lead_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			AVG(CASE
+				WHEN creation >= %(from_date)s AND creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+					AND net_total IS NOT NULL AND net_total > 0
+					{conds}
+				THEN net_total
+				ELSE NULL
+			END) as current_month_avg_value,
+
+			AVG(CASE
+				WHEN creation >= %(prev_from_date)s AND creation < %(from_date)s
+					AND net_total IS NOT NULL AND net_total > 0
+					{conds}
+				THEN net_total
+				ELSE NULL
+			END) as prev_month_avg_value
+		FROM `tabCRM Lead`
+		""",
+		params,
+		as_dict=1,
+	)
+
+	current_month_avg_value = result[0].current_month_avg_value or 0
+	prev_month_avg_value = result[0].prev_month_avg_value or 0
+
+	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
+
+	return {
+		"title": _("Avg. lead value"),
+		"tooltip": _("Average net total value of leads"),
+		"value": current_month_avg_value,
+		"delta": avg_value_delta,
+		"prefix": get_base_currency_symbol(),
+	}
+
+
+def get_average_deal_value_new(from_date, to_date, user=""):
+	"""
+	Get average deal value (net_total) for the dashboard.
+	"""
+	diff = frappe.utils.date_diff(to_date, from_date)
+	if diff == 0:
+		diff = 1
+
+	conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+		"prev_from_date": frappe.utils.add_days(from_date, -diff),
+	}
+	if user:
+		conds += " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			AVG(CASE
+				WHEN d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+					AND d.net_total IS NOT NULL AND d.net_total > 0
+					{conds}
+				THEN d.net_total
+				ELSE NULL
+			END) as current_month_avg_value,
+
+			AVG(CASE
+				WHEN d.creation >= %(prev_from_date)s AND d.creation < %(from_date)s
+					AND d.net_total IS NOT NULL AND d.net_total > 0
+					{conds}
+				THEN d.net_total
+				ELSE NULL
+			END) as prev_month_avg_value
+		FROM `tabCRM Deal` d
+		""",
+		params,
+		as_dict=1,
+	)
+
+	current_month_avg_value = result[0].current_month_avg_value or 0
+	prev_month_avg_value = result[0].prev_month_avg_value or 0
+
+	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
+
+	return {
+		"title": _("Avg. deal value"),
+		"tooltip": _("Average net total value of deals"),
+		"value": current_month_avg_value,
+		"delta": avg_value_delta,
+		"prefix": get_base_currency_symbol(),
+	}
+
+
+def get_total_deals(from_date, to_date, user=""):
+	"""
+	Get total deal count for the dashboard.
+	"""
+	diff = frappe.utils.date_diff(to_date, from_date)
+	if diff == 0:
+		diff = 1
+
+	conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+		"prev_from_date": frappe.utils.add_days(from_date, -diff),
+	}
+	if user:
+		conds += " AND deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			COUNT(CASE
+				WHEN creation >= %(from_date)s AND creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{conds}
+				THEN name
+				ELSE NULL
+			END) as current_month_deals,
+
+			COUNT(CASE
+				WHEN creation >= %(prev_from_date)s AND creation < %(from_date)s
+				{conds}
+				THEN name
+				ELSE NULL
+			END) as prev_month_deals
+		FROM `tabCRM Deal`
+		""",
+		params,
+		as_dict=1,
+	)
+
+	current_month_deals = result[0].current_month_deals or 0
+	prev_month_deals = result[0].prev_month_deals or 0
+
+	delta_in_percentage = (
+		(current_month_deals - prev_month_deals) / prev_month_deals * 100 if prev_month_deals else 0
+	)
+
+	return {
+		"title": _("Total deals"),
+		"tooltip": _("Total number of deals"),
+		"value": current_month_deals,
+		"delta": delta_in_percentage,
+		"deltaSuffix": "%",
+	}
+
+
+def get_forecasted_revenue_new(from_date, to_date, user=""):
+	"""
+	Get forecasted revenue using net_total for the dashboard.
+	"""
+	deal_conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+
+	if user:
+		deal_conds += " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			DATE_FORMAT(COALESCE(d.expected_closure_date, d.creation), '%%Y-%%m') AS month,
+			SUM(
+				CASE
+					WHEN s.type = 'Lost' THEN 0
+					ELSE COALESCE(d.net_total, 0) * IFNULL(s.probability, 0) / 100
+				END
+			) AS forecasted,
+			SUM(
+				CASE
+					WHEN s.type = 'Won' THEN COALESCE(d.net_total, 0)
+					ELSE 0
+				END
+			) AS actual
+		FROM `tabCRM Deal` AS d
+		JOIN `tabCRM Deal Status` s ON d.status = s.name
+		WHERE COALESCE(d.expected_closure_date, d.creation) >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+		AND d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+		{deal_conds}
+		GROUP BY DATE_FORMAT(COALESCE(d.expected_closure_date, d.creation), '%%Y-%%m')
+		ORDER BY month
+		""",
+		params,
+		as_dict=True,
+	)
+
+	for row in result:
+		row["month"] = frappe.utils.get_datetime(row["month"]).strftime("%Y-%m-01")
+		row["forecasted"] = row["forecasted"] or ""
+		row["actual"] = row["actual"] or ""
+
+	return {
+		"data": result or [],
+		"title": _("Forecasted Revenue"),
+		"subtitle": _("Projected vs actual revenue based on net_total"),
+		"xAxis": {
+			"title": _("Month"),
+			"key": "month",
+			"type": "time",
+			"timeGrain": "month",
+		},
+		"yAxis": {
+			"title": _("Revenue") + f" ({get_base_currency_symbol()})",
+		},
+		"series": [
+			{"name": "forecasted", "type": "line", "showDataPoints": True},
+			{"name": "actual", "type": "line", "showDataPoints": True},
+		],
+	}
+
+
+def get_products_by_tag_donut(from_date, to_date, user=""):
+	"""
+	Get product statistics by tag (donut chart with percentages).
+	"""
+	lead_conds = ""
+	deal_conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	
+	if user:
+		lead_conds = " AND l.lead_owner = %(user)s"
+		deal_conds = " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	# Get products from both leads and deals
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			ptm.tag_name as tag,
+			SUM(COALESCE(cp.qty, 0)) as count
+		FROM `tabCRM Products` cp
+		LEFT JOIN `tabCRM Product` p ON cp.product_code = p.name
+		LEFT JOIN `tabCRM Product Tag` pt ON pt.parent = p.name
+		LEFT JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
+		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
+		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
+		WHERE (
+			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			OR
+			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+		)
+		AND ptm.tag_name IS NOT NULL
+		GROUP BY ptm.tag_name
+		ORDER BY count DESC
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Calculate total for percentages
+	total = sum(row["count"] for row in result) if result else 1
+
+	# Add percentage to each row and translate tag names
+	for row in result:
+		row["percentage"] = (row["count"] / total * 100) if total > 0 else 0
+		if row.get("tag"):
+			row["tag"] = _(row["tag"])
+
+	return {
+		"data": result or [],
+		"title": _("Products by Tag"),
+		"subtitle": _("Distribution of products by tag (percentage)"),
+		"labelKey": "tag",
+		"valueKey": "percentage",
+	}
+
+
+def get_products_by_tag_bar(from_date, to_date, user=""):
+	"""
+	Get product statistics by tag (vertical bar chart with counts).
+	"""
+	lead_conds = ""
+	deal_conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	
+	if user:
+		lead_conds = " AND l.lead_owner = %(user)s"
+		deal_conds = " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			ptm.tag_name as tag,
+			SUM(COALESCE(cp.qty, 0)) as count
+		FROM `tabCRM Products` cp
+		LEFT JOIN `tabCRM Product` p ON cp.product_code = p.name
+		LEFT JOIN `tabCRM Product Tag` pt ON pt.parent = p.name
+		LEFT JOIN `tabCRM Product Tag Master` ptm ON pt.tag_name = ptm.name
+		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
+		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
+		WHERE (
+			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			OR
+			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+		)
+		AND ptm.tag_name IS NOT NULL
+		GROUP BY ptm.tag_name
+		ORDER BY count DESC
+		LIMIT 20
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Translate tag names
+	for row in result:
+		if row.get("tag"):
+			row["tag"] = _(row["tag"])
+
+	return {
+		"data": result or [],
+		"title": _("Products by Tag"),
+		"subtitle": _("Number of products ordered by tag"),
+		"xAxis": {
+			"title": _("Tag"),
+			"key": "tag",
+			"type": "category",
+		},
+		"yAxis": {
+			"title": _("Count"),
+		},
+		"series": [
+			{"name": "count", "type": "bar"},
+		],
+	}
+
+
+def get_products_by_type_donut(from_date, to_date, user=""):
+	"""
+	Get product statistics by product type/name (donut chart with percentages).
+	"""
+	lead_conds = ""
+	deal_conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	
+	if user:
+		lead_conds = " AND l.lead_owner = %(user)s"
+		deal_conds = " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			p.product_name as product_type,
+			SUM(COALESCE(cp.qty, 0)) as count
+		FROM `tabCRM Products` cp
+		LEFT JOIN `tabCRM Product` p ON cp.product_code = p.name
+		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
+		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
+		WHERE (
+			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			OR
+			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+		)
+		AND p.product_name IS NOT NULL
+		GROUP BY p.product_name
+		ORDER BY count DESC
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Calculate total for percentages
+	total = sum(row["count"] for row in result) if result else 1
+
+	# Add percentage to each row and translate product type names
+	for row in result:
+		row["percentage"] = (row["count"] / total * 100) if total > 0 else 0
+		if row.get("product_type"):
+			row["product_type"] = _(row["product_type"])
+
+	return {
+		"data": result or [],
+		"title": _("Products by Type"),
+		"subtitle": _("Distribution of products by type (percentage)"),
+		"labelKey": "product_type",
+		"valueKey": "percentage",
+	}
+
+
+def get_products_by_type_bar(from_date, to_date, user=""):
+	"""
+	Get product statistics by product type/name (vertical bar chart with counts).
+	"""
+	lead_conds = ""
+	deal_conds = ""
+	params = {
+		"from_date": from_date,
+		"to_date": to_date,
+	}
+	
+	if user:
+		lead_conds = " AND l.lead_owner = %(user)s"
+		deal_conds = " AND d.deal_owner = %(user)s"
+		params["user"] = user
+
+	result = frappe.db.sql(
+		f"""
+		SELECT
+			p.product_name as product_type,
+			SUM(COALESCE(cp.qty, 0)) as count
+		FROM `tabCRM Products` cp
+		LEFT JOIN `tabCRM Product` p ON cp.product_code = p.name
+		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
+		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
+		WHERE (
+			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			OR
+			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+		)
+		AND p.product_name IS NOT NULL
+		GROUP BY p.product_name
+		ORDER BY count DESC
+		LIMIT 20
+		""",
+		params,
+		as_dict=True,
+	)
+
+	# Translate product type names
+	for row in result:
+		if row.get("product_type"):
+			row["product_type"] = _(row["product_type"])
+
+	return {
+		"data": result or [],
+		"title": _("Products by Type"),
+		"subtitle": _("Number of products ordered by type"),
+		"xAxis": {
+			"title": _("Product Type"),
+			"key": "product_type",
+			"type": "category",
+		},
+		"yAxis": {
+			"title": _("Count"),
+		},
+		"series": [
+			{"name": "count", "type": "bar"},
+		],
+	}
+
+
 def get_base_currency_symbol():
 	"""
 	Get the base currency symbol from the system settings.

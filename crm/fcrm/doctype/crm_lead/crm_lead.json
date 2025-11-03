@@ -354,7 +354,7 @@
    "fieldname": "custom_order_details",
    "fieldtype": "JSON",
    "label": "Custom Order Details",
-   "hidden": 1
+   "hidden": 0
   }
  ],
  "grid_page_length": 50,
