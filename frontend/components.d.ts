@@ -245,6 +245,7 @@ declare module 'vue' {
     SortBy: typeof import('./src/components/SortBy.vue')['default']
     SortIcon: typeof import('./src/components/Icons/SortIcon.vue')['default']
     SparkleIcon: typeof import('./src/components/Icons/SparkleIcon.vue')['default']
+    SpecialFunctions: typeof import('./src/components/Settings/SpecialFunctions.vue')['default']
     SquareAsterisk: typeof import('./src/components/Icons/SquareAsterisk.vue')['default']
     StepsIcon: typeof import('./src/components/Icons/StepsIcon.vue')['default']
     SuccessIcon: typeof import('./src/components/Icons/SuccessIcon.vue')['default']

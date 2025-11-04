@@ -2,7 +2,7 @@ import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import { capture } from '@/telemetry'
 import { parseColor } from '@/utils'
 import { defineStore } from 'pinia'
-import { createListResource, __ } from 'frappe-ui'
+import { createListResource } from 'frappe-ui'
 import { reactive, h } from 'vue'
 
 export const statusesStore = defineStore('crm-statuses', () => {

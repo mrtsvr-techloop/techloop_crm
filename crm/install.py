@@ -493,17 +493,12 @@ def create_assignment_rule_custom_fields():
 
 def add_default_quick_filters(force=False):
 	"""
-	Add default quick filters for CRM Deal and CRM Lead to ensure delivery_date, order_date
-	and other important fields are always available as quick filters.
+	Add default quick filters for CRM Deal and CRM Lead to ensure delivery_date and order_date
+	are always available as quick filters.
 	"""
 	quick_filters = [
-		"status",
-		"organization",
-		"email",
-		"mobile_no",
 		"order_date",
 		"delivery_date",
-		"delivery_address",
 	]
 
 	# Configure quick filters for both CRM Deal and CRM Lead
@@ -521,29 +516,19 @@ def add_default_quick_filters(force=False):
 				existing_filters = json.loads(doc.json or "[]")
 				
 				# Always ensure required filters (order_date and delivery_date) are present
-				# Merge existing with default, keeping order but ensuring required fields
 				merged_filters = []
 				filter_set = set()
 				
-				# First add all existing filters
-				for f in existing_filters:
-					if f not in filter_set:
+				# First add order_date and delivery_date if they exist
+				for f in quick_filters:
+					if f in existing_filters:
 						merged_filters.append(f)
 						filter_set.add(f)
 				
-				# Then add default filters that are missing, especially order_date and delivery_date
+				# Add order_date and delivery_date if missing
 				for f in quick_filters:
 					if f not in filter_set:
-						# For order_date and delivery_date, insert in the correct position
-						if f in ["order_date", "delivery_date"]:
-							# Find position after mobile_no
-							insert_idx = next((i for i, x in enumerate(merged_filters) if x == "mobile_no"), -1)
-							if insert_idx >= 0:
-								merged_filters.insert(insert_idx + 1, f)
-							else:
-								merged_filters.append(f)
-						else:
-							merged_filters.append(f)
+						merged_filters.append(f)
 						filter_set.add(f)
 				
 				doc.json = frappe.as_json(merged_filters)

@@ -1429,6 +1429,7 @@ def get_products_by_tag_donut(from_date, to_date, user=""):
 		params["user"] = user
 
 	# Get products from both leads and deals
+	# Use a more reliable approach with proper JOIN conditions
 	result = frappe.db.sql(
 		f"""
 		SELECT
@@ -1441,9 +1442,15 @@ def get_products_by_tag_donut(from_date, to_date, user=""):
 		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
 		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
 		WHERE (
-			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			(cp.parenttype = 'CRM Lead' AND l.name IS NOT NULL 
+				AND l.creation >= %(from_date)s 
+				AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{lead_conds})
 			OR
-			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+			(cp.parenttype = 'CRM Deal' AND d.name IS NOT NULL 
+				AND d.creation >= %(from_date)s 
+				AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{deal_conds})
 		)
 		AND ptm.tag_name IS NOT NULL
 		GROUP BY ptm.tag_name
@@ -1487,6 +1494,7 @@ def get_products_by_tag_bar(from_date, to_date, user=""):
 		deal_conds = " AND d.deal_owner = %(user)s"
 		params["user"] = user
 
+	# Get products from both leads and deals
 	result = frappe.db.sql(
 		f"""
 		SELECT
@@ -1499,9 +1507,15 @@ def get_products_by_tag_bar(from_date, to_date, user=""):
 		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
 		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
 		WHERE (
-			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			(cp.parenttype = 'CRM Lead' AND l.name IS NOT NULL 
+				AND l.creation >= %(from_date)s 
+				AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{lead_conds})
 			OR
-			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+			(cp.parenttype = 'CRM Deal' AND d.name IS NOT NULL 
+				AND d.creation >= %(from_date)s 
+				AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{deal_conds})
 		)
 		AND ptm.tag_name IS NOT NULL
 		GROUP BY ptm.tag_name
@@ -1551,6 +1565,7 @@ def get_products_by_type_donut(from_date, to_date, user=""):
 		deal_conds = " AND d.deal_owner = %(user)s"
 		params["user"] = user
 
+	# Get products from both leads and deals
 	result = frappe.db.sql(
 		f"""
 		SELECT
@@ -1561,9 +1576,15 @@ def get_products_by_type_donut(from_date, to_date, user=""):
 		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
 		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
 		WHERE (
-			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			(cp.parenttype = 'CRM Lead' AND l.name IS NOT NULL 
+				AND l.creation >= %(from_date)s 
+				AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{lead_conds})
 			OR
-			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+			(cp.parenttype = 'CRM Deal' AND d.name IS NOT NULL 
+				AND d.creation >= %(from_date)s 
+				AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{deal_conds})
 		)
 		AND p.product_name IS NOT NULL
 		GROUP BY p.product_name
@@ -1607,6 +1628,7 @@ def get_products_by_type_bar(from_date, to_date, user=""):
 		deal_conds = " AND d.deal_owner = %(user)s"
 		params["user"] = user
 
+	# Get products from both leads and deals
 	result = frappe.db.sql(
 		f"""
 		SELECT
@@ -1617,9 +1639,15 @@ def get_products_by_type_bar(from_date, to_date, user=""):
 		LEFT JOIN `tabCRM Lead` l ON cp.parenttype = 'CRM Lead' AND cp.parent = l.name
 		LEFT JOIN `tabCRM Deal` d ON cp.parenttype = 'CRM Deal' AND cp.parent = d.name
 		WHERE (
-			(l.creation >= %(from_date)s AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {lead_conds})
+			(cp.parenttype = 'CRM Lead' AND l.name IS NOT NULL 
+				AND l.creation >= %(from_date)s 
+				AND l.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{lead_conds})
 			OR
-			(d.creation >= %(from_date)s AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY) {deal_conds})
+			(cp.parenttype = 'CRM Deal' AND d.name IS NOT NULL 
+				AND d.creation >= %(from_date)s 
+				AND d.creation < DATE_ADD(%(to_date)s, INTERVAL 1 DAY)
+				{deal_conds})
 		)
 		AND p.product_name IS NOT NULL
 		GROUP BY p.product_name

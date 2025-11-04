@@ -6,12 +6,115 @@ from frappe import _
 
 
 @frappe.whitelist()
-def create_bakery_test_products():
-    """Crea prodotti di test per una Bakery nel CRM.
+def reset_crm_database():
+    """
+    Pulisce completamente il database CRM eliminando tutti i dati operativi.
+    
+    Elimina:
+    - Tutti i Deal e Lead
+    - Tutti i Contact e Organization
+    - Tutti i Product e Product Tags
+    - Tutti i Notes e Call Logs
+    - Tutti i Task
+    - Tutti i CRM Products (child table)
+    
+    NON elimina:
+    - Status (Lead Status, Deal Status)
+    - Impostazioni di sistema
+    - Utenti e permessi
+    - Configurazioni
+    
+    ATTENZIONE: Questa funzione elimina TUTTI i dati operativi!
+    
+    Returns:
+        dict: Risultato dell'operazione con statistiche
+    """
+    frappe.only_for("System Manager")
+    
+    try:
+        print("🧹 Pulizia completa database CRM...")
+        
+        deleted_stats = {
+            "deals": 0,
+            "leads": 0,
+            "contacts": 0,
+            "organizations": 0,
+            "products": 0,
+            "product_tags": 0,
+            "product_tag_masters": 0,
+            "notes": 0,
+            "call_logs": 0,
+            "tasks": 0,
+        }
+        
+        # Lista dei doctype da eliminare
+        doctypes_to_delete = [
+            ("CRM Deal", "deals"),
+            ("CRM Lead", "leads"),
+            ("Contact", "contacts"),
+            ("CRM Organization", "organizations"),
+            ("CRM Product", "products"),
+            ("CRM Product Tag", "product_tags"),
+            ("CRM Product Tag Master", "product_tag_masters"),
+            ("FCRM Note", "notes"),
+            ("CRM Call Log", "call_logs"),
+            ("CRM Task", "tasks"),
+        ]
+        
+        # Prima elimina tutti i CRM Products (child table) che potrebbero essere collegati
+        print("🗑️  Eliminazione CRM Products (child table)...")
+        if frappe.db.exists("DocType", "CRM Products"):
+            crm_products = frappe.get_all("CRM Products", pluck="name")
+            for product_name in crm_products:
+                try:
+                    frappe.delete_doc("CRM Products", product_name, force=True, ignore_permissions=True)
+                except Exception as e:
+                    frappe.log_error(f"Errore eliminando CRM Products {product_name}: {str(e)}")
+        
+        # Poi elimina i doctype principali
+        for doctype, stat_key in doctypes_to_delete:
+            if not frappe.db.exists("DocType", doctype):
+                print(f"⚠️  Doctype {doctype} non trovato, salto...")
+                continue
+            
+            print(f"🗑️  Eliminazione {doctype}...")
+            docs = frappe.get_all(doctype, pluck="name")
+            for doc_name in docs:
+                try:
+                    frappe.delete_doc(doctype, doc_name, force=True, ignore_permissions=True)
+                    deleted_stats[stat_key] += 1
+                except Exception as e:
+                    frappe.log_error(f"Errore eliminando {doctype} {doc_name}: {str(e)}")
+        
+        frappe.db.commit()
+        
+        total_deleted = sum(deleted_stats.values())
+        print(f"✅ Pulizia completata: {total_deleted} documenti eliminati")
+        
+        return {
+            "success": True,
+            "message": f"Database pulito con successo! Eliminati {total_deleted} documenti.",
+            "deleted": deleted_stats,
+            "summary": deleted_stats
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Errore generale durante pulizia database: {str(e)}")
+        frappe.db.rollback()
+        return {
+            "success": False,
+            "error": f"Errore generale: {str(e)}"
+        }
+
+
+@frappe.whitelist()
+def create_products():
+    """
+    Crea prodotti di default nel CRM.
     
     Questa funzione crea:
     - Tag master per le caratteristiche dei prodotti
-    - 6 prodotti di test diversi con prezzi realistici
+    - 6 prodotti di esempio con prezzi realistici
     - Associa i tag appropriati a ogni prodotto
     
     Returns:
@@ -19,10 +122,10 @@ def create_bakery_test_products():
     """
     
     try:
-        print("🍰 Creazione prodotti di test per Bakery...")
+        print("📦 Creazione prodotti...")
         
         # Prima crea i tag master se non esistono
-        created_tags = _create_bakery_tags()
+        created_tags = _create_default_tags()
         
         # Poi crea i prodotti
         products_data = [
@@ -121,15 +224,15 @@ def create_bakery_test_products():
         }
         
     except Exception as e:
-        frappe.log_error(f"Errore generale creando prodotti bakery: {str(e)}")
+        frappe.log_error(f"Errore generale creando prodotti: {str(e)}")
         return {
             "success": False,
             "error": f"Errore generale: {str(e)}"
         }
 
 
-def _create_bakery_tags():
-    """Crea i tag master per le caratteristiche dei prodotti bakery."""
+def _create_default_tags():
+    """Crea i tag master per le caratteristiche dei prodotti."""
     
     print("🏷️  Creazione tag per caratteristiche prodotti...")
     
@@ -206,87 +309,3 @@ def _add_tags_to_product(product_name: str, tag_names: list):
     except Exception as e:
         frappe.log_error(f"Errore aggiungendo tag a {product_name}: {str(e)}")
 
-
-@frappe.whitelist()
-def cleanup_bakery_test_products():
-    """Rimuove tutti i prodotti di test bakery creati."""
-    
-    try:
-        print("🧹 Pulizia prodotti di test bakery...")
-        
-        test_product_codes = [
-            "EXTRA-CHOCOLATE",
-            "CARAMELLO-CAFFE",
-            "ORO-VERDE",
-            "DONNA-MARIA",
-            "PANDORO-ARTIGIANALE",
-            "PANETTONE-TRADIZIONALE"
-        ]
-        
-        deleted_count = 0
-        
-        for product_code in test_product_codes:
-            try:
-                existing = frappe.db.exists("CRM Product", {"product_code": product_code})
-                if existing:
-                    frappe.delete_doc("CRM Product", existing)
-                    print(f"🗑️  Rimosso prodotto: {product_code}")
-                    deleted_count += 1
-            except Exception as e:
-                frappe.log_error(f"Errore rimuovendo prodotto {product_code}: {str(e)}")
-        
-        frappe.db.commit()
-        
-        return {
-            "success": True,
-            "message": f"Rimossi {deleted_count} prodotti di test",
-            "deleted_count": deleted_count
-        }
-        
-    except Exception as e:
-        frappe.log_error(f"Errore generale pulendo prodotti bakery: {str(e)}")
-        return {
-            "success": False,
-            "error": f"Errore generale: {str(e)}"
-        }
-
-
-@frappe.whitelist()
-def cleanup_bakery_test_tags():
-    """Rimuove tutti i tag di test bakery creati."""
-    
-    try:
-        print("🧹 Pulizia tag di test bakery...")
-        
-        test_tag_names = [
-            "limited-edition", "1kg", "senza-lattosio", "cioccolato", "cioccolato-fondente",
-            "cioccolato-bianco", "caramello", "caffè", "pistacchio", "mela-annurca",
-            "cannella", "vaniglia", "arancia-navel", "uvetta", "artigianale", "tradizionale"
-        ]
-        
-        deleted_count = 0
-        
-        for tag_name in test_tag_names:
-            try:
-                existing = frappe.db.exists("CRM Product Tag Master", {"tag_name": tag_name})
-                if existing:
-                    frappe.delete_doc("CRM Product Tag Master", existing)
-                    print(f"🗑️  Rimosso tag: {tag_name}")
-                    deleted_count += 1
-            except Exception as e:
-                frappe.log_error(f"Errore rimuovendo tag {tag_name}: {str(e)}")
-        
-        frappe.db.commit()
-        
-        return {
-            "success": True,
-            "message": f"Rimossi {deleted_count} tag di test",
-            "deleted_count": deleted_count
-        }
-        
-    except Exception as e:
-        frappe.log_error(f"Errore generale pulendo tag bakery: {str(e)}")
-        return {
-            "success": False,
-            "error": f"Errore generale: {str(e)}"
-        }
