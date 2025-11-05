@@ -114,47 +114,47 @@ const { getPinnedViews, getPublicViews } = viewsStore()
 
 const links = [
   {
-    label: 'Leads',
+    label: __('Leads'),
     icon: LeadsIcon,
     to: 'Leads',
   },
   {
-    label: 'Deals',
+    label: __('Deals'),
     icon: DealsIcon,
     to: 'Deals',
   },
   {
-    label: 'Contacts',
+    label: __('Contacts'),
     icon: ContactsIcon,
     to: 'Contacts',
   },
   {
-    label: 'Organizations',
+    label: __('Organizations'),
     icon: OrganizationsIcon,
     to: 'Organizations',
   },
   {
-    label: 'Notes',
+    label: __('Notes'),
     icon: NoteIcon,
     to: 'Notes',
   },
   {
-    label: 'Tasks',
+    label: __('Tasks'),
     icon: TaskIcon,
     to: 'Tasks',
   },
   {
-    label: 'Call Logs',
+    label: __('Call Logs'),
     icon: PhoneIcon,
     to: 'Call Logs',
   },
   {
-    label: 'Listino Prodotti',
+    label: __('Listino Prodotti'),
     icon: SquareAsterisk,
     to: 'Listino Prodotti',
   },
   {
-    label: 'Email Templates',
+    label: __('Email Templates'),
     icon: Email2Icon,
     to: 'Email Templates',
   },

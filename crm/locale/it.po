@@ -521,7 +521,7 @@ msgstr ""
 
 #: frontend/src/pages/MobileOrganization.vue:261
 msgid "Are you sure you want to delete this organization?"
-msgstr ""
+msgstr "Sei sicuro di voler eliminare questa azienda?"
 
 #: frontend/src/components/Activities/TaskArea.vue:60
 msgid "Are you sure you want to delete this task?"
@@ -942,7 +942,7 @@ msgstr ""
 #. Name of a DocType
 #: crm/fcrm/doctype/crm_organization/crm_organization.json
 msgid "CRM Organization"
-msgstr ""
+msgstr "Azienda CRM"
 
 #. Label of a shortcut in the Frappe CRM Workspace
 #: crm/fcrm/workspace/frappe_crm/frappe_crm.json
@@ -1157,7 +1157,7 @@ msgstr "Scegli Contatto Esistente"
 
 #: frontend/src/components/Modals/DealModal.vue:37
 msgid "Choose Existing Organization"
-msgstr "Scegli Organizzazione Esistente"
+msgstr "Scegli Azienda Esistente"
 
 #: frontend/src/components/Settings/AssignmentRules/AssigneeRules.vue:9
 msgid "Choose how {0} are assigned among salespeople."
@@ -1413,7 +1413,7 @@ msgstr ""
 #: frontend/src/pages/Contact.vue:234 frontend/src/pages/MobileContact.vue:212
 #: frontend/src/pages/MobileOrganization.vue:331
 msgid "Contacts"
-msgstr ""
+msgstr "Contatti"
 
 #. Label of the content (Text Editor) field in DocType 'FCRM Note'
 #: crm/fcrm/doctype/fcrm_note/fcrm_note.json
@@ -1873,7 +1873,7 @@ msgstr ""
 
 #: frontend/src/pages/MobileOrganization.vue:260
 msgid "Delete organization"
-msgstr ""
+msgstr "Elimina azienda"
 
 #: frontend/src/components/DeleteLinkedDocModal.vue:67
 msgid "Delete {0} item(s)"
@@ -2225,7 +2225,7 @@ msgstr ""
 #: frontend/src/components/Modals/EmailTemplateSelectorModal.vue:4
 #: frontend/src/components/Settings/Settings.vue:153
 msgid "Email Templates"
-msgstr ""
+msgstr "Modelli Email"
 
 #: frontend/src/components/Settings/EmailAdd.vue:141
 msgid "Email account created successfully"
@@ -3754,7 +3754,7 @@ msgstr ""
 
 #: frontend/src/components/Modals/OrganizationModal.vue:8
 msgid "New Organization"
-msgstr ""
+msgstr "Nuova Azienda"
 
 #: frontend/src/components/Modals/ChangePasswordModal.vue:6
 msgid "New Password"
@@ -3792,7 +3792,7 @@ msgstr ""
 #: frontend/src/components/Modals/ConvertToDealModal.vue:42
 #: frontend/src/pages/MobileLead.vue:136
 msgid "New organization will be created based on the data in details section"
-msgstr ""
+msgstr "Nuova azienda verrà creata in base ai dati nella sezione dettagli"
 
 #: frontend/src/components/Settings/EmailTemplate/NewEmailTemplate.vue:10
 msgid "New template"
@@ -4006,7 +4006,7 @@ msgstr ""
 #: frontend/src/pages/Deal.vue:562 frontend/src/pages/Lead.vue:419
 #: frontend/src/pages/MobileDeal.vue:461 frontend/src/pages/MobileLead.vue:368
 msgid "Notes"
-msgstr ""
+msgstr "Note"
 
 #: frontend/src/pages/Notes.vue:23
 msgid "Notes View"
@@ -4156,37 +4156,37 @@ msgstr ""
 #: frontend/src/pages/Organization.vue:467
 #: frontend/src/pages/Organization.vue:521
 msgid "Organization"
-msgstr "Organizzazione"
+msgstr "Azienda"
 
 #. Label of the organization_details_section (Section Break) field in DocType
 #. 'CRM Deal'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 msgid "Organization Details"
-msgstr ""
+msgstr "Dettagli Azienda"
 
 #. Label of the organization_logo (Attach Image) field in DocType 'CRM
 #. Organization'
 #: crm/fcrm/doctype/crm_organization/crm_organization.json
 msgid "Organization Logo"
-msgstr ""
+msgstr "Logo Azienda"
 
 #. Label of the organization_name (Data) field in DocType 'CRM Deal'
 #. Label of the organization_name (Data) field in DocType 'CRM Organization'
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 #: crm/fcrm/doctype/crm_organization/crm_organization.json
 msgid "Organization Name"
-msgstr ""
+msgstr "Nome Azienda"
 
 #: frontend/src/pages/Deal.vue:62
 msgid "Organization logo"
-msgstr ""
+msgstr "Logo azienda"
 
 #. Label of a shortcut in the Frappe CRM Workspace
 #: crm/fcrm/workspace/frappe_crm/frappe_crm.json
 #: frontend/src/pages/MobileOrganization.vue:205
 #: frontend/src/pages/Organization.vue:234
 msgid "Organizations"
-msgstr ""
+msgstr "Aziende"
 
 #: frontend/src/components/Calendar/CalendarEventPanel.vue:107
 msgid "Organizer"
@@ -4344,7 +4344,7 @@ msgstr ""
 #: frontend/src/components/Modals/ConvertToDealModal.vue:141
 #: frontend/src/pages/MobileLead.vue:437
 msgid "Please select an existing organization"
-msgstr ""
+msgstr "Seleziona un'azienda esistente"
 
 #: crm/fcrm/doctype/helpdesk_crm_settings/helpdesk_crm_settings.py:126
 msgid "Please set Email Address"
@@ -5006,7 +5006,7 @@ msgstr ""
 
 #: frontend/src/pages/Deal.vue:73
 msgid "Set an organization"
-msgstr ""
+msgstr "Imposta un'azienda"
 
 #: frontend/src/pages/Deal.vue:626 frontend/src/pages/MobileDeal.vue:523
 msgid "Set as Primary Contact"
@@ -5317,7 +5317,7 @@ msgstr "Attività"
 #: frontend/src/pages/Deal.vue:557 frontend/src/pages/Lead.vue:414
 #: frontend/src/pages/MobileDeal.vue:456 frontend/src/pages/MobileLead.vue:363
 msgid "Tasks"
-msgstr ""
+msgstr "Attività"
 
 #: frontend/src/components/Modals/AboutModal.vue:67
 msgid "Telegram Channel"
@@ -6444,4 +6444,168 @@ msgstr "Rifiutato"
 
 msgid "Preparation"
 msgstr "Preparazione"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Reset Default Views"
+msgstr "Reset Viste Default"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Resets all default views (List and Kanban) for:"
+msgstr "Resetta tutte le viste default (Lista e Kanban) per:"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "CRM Lead (List and Kanban)"
+msgstr "Offerte CRM (Lista e Kanban)"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "CRM Deal (List and Kanban)"
+msgstr "Offerte CRM (Lista e Kanban)"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Contact (List)"
+msgstr "Contatti (Lista)"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "This will sync columns from database, including all custom statuses for Kanban views"
+msgstr "Questo sincronizzerà le colonne dal database, inclusi tutti gli stati custom per le viste Kanban"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Reset Views"
+msgstr "Reset Viste"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Default views reset successfully!"
+msgstr "Viste default resettate con successo!"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Error resetting views"
+msgstr "Errore nel reset delle viste"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Views Reset"
+msgstr "Viste Resettate"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Lead List"
+msgstr "Lista Offerte"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Lead Kanban"
+msgstr "Kanban Offerte"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Deal List"
+msgstr "Lista Offerte"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Deal Kanban"
+msgstr "Kanban Offerte"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Contact List"
+msgstr "Lista Contatti"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Success"
+msgstr "Successo"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Failed"
+msgstr "Fallito"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "⚠️ Reset Default Views\n\n"
+msgstr "⚠️ Reset Viste Default\n\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "This will reset all default views (List and Kanban) for:\n"
+msgstr "Questo resetterà tutte le viste default (Lista e Kanban) per:\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "• CRM Lead (List and Kanban)\n"
+msgstr "• Offerte CRM (Lista e Kanban)\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "• CRM Deal (List and Kanban)\n"
+msgstr "• Offerte CRM (Lista e Kanban)\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "• Contact (List)\n\n"
+msgstr "• Contatti (Lista)\n\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "All views will be synchronized with the latest column definitions from the database.\n\n"
+msgstr "Tutte le viste saranno sincronizzate con le ultime definizioni di colonne dal database.\n\n"
+
+#: frontend/src/components/Settings/SpecialFunctions.vue
+msgid "Continue?"
+msgstr "Continuare?"
+
+#: crm/fcrm/doctype/crm_view_settings/crm_view_settings.py
+msgid "Viste default resettate con successo! Reset {0} viste."
+msgstr "Viste default resettate con successo! Reset {0} viste."
+
+#: crm/fcrm/doctype/crm_view_settings/crm_view_settings.py
+msgid "Errore generale: {0}"
+msgstr "Errore generale: {0}"
+
+# Translations for Contact list view columns
+#: crm/overrides/contact.py
+msgid "First Name"
+msgstr "Nome"
+
+#: crm/overrides/contact.py
+msgid "Last Name"
+msgstr "Cognome"
+
+# Translations for CRM Lead list view columns
+#: crm/fcrm/doctype/crm_lead/crm_lead.py
+msgid "Full Name"
+msgstr "Nome Completo"
+
+#: crm/fcrm/doctype/crm_lead/crm_lead.py
+msgid "Email"
+msgstr "Email"
+
+#: crm/fcrm/doctype/crm_lead/crm_lead.py
+msgid "Delivery Address"
+msgstr "Indirizzo di Consegna"
+
+#: crm/fcrm/doctype/crm_lead/crm_lead.py
+msgid "Net Total"
+msgstr "Totale Netto"
+
+#: crm/fcrm/doctype/crm_lead/crm_lead.py
+msgid "Custom Order Details"
+msgstr "Dettagli Ordine Personalizzati"
+
+# Translations for CRM Deal list view columns
+#: crm/fcrm/doctype/crm_deal/crm_deal.py
+msgid "Primary Email"
+msgstr "Email Principale"
+
+#: crm/fcrm/doctype/crm_deal/crm_deal.py
+msgid "Primary Mobile No"
+msgstr "Cellulare Principale"
+
+#: crm/fcrm/doctype/crm_view_settings/crm_view_settings.py
+msgid "Status"
+msgstr "Stato"
+
+# Translations for sidebar menu items
+#: frontend/src/components/Layouts/AppSidebar.vue
+msgid "Dashboard"
+msgstr "Pannello di controllo"
+
+#: frontend/src/components/Layouts/AppSidebar.vue
+msgid "Organizations"
+msgstr "Aziende"
+
+#: frontend/src/components/Layouts/AppSidebar.vue
+msgid "Call Logs"
+msgstr "Registro Chiamate"
+
+#: frontend/src/components/Layouts/AppSidebar.vue
+msgid "Email Templates"
+msgstr "Modelli Email"
 

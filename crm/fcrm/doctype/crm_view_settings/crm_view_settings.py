@@ -132,11 +132,40 @@ def sync_default_columns(view):
 	if view.type == "kanban" and view.column_field:
 		field_meta = frappe.get_meta(view.doctype).get_field(view.column_field)
 		if field_meta.fieldtype == "Link":
-			columns = frappe.get_all(
-				field_meta.options,
-				fields=["name"],
-				order_by="modified asc",
-			)
+			# For CRM Lead Status and CRM Deal Status, include color and position
+			if field_meta.options in ["CRM Lead Status", "CRM Deal Status"]:
+				fields_to_get = ["name", "color", "position"]
+				if field_meta.options == "CRM Deal Status":
+					fields_to_get.append("type")
+				
+				statuses = frappe.get_all(
+					field_meta.options,
+					fields=fields_to_get,
+					order_by="position asc",
+				)
+				
+				# Ensure red color is only used for Lost statuses (Deal) or similar negative statuses
+				for status in statuses:
+					# If it's a Deal Status and type is Lost, ensure color is red
+					if field_meta.options == "CRM Deal Status" and status.get("type") == "Lost":
+						if not status.get("color") or status.get("color") not in ["red"]:
+							status["color"] = "red"
+					# If it's a positive status with red color, change it to gray
+					elif status.get("color") == "red":
+						if field_meta.options == "CRM Deal Status" and status.get("type") not in ["Lost"]:
+							status["color"] = "gray"
+						elif field_meta.options == "CRM Lead Status":
+							# For Lead Status, we don't have a type field, so we'll keep red only if explicitly set
+							# But we'll default to gray for safety
+							status["color"] = status.get("color") or "gray"
+				
+				columns = statuses
+			else:
+				columns = frappe.get_all(
+					field_meta.options,
+					fields=["name"],
+					order_by="modified asc",
+				)
 		elif field_meta.fieldtype == "Select":
 			columns = [{"name": option} for option in field_meta.options.split("\n")]
 	elif hasattr(list, "default_list_data"):
@@ -170,6 +199,8 @@ def create_or_update_standard_view(view):
 	# Check if columns/rows were explicitly passed (even if empty)
 	columns_explicitly_passed = "columns" in view
 	rows_explicitly_passed = "rows" in view
+	kanban_columns_explicitly_passed = "kanban_columns" in view
+	kanban_columns_force_reset = view.kanban_columns == ""  # Force reset if empty string
 	
 	columns = parse_json(view.columns or "[]")
 	rows = parse_json(view.rows or "[]")
@@ -188,6 +219,7 @@ def create_or_update_standard_view(view):
 		existing_doc = frappe.get_doc("CRM View Settings", doc)
 		existing_columns = parse_json(existing_doc.columns or "[]")
 		existing_rows = parse_json(existing_doc.rows or "[]")
+		existing_kanban_columns = parse_json(existing_doc.kanban_columns or "[]")
 		
 		# If columns/rows weren't explicitly passed, preserve existing ones
 		# This prevents reset during install/updates unless explicitly requested
@@ -195,6 +227,11 @@ def create_or_update_standard_view(view):
 			columns = existing_columns
 		if not rows_explicitly_passed and existing_rows:
 			rows = existing_rows
+		# For kanban_columns, if explicitly passed as empty string, force sync from database
+		if kanban_columns_force_reset:
+			kanban_columns = []  # Force sync from database
+		elif not kanban_columns and existing_kanban_columns:
+			kanban_columns = existing_kanban_columns
 
 	default_rows = sync_default_rows(view.doctype, view.type)
 	rows = rows + default_rows if default_rows else rows
@@ -264,3 +301,117 @@ def get_route_name(doctype):
 		doctype += "s"
 
 	return doctype
+
+
+@frappe.whitelist()
+def reset_default_views():
+	"""
+	Resetta tutte le viste default (List e Kanban) per CRM Lead, CRM Deal e Contact.
+	
+	Questa funzione forza la sincronizzazione delle colonne dai default definiti nel codice,
+	inclusi:
+	- Colonne lista per CRM Lead, CRM Deal e Contact
+	- Colonne kanban per CRM Lead e CRM Deal (con stati sincronizzati dal database)
+	
+	Returns:
+		dict: Risultato dell'operazione con statistiche
+	"""
+	frappe.only_for("System Manager")
+	
+	try:
+		reset_stats = {
+			"leads": {"list": False, "kanban": False},
+			"deals": {"list": False, "kanban": False},
+			"contacts": {"list": False},
+		}
+		
+		# Reset viste per CRM Lead
+		try:
+			# Reset vista lista
+			create_or_update_standard_view({
+				"doctype": "CRM Lead",
+				"type": "list",
+				"columns": "",  # Stringa vuota forza sincronizzazione default
+				"rows": "",  # Stringa vuota forza sincronizzazione default
+				"is_default": True,
+			})
+			reset_stats["leads"]["list"] = True
+			
+			# Reset vista kanban
+			create_or_update_standard_view({
+				"doctype": "CRM Lead",
+				"type": "kanban",
+				"column_field": "status",
+				"title_field": "lead_name",
+				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
+				"kanban_fields": '["organization", "email", "mobile_no", "_assign", "modified"]',
+				"is_default": True,
+			})
+			reset_stats["leads"]["kanban"] = True
+		except Exception as e:
+			frappe.log_error(f"Errore resettando viste CRM Lead: {str(e)}")
+		
+		# Reset viste per CRM Deal
+		try:
+			# Reset vista lista
+			create_or_update_standard_view({
+				"doctype": "CRM Deal",
+				"type": "list",
+				"columns": "",  # Stringa vuota forza sincronizzazione default
+				"rows": "",  # Stringa vuota forza sincronizzazione default
+				"is_default": True,
+			})
+			reset_stats["deals"]["list"] = True
+			
+			# Reset vista kanban
+			create_or_update_standard_view({
+				"doctype": "CRM Deal",
+				"type": "kanban",
+				"column_field": "status",
+				"title_field": "delivery_date",
+				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
+				"kanban_fields": '["order_date", "last_name", "first_name", "email", "mobile_no", "delivery_address"]',
+				"is_default": True,
+			})
+			reset_stats["deals"]["kanban"] = True
+		except Exception as e:
+			frappe.log_error(f"Errore resettando viste CRM Deal: {str(e)}")
+		
+		# Reset vista per Contact
+		try:
+			# Reset vista lista
+			create_or_update_standard_view({
+				"doctype": "Contact",
+				"type": "list",
+				"columns": "",  # Stringa vuota forza sincronizzazione default
+				"rows": "",  # Stringa vuota forza sincronizzazione default
+				"is_default": True,
+			})
+			reset_stats["contacts"]["list"] = True
+		except Exception as e:
+			frappe.log_error(f"Errore resettando vista Contact: {str(e)}")
+		
+		frappe.db.commit()
+		
+		total_reset = sum([
+			reset_stats["leads"]["list"],
+			reset_stats["leads"]["kanban"],
+			reset_stats["deals"]["list"],
+			reset_stats["deals"]["kanban"],
+			reset_stats["contacts"]["list"],
+		])
+		
+		return {
+			"success": True,
+			"message": _("Viste default resettate con successo! Reset {0} viste.").format(total_reset),
+			"reset": reset_stats,
+			"summary": reset_stats
+		}
+		
+	except Exception as e:
+		frappe.log_error(f"Errore generale durante reset viste: {str(e)}")
+		frappe.db.rollback()
+		return {
+			"success": False,
+			"error": _("Errore generale: {0}").format(str(e))
+		}

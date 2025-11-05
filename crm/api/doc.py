@@ -411,11 +411,40 @@ def get_data(
 		if not kanban_columns and column_field:
 			field_meta = frappe.get_meta(doctype).get_field(column_field)
 			if field_meta.fieldtype == "Link":
-				kanban_columns = frappe.get_all(
-					field_meta.options,
-					fields=["name"],
-					order_by="modified asc",
-				)
+				# For CRM Lead Status and CRM Deal Status, include color and position
+				if field_meta.options in ["CRM Lead Status", "CRM Deal Status"]:
+					fields_to_get = ["name", "color", "position"]
+					if field_meta.options == "CRM Deal Status":
+						fields_to_get.append("type")
+					
+					statuses = frappe.get_all(
+						field_meta.options,
+						fields=fields_to_get,
+						order_by="position asc",
+					)
+					
+					# Ensure red color is only used for Lost statuses (Deal) or similar negative statuses
+					for status in statuses:
+						# If it's a Deal Status and type is Lost, ensure color is red
+						if field_meta.options == "CRM Deal Status" and status.get("type") == "Lost":
+							if not status.get("color") or status.get("color") not in ["red"]:
+								status["color"] = "red"
+						# If it's a positive status with red color, change it to gray
+						elif status.get("color") == "red":
+							if field_meta.options == "CRM Deal Status" and status.get("type") not in ["Lost"]:
+								status["color"] = "gray"
+							elif field_meta.options == "CRM Lead Status":
+								# For Lead Status, we don't have a type field, so we'll keep red only if explicitly set
+								# But we'll default to gray for safety
+								status["color"] = status.get("color") or "gray"
+					
+					kanban_columns = statuses
+				else:
+					kanban_columns = frappe.get_all(
+						field_meta.options,
+						fields=["name"],
+						order_by="modified asc",
+					)
 			elif field_meta.fieldtype == "Select":
 				kanban_columns = [{"name": option} for option in field_meta.options.split("\n")]
 

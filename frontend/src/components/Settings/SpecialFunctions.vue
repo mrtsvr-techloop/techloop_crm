@@ -83,6 +83,46 @@
           </div>
         </div>
       </div>
+
+      <!-- Reset Viste Default -->
+      <div class="rounded-lg border border-outline-gray-2 bg-surface-white p-6">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <div class="flex flex-col gap-2">
+              <h3 class="text-lg font-semibold text-ink-gray-8">
+                {{ __('Reset Default Views') }}
+              </h3>
+              <p class="text-sm text-ink-gray-6">
+                {{ __('Resets all default views (List and Kanban) for:') }}
+              </p>
+              <ul class="list-disc list-inside text-sm text-ink-gray-6 space-y-1 mt-2">
+                <li>{{ __('CRM Lead (List and Kanban)') }}</li>
+                <li>{{ __('CRM Deal (List and Kanban)') }}</li>
+                <li>{{ __('Contact (List)') }}</li>
+              </ul>
+              <p class="text-xs text-ink-gray-5 mt-2">
+                {{ __('This will sync columns from database, including all custom statuses for Kanban views') }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <Button
+              variant="solid"
+              :loading="resetViews.loading"
+              :iconLeft="RefreshCwIcon"
+              @click="handleResetViews"
+            >
+              {{ __('Reset Views') }}
+            </Button>
+            <Badge
+              v-if="viewsResult"
+              :variant="viewsResult.success ? 'subtle' : 'subtle'"
+              :theme="viewsResult.success ? 'green' : 'red'"
+              :label="viewsResult.message"
+            />
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Risultati Dettagliati -->
@@ -129,6 +169,44 @@
         </div>
       </div>
     </div>
+
+    <div v-if="viewsResult && viewsResult.summary" class="rounded-lg border border-outline-gray-2 bg-surface-gray-1 p-4">
+      <h4 class="text-sm font-semibold text-ink-gray-8 mb-3">
+        {{ __('Views Reset') }}
+      </h4>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink-gray-5">{{ __('Lead List') }}</span>
+          <span class="text-lg font-semibold" :class="viewsResult.summary.leads?.list ? 'text-green-600' : 'text-red-600'">
+            {{ viewsResult.summary.leads?.list ? __('Success') : __('Failed') }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink-gray-5">{{ __('Lead Kanban') }}</span>
+          <span class="text-lg font-semibold" :class="viewsResult.summary.leads?.kanban ? 'text-green-600' : 'text-red-600'">
+            {{ viewsResult.summary.leads?.kanban ? __('Success') : __('Failed') }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink-gray-5">{{ __('Deal List') }}</span>
+          <span class="text-lg font-semibold" :class="viewsResult.summary.deals?.list ? 'text-green-600' : 'text-red-600'">
+            {{ viewsResult.summary.deals?.list ? __('Success') : __('Failed') }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink-gray-5">{{ __('Deal Kanban') }}</span>
+          <span class="text-lg font-semibold" :class="viewsResult.summary.deals?.kanban ? 'text-green-600' : 'text-red-600'">
+            {{ viewsResult.summary.deals?.kanban ? __('Success') : __('Failed') }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-ink-gray-5">{{ __('Contact List') }}</span>
+          <span class="text-lg font-semibold" :class="viewsResult.summary.contacts?.list ? 'text-green-600' : 'text-red-600'">
+            {{ viewsResult.summary.contacts?.list ? __('Success') : __('Failed') }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -137,12 +215,15 @@ import { ref } from 'vue'
 import { Button, Badge, createResource, toast } from 'frappe-ui'
 import LucideTrash2 from '~icons/lucide/trash-2'
 import LucidePackage from '~icons/lucide/package'
+import LucideRefreshCw from '~icons/lucide/refresh-cw'
 
 const TrashIcon = LucideTrash2
 const PackageIcon = LucidePackage
+const RefreshCwIcon = LucideRefreshCw
 
 const cleanResult = ref(null)
 const productsResult = ref(null)
+const viewsResult = ref(null)
 
 const cleanDatabase = createResource({
   url: 'crm.api.products.reset_crm_database',
@@ -178,6 +259,23 @@ const addProducts = createResource({
   }
 })
 
+const resetViews = createResource({
+  url: 'crm.fcrm.doctype.crm_view_settings.crm_view_settings.reset_default_views',
+  method: 'POST',
+  onSuccess: (result) => {
+    viewsResult.value = result
+    if (result.success) {
+      toast.success(__('Default views reset successfully!'))
+    } else {
+      toast.error(result.error || __('Error resetting views'))
+    }
+  },
+  onError: (error) => {
+    toast.error(__('Error: ') + error.message)
+    viewsResult.value = { success: false, error: error.message }
+  }
+})
+
 function handleCleanDatabase() {
   if (!confirm(
     __('⚠️ WARNING!\n\nThis will delete ALL operational data:\n') +
@@ -197,6 +295,22 @@ function handleCleanDatabase() {
 
 function handleAddProducts() {
   addProducts.fetch()
+}
+
+function handleResetViews() {
+  if (!confirm(
+    __('⚠️ Reset Default Views\n\n') +
+    __('This will reset all default views (List and Kanban) for:\n') +
+    __('• CRM Lead (List and Kanban)\n') +
+    __('• CRM Deal (List and Kanban)\n') +
+    __('• Contact (List)\n\n') +
+    __('All views will be synchronized with the latest column definitions from the database.\n\n') +
+    __('Continue?')
+  )) {
+    return
+  }
+
+  resetViews.fetch()
 }
 </script>
 
