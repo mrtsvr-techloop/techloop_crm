@@ -4,20 +4,20 @@
       <div class="flex items-center">
         <Button
           :label="__('Filter')"
-          :class="filters?.size ? 'rounded-r-none' : ''"
+          :class="(filters?.size || hasActiveFilters) ? 'rounded-r-none' : ''"
           :iconLeft="FilterIcon"
           @click="togglePopover"
         >
-          <template v-if="filters?.size" #suffix>
+          <template v-if="filters?.size || hasActiveFilters" #suffix>
             <div
               class="flex h-5 w-5 items-center justify-center rounded-[5px] bg-surface-white pt-px text-xs font-medium text-ink-gray-8 shadow-sm"
             >
-              {{ filters.size }}
+              {{ activeFiltersCount }}
             </div>
           </template>
         </Button>
         <Button
-          v-if="filters?.size"
+          v-if="filters?.size || hasActiveFilters"
           :tooltip="__('Clear all Filter')"
           class="rounded-l-none border-l"
           icon="x"
@@ -140,7 +140,7 @@
               </template>
             </Autocomplete>
             <Button
-              v-if="filters?.size"
+              v-if="filters?.size || hasActiveFilters"
               class="!text-ink-gray-5"
               variant="ghost"
               :label="__('Clear all Filter')"
@@ -201,15 +201,62 @@ onMounted(() => {
 })
 
 const filters = computed(() => {
-  if (!list.value?.data) return new Set()
-  let allFilters =
-    list.value?.params?.filters || list.value.data?.params?.filters
-  if (!allFilters || !filterableFields.data) return new Set()
+  // Check for filters in params first (works even during reload)
+  let allFilters = list.value?.params?.filters
+  // Fallback to data.params.filters if params.filters is not available
+  if (!allFilters && list.value?.data?.params?.filters) {
+    allFilters = list.value.data.params.filters
+  }
+  if (!allFilters) return new Set()
+  
+  // Create a copy to avoid mutating the original
+  allFilters = { ...allFilters }
+  
   // remove default filters
   if (props.default_filters) {
     allFilters = removeCommonFilters(props.default_filters, allFilters)
   }
+  
+  // If filterableFields.data is not loaded yet, return empty Set but we'll still show the button
+  // based on hasActiveFilters computed
+  if (!filterableFields.data) return new Set()
+  
   return convertFilters(filterableFields.data, allFilters)
+})
+
+// Computed to check if there are any active filters (excluding defaults)
+const hasActiveFilters = computed(() => {
+  let allFilters = list.value?.params?.filters || list.value?.data?.params?.filters
+  if (!allFilters) return false
+  
+  // Create a copy to avoid mutating
+  allFilters = { ...allFilters }
+  
+  // Remove default filters
+  if (props.default_filters) {
+    allFilters = removeCommonFilters(props.default_filters, allFilters)
+  }
+  
+  // Check if there are any filters left after removing defaults
+  return Object.keys(allFilters).length > 0
+})
+
+// Computed to get the count of active filters
+const activeFiltersCount = computed(() => {
+  if (filters.value?.size) {
+    return filters.value.size
+  }
+  if (hasActiveFilters.value) {
+    // Count filters from params
+    let allFilters = list.value?.params?.filters || list.value?.data?.params?.filters
+    if (!allFilters) return 0
+    allFilters = { ...allFilters }
+    if (props.default_filters) {
+      allFilters = removeCommonFilters(props.default_filters, allFilters)
+    }
+    return Object.keys(allFilters).length
+  }
+  return 0
 })
 
 const availableFilters = computed(() => {
@@ -478,9 +525,20 @@ function removeFilter(index) {
 }
 
 function clearfilter(close) {
+  // Clear all filters from the list params, keeping only default filters
+  let clearedFilters = {}
+  // Keep only default filters if they exist
+  if (props.default_filters) {
+    clearedFilters = { ...props.default_filters }
+  }
+  
+  // Clear the filters Set
   filters.value.clear()
-  apply()
-  close()
+  
+  // Emit the cleared filters (only defaults)
+  emit('update', clearedFilters)
+  
+  if (close) close()
 }
 
 function updateValue(value, filter) {

@@ -103,6 +103,27 @@
           </div>
         </div>
       </div>
+
+      <!-- Payment Info -->
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-1">
+          <span class="text-base font-medium">{{ __('Payment Information') }}</span>
+          <span class="text-p-base text-ink-gray-6">
+            {{
+              __(
+                'Enter payment information that the AI will include in WhatsApp messages when the order status is "Attesa Pagamento". You can include IBAN, PayPal, instructions, etc. The AI will understand and automatically format this information in the message.'
+              )
+            }}
+          </span>
+        </div>
+        <FormControl
+          type="textarea"
+          v-model="settings.doc.payment_info_text"
+          :label="__('Payment Information Text')"
+          :placeholder="__('Enter payment information...')"
+          rows="6"
+        />
+      </div>
     </div>
   </div>
 </template>

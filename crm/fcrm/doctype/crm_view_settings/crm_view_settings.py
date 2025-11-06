@@ -313,12 +313,41 @@ def reset_default_views():
 	- Colonne lista per CRM Lead, CRM Deal e Contact
 	- Colonne kanban per CRM Lead e CRM Deal (con stati sincronizzati dal database)
 	
+	IMPORTANTE: Verifica che gli status richiesti esistano prima di resettare le viste.
+	Se gli status "Attesa Pagamento", "Confermato" o "Non Pagato" non esistono per CRM Lead,
+	viene mostrato un messaggio di errore.
+	
 	Returns:
 		dict: Risultato dell'operazione con statistiche
 	"""
 	frappe.only_for("System Manager")
 	
 	try:
+		# Verifica che gli status nuovi esistano per CRM Lead
+		required_lead_statuses = ["Attesa Pagamento", "Confermato", "Non Pagato"]
+		missing_statuses = []
+		
+		for status_name in required_lead_statuses:
+			if not frappe.db.exists("CRM Lead Status", status_name):
+				missing_statuses.append(status_name)
+		
+		if missing_statuses:
+			error_message = _(
+				"Errore nel reset viste: gli status seguenti non sono presenti nel sistema: {0}. "
+				"Esegui lo script 'crm.fcrm.doctype.crm_lead.create_new_statuses.execute' per crearli."
+			).format(", ".join(missing_statuses))
+			
+			frappe.log_error(
+				message=error_message,
+				title="Reset Default Views - Status Mancanti",
+			)
+			
+			return {
+				"success": False,
+				"error": error_message,
+				"missing_statuses": missing_statuses,
+			}
+		
 		reset_stats = {
 			"leads": {"list": False, "kanban": False},
 			"deals": {"list": False, "kanban": False},

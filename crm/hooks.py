@@ -174,6 +174,9 @@ scheduler_events = {
 	"hourly": [
 		"crm.fcrm.doctype.fcrm_temp_ordine.fcrm_temp_ordine.cleanup_expired_temp_orders"
 	],
+	"daily": [
+		"crm.fcrm.doctype.crm_lead.status_change_notification.check_pending_payments"
+	],
 # "daily": [
 # "crm.tasks.daily"
 # ],

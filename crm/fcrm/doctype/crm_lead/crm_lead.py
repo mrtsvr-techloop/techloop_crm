@@ -11,6 +11,9 @@ from crm.fcrm.doctype.crm_service_level_agreement.utils import get_sla
 from crm.fcrm.doctype.crm_status_change_log.crm_status_change_log import (
 	add_status_change_log,
 )
+from crm.fcrm.doctype.crm_lead.status_change_notification import (
+	on_lead_status_change,
+)
 
 
 class CRMLead(Document):
@@ -27,6 +30,8 @@ class CRMLead(Document):
 			self.assign_agent(self.lead_owner)
 		if self.has_value_changed("status"):
 			add_status_change_log(self)
+			# Invia notifica WhatsApp tramite AI quando lo status cambia
+			on_lead_status_change(self)
 
 	def after_insert(self):
 		if self.lead_owner:

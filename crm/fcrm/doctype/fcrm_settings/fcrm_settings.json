@@ -4,7 +4,7 @@
  "creation": "2024-09-29 13:48:02.715924",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": [
+  "field_order": [
   "defaults_tab",
   "restore_defaults",
   "enable_forecasting",
@@ -19,6 +19,8 @@
   "brand_name",
   "brand_logo",
   "favicon",
+  "payment_info_section",
+  "payment_info_text",
   "dropdown_items_tab",
   "dropdown_items"
  ],
@@ -64,6 +66,17 @@
    "fieldname": "favicon",
    "fieldtype": "Attach",
    "label": "Favicon"
+  },
+  {
+   "fieldname": "payment_info_section",
+   "fieldtype": "Section Break",
+   "label": "Informazioni Pagamento"
+  },
+  {
+   "description": "Inserisci qui le informazioni di pagamento che l'AI includerà nei messaggi WhatsApp quando lo stato è 'Attesa Pagamento'. Puoi includere IBAN, PayPal, istruzioni, ecc. L'AI comprenderà e formatterà automaticamente queste informazioni nel messaggio.",
+   "fieldname": "payment_info_text",
+   "fieldtype": "Long Text",
+   "label": "Testo Informazioni Pagamento"
   },
   {
    "default": "0",
