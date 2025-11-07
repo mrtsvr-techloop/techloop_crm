@@ -53,6 +53,18 @@ def add_default_lead_statuses():
 			"color": "red",
 			"position": 5,
 		},
+		"Awaiting Payment": {
+			"color": "orange",
+			"position": 6,
+		},
+		"Confirmed": {
+			"color": "green",
+			"position": 7,
+		},
+		"Not Paid": {
+			"color": "red",
+			"position": 8,
+		},
 	}
 
 	for status in statuses:

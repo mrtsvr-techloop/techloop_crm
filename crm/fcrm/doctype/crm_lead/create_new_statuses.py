@@ -1,11 +1,12 @@
 # Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
-# Script per creare i nuovi stati "Attesa Pagamento", "Confermato" e "Non Pagato"
+# Script per creare i nuovi stati in inglese (Awaiting Payment, Confirmed, Not Paid)
+# Le traduzioni vengono gestite tramite localizations di Frappe
 
 import frappe
 
 
 def execute():
-	"""Crea i nuovi stati per CRM Lead Status se non esistono già."""
+	"""Crea i nuovi stati per CRM Lead Status se non esistono già (nomi in inglese)."""
 	
 	# Trova la posizione massima esistente
 	max_position = frappe.db.sql("""
@@ -15,20 +16,20 @@ def execute():
 	
 	next_position = (max_position[0].get("max_pos") or 0) + 1
 	
-	# Stati da creare
+	# Stati da creare (nomi in inglese, traduzioni gestite da Frappe)
 	new_statuses = [
 		{
-			"lead_status": "Attesa Pagamento",
+			"lead_status": "Awaiting Payment",
 			"color": "orange",
 			"position": next_position,
 		},
 		{
-			"lead_status": "Confermato",
+			"lead_status": "Confirmed",
 			"color": "green",
 			"position": next_position + 1,
 		},
 		{
-			"lead_status": "Non Pagato",
+			"lead_status": "Not Paid",
 			"color": "red",
 			"position": next_position + 2,
 		},

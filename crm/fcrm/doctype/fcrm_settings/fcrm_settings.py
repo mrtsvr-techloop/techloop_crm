@@ -7,7 +7,7 @@ from frappe import _
 from frappe.custom.doctype.property_setter.property_setter import delete_property_setter, make_property_setter
 from frappe.model.document import Document
 
-from crm.install import after_install
+from crm.install import after_install, add_default_lead_statuses
 
 
 class FCRMSettings(Document):
@@ -79,6 +79,8 @@ def get_standard_dropdown_items():
 
 def after_migrate():
 	sync_table("dropdown_items", "standard_dropdown_items")
+	# Assicura che i nuovi stati Lead vengano creati anche dopo un aggiornamento
+	add_default_lead_statuses()
 
 
 def sync_table(key, hook):

@@ -6442,6 +6442,15 @@ msgstr "Rischedulazione"
 msgid "Rejected"
 msgstr "Rifiutato"
 
+msgid "Awaiting Payment"
+msgstr "Attesa Pagamento"
+
+msgid "Confirmed"
+msgstr "Confermato"
+
+msgid "Not Paid"
+msgstr "Non Pagato"
+
 msgid "Preparation"
 msgstr "Preparazione"
 

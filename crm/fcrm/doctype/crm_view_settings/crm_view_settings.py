@@ -3,6 +3,7 @@
 import json
 
 import frappe
+from frappe import _
 from frappe.model.document import Document, get_controller
 from frappe.utils import parse_json
 
@@ -323,8 +324,8 @@ def reset_default_views():
 	frappe.only_for("System Manager")
 	
 	try:
-		# Verifica che gli status nuovi esistano per CRM Lead
-		required_lead_statuses = ["Attesa Pagamento", "Confermato", "Non Pagato"]
+		# Verifica che gli status nuovi esistano per CRM Lead (nomi in inglese)
+		required_lead_statuses = ["Awaiting Payment", "Confirmed", "Not Paid"]
 		missing_statuses = []
 		
 		for status_name in required_lead_statuses:

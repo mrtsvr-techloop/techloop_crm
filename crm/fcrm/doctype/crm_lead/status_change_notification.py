@@ -29,7 +29,7 @@ def on_lead_status_change(doc, method=None):
 		if not doc.has_value_changed("status"):
 			return
 		
-		# Ottieni lo status precedente dal log
+		# Ottieni lo status precedente dal documento prima del salvataggio
 		old_status = _get_previous_status(doc)
 		new_status = doc.status
 		
@@ -82,28 +82,71 @@ def _is_ai_module_installed() -> bool:
 
 
 def _get_previous_status(doc) -> Optional[str]:
-	"""Ottieni lo status precedente dal log dei cambi di stato."""
+	"""Ottieni lo status precedente dal documento prima del salvataggio."""
 	try:
-		if doc.status_change_log:
-			# Prendi l'ultimo log entry
-			last_log = doc.status_change_log[-1] if doc.status_change_log else None
-			if last_log and hasattr(last_log, 'from_status'):
-				return last_log.from_status
+		# Usa get_doc_before_save() per ottenere lo status precedente
+		# Questo è il modo più affidabile perché viene chiamato durante validate()
+		doc_before_save = doc.get_doc_before_save()
+		if doc_before_save and doc_before_save.status:
+			return doc_before_save.status
 		
-		# Fallback: cerca nel database
+		# Fallback: cerca nel log dei cambi di stato
+		if doc.status_change_log:
+			# Prendi il penultimo log entry (l'ultimo è quello corrente che si sta creando)
+			# Il campo si chiama "from" non "from_status" (usare getattr perché "from" è parola riservata)
+			if len(doc.status_change_log) >= 2:
+				previous_log = doc.status_change_log[-2]
+				from_status = getattr(previous_log, 'from', None)
+				if from_status:
+					return from_status
+			elif len(doc.status_change_log) == 1:
+				# Se c'è solo un log, usa quello
+				previous_log = doc.status_change_log[0]
+				from_status = getattr(previous_log, 'from', None)
+				if from_status:
+					return from_status
+		
+		# Fallback finale: cerca nel database
+		# Nota: "from" è una parola riservata SQL, ma frappe.get_all lo gestisce correttamente
 		logs = frappe.get_all(
 			"CRM Status Change Log",
 			filters={"reference_doctype": "CRM Lead", "reference_name": doc.name},
-			fields=["from_status"],
+			fields=["from"],  # Campo "from" del log
 			order_by="creation desc",
-			limit=1
+			limit=2  # Prendi gli ultimi 2 per avere quello precedente
 		)
-		if logs:
-			return logs[0].get("from_status")
+		if len(logs) >= 2:
+			# Il secondo è quello precedente
+			return logs[1].get("from")
+		elif len(logs) == 1:
+			# Se c'è solo un log, usa quello
+			return logs[0].get("from")
 		
 		return None
 	except Exception:
 		return None
+
+
+def _format_order_number(order_number: str) -> str:
+	"""
+	Converte il numero ordine da formato completo a formato abbreviato.
+	Esempio: "CRM-LEAD-2025-00021" -> "25-00021"
+	"""
+	try:
+		# Se il formato è "CRM-LEAD-YYYY-XXXXX", estrai anno e numero
+		if order_number.startswith("CRM-LEAD-"):
+			parts = order_number.split("-")
+			if len(parts) >= 4:
+				year = parts[2]  # 2025
+				number = parts[3]  # 00021
+				# Prendi solo le ultime 2 cifre dell'anno
+				year_short = year[-2:] if len(year) >= 2 else year
+				return f"{year_short}-{number}"
+		# Se il formato è già abbreviato o diverso, restituisci così com'è
+		return order_number
+	except Exception:
+		# In caso di errore, restituisci il numero originale
+		return order_number
 
 
 def _get_contact_phone(doc) -> Optional[str]:
@@ -143,17 +186,21 @@ def _prepare_status_change_context(doc, old_status: str, new_status: str) -> Dic
 	"""
 	Prepara i dati strutturati per l'AI in base al cambio di stato.
 	"""
+	# Traduci gli stati in italiano per l'AI (gli stati nel DB sono in inglese)
+	old_status_translated = _(old_status) if old_status else "N/A"
+	new_status_translated = _(new_status) if new_status else "N/A"
+	
 	context = {
 		"lead_id": doc.name,
-		"order_number": doc.name,  # Il nome del lead è il numero d'ordine (es. 25-XXX...)
-		"old_status": old_status or "N/A",
-		"new_status": new_status,
+		"order_number": _format_order_number(doc.name),  # Formato abbreviato: 25-00021
+		"old_status": old_status_translated,  # Tradotto in italiano
+		"new_status": new_status_translated,  # Tradotto in italiano
 		"customer_name": doc.lead_name or doc.first_name or "Cliente",
 		"has_order_details": False,
 	}
 	
-	# Se lo stato è "Attesa Pagamento", aggiungi dettagli ordine
-	if new_status == "Attesa Pagamento":
+	# Se lo stato è "Awaiting Payment" (Attesa Pagamento), aggiungi dettagli ordine
+	if new_status == "Awaiting Payment":
 		context["has_order_details"] = True
 		context["order_summary"] = _prepare_order_summary(doc)
 		context["payment_info"] = _get_payment_info()
@@ -167,7 +214,7 @@ def _prepare_order_summary(doc) -> Dict[str, Any]:
 		"products": [],
 		"subtotal": float(doc.total or 0),
 		"net_total": float(doc.net_total or 0),
-		"currency": doc.currency or "EUR",
+		"currency": "EUR",  # Valuta fissa: solo Euro
 	}
 	
 	# Aggiungi i prodotti
@@ -302,8 +349,8 @@ def _send_status_change_notification(phone: str, context_data: Dict[str, Any], l
 
 def check_pending_payments():
 	"""
-	Scheduled job: Controlla gli ordini in "Attesa Pagamento" da più di 3 giorni
-	e li cambia automaticamente a "Non Pagato".
+	Scheduled job: Controlla gli ordini in "Awaiting Payment" (Attesa Pagamento) da più di 3 giorni
+	e li cambia automaticamente a "Not Paid" (Non Pagato).
 	"""
 	try:
 		# Verifica che il DocType CRM Lead esista
@@ -316,11 +363,11 @@ def check_pending_payments():
 		# Calcola la data limite (3 giorni fa)
 		cutoff_date = add_days(now_datetime(), -3)
 		
-		# Trova tutti i Lead in "Attesa Pagamento"
+		# Trova tutti i Lead in "Awaiting Payment" (Attesa Pagamento)
 		leads = frappe.get_all(
 			"CRM Lead",
 			filters={
-				"status": "Attesa Pagamento",
+				"status": "Awaiting Payment",
 			},
 			fields=["name", "modified", "status"],
 		)
@@ -330,17 +377,17 @@ def check_pending_payments():
 			try:
 				lead_doc = frappe.get_cached_doc("CRM Lead", lead.name)
 				
-				# Controlla quando è stato cambiato a "Attesa Pagamento"
-				status_change_date = _get_status_change_date(lead_doc.name, "Attesa Pagamento")
+				# Controlla quando è stato cambiato a "Awaiting Payment"
+				status_change_date = _get_status_change_date(lead_doc.name, "Awaiting Payment")
 				
 				if status_change_date and status_change_date < cutoff_date:
-					# Cambia lo status a "Non Pagato"
-					lead_doc.status = "Non Pagato"
+					# Cambia lo status a "Not Paid" (Non Pagato)
+					lead_doc.status = "Not Paid"
 					lead_doc.save(ignore_permissions=True)
 					updated_count += 1
 					
 					frappe.logger("crm").info(
-						f"Lead {lead_doc.name} cambiato automaticamente da 'Attesa Pagamento' a 'Non Pagato'"
+						f"Lead {lead_doc.name} cambiato automaticamente da 'Awaiting Payment' a 'Not Paid'"
 					)
 			except Exception as lead_error:
 				# Logga errore per singolo lead ma continua con gli altri
@@ -356,7 +403,7 @@ def check_pending_payments():
 		if updated_count > 0:
 			frappe.db.commit()
 			frappe.logger("crm").info(
-				f"Job completato: {updated_count} ordini cambiati a 'Non Pagato'"
+				f"Job completato: {updated_count} ordini cambiati a 'Not Paid'"
 			)
 		
 	except Exception as e:
