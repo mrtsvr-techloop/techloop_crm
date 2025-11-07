@@ -111,7 +111,7 @@
           <span class="text-p-base text-ink-gray-6">
             {{
               __(
-                'Enter payment information that the AI will include in WhatsApp messages when the order status is "Attesa Pagamento". You can include IBAN, PayPal, instructions, etc. The AI will understand and automatically format this information in the message.'
+                'Enter payment information that will be included in WhatsApp messages when the order status is "Attesa Pagamento". You can include IBAN, PayPal, instructions, etc.'
               )
             }}
           </span>
@@ -124,17 +124,96 @@
           rows="6"
         />
       </div>
+
+      <!-- Status Notifications -->
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <span class="text-base font-medium">{{ __('Status Change Notifications') }}</span>
+          <span class="text-p-base text-ink-gray-6">
+            {{
+              __(
+                'Configure WhatsApp notifications for each status change. Enable/disable notifications and customize the message for each status.'
+              )
+            }}
+          </span>
+        </div>
+
+        <!-- Dynamic Status Fields -->
+        <div
+          v-for="status in leadStatuses.data"
+          :key="status.name"
+          class="flex flex-col gap-2 border-t border-outline-gray-modals pt-4"
+        >
+          <FormControl
+            type="checkbox"
+            v-model="settings.doc[getEnableFieldName(status.name)]"
+            :label="getEnableNotificationLabel(status.name)"
+          />
+          <FormControl
+            v-if="settings.doc[getEnableFieldName(status.name)]"
+            type="textarea"
+            v-model="settings.doc[getMessageFieldName(status.name)]"
+            :label="getCustomMessageLabel(status.name)"
+            :placeholder="__('Leave empty to use default message')"
+            rows="3"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <script setup>
+import { computed } from 'vue'
 import ImageIcon from '~icons/lucide/image'
 import ImageUploader from '@/components/Controls/ImageUploader.vue'
 import { FormControl } from 'frappe-ui'
 import { getSettings } from '@/stores/settings'
 import { showSettings } from '@/composables/settings'
+import { statusesStore } from '@/stores/statuses'
 
 const { _settings: settings, setupBrand } = getSettings()
+const { leadStatuses } = statusesStore()
+
+/**
+ * Converte il nome di uno stato in uno slug valido per i nomi dei campi.
+ * Es: "Awaiting Payment" -> "awaiting_payment"
+ */
+function slugifyStatusName(statusName) {
+  return statusName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+/**
+ * Ottiene il nome del campo boolean per abilitare/disabilitare la notifica per uno stato.
+ */
+function getEnableFieldName(statusName) {
+  return `enable_notification_${slugifyStatusName(statusName)}`
+}
+
+/**
+ * Ottiene il nome del campo text per il messaggio personalizzato per uno stato.
+ */
+function getMessageFieldName(statusName) {
+  return `custom_message_${slugifyStatusName(statusName)}`
+}
+
+/**
+ * Ottiene la label tradotta per il campo "Enable notification".
+ */
+function getEnableNotificationLabel(statusName) {
+  const statusLabel = __(statusName)
+  return __('Enable notification for {0}', statusLabel)
+}
+
+/**
+ * Ottiene la label tradotta per il campo "Custom message".
+ */
+function getCustomMessageLabel(statusName) {
+  const statusLabel = __(statusName)
+  return __('Custom message for {0}', statusLabel)
+}
 
 function updateSettings() {
   settings.save.submit(null, {

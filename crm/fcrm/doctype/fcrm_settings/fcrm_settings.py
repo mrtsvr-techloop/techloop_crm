@@ -3,6 +3,7 @@
 
 import frappe
 import requests
+import re
 from frappe import _
 from frappe.custom.doctype.property_setter.property_setter import delete_property_setter, make_property_setter
 from frappe.model.document import Document
@@ -81,6 +82,8 @@ def after_migrate():
 	sync_table("dropdown_items", "standard_dropdown_items")
 	# Assicura che i nuovi stati Lead vengano creati anche dopo un aggiornamento
 	add_default_lead_statuses()
+	# Sincronizza i Custom Fields per le notifiche degli stati
+	sync_status_notification_fields()
 
 
 def sync_table(key, hook):
@@ -208,3 +211,176 @@ def get_exchange_rate(from_currency, to_currency, date=None):
 			"Failed to fetch exchange rate from {0} to {1} on {2}. Please check your internet connection or try again later."
 		).format(from_currency, to_currency, date)
 	)
+
+
+def _slugify_status_name(status_name: str) -> str:
+	"""
+	Converte il nome di uno stato in uno slug valido per i nomi dei campi.
+	Es: "Awaiting Payment" -> "awaiting_payment"
+	"""
+	# Converti in lowercase e sostituisci spazi e caratteri speciali con underscore
+	slug = status_name.lower()
+	slug = re.sub(r'[^a-z0-9]+', '_', slug)
+	slug = slug.strip('_')
+	return slug
+
+
+def sync_status_notification_fields():
+	"""
+	Sincronizza dinamicamente i Custom Fields per le notifiche di cambio stato.
+	Crea un campo boolean (enable_notification_<status>) e un campo text (custom_message_<status>)
+	per ogni stato Lead disponibile nel database.
+	"""
+	try:
+		# Recupera tutti gli stati Lead dal database
+		lead_statuses = frappe.get_all(
+			"CRM Lead Status",
+			fields=["name"],
+			order_by="position asc"
+		)
+		
+		if not lead_statuses:
+			frappe.log_error(
+				message="Nessuno stato Lead trovato durante la sincronizzazione dei Custom Fields",
+				title="CRM Status Notification Fields Sync"
+			)
+			return
+		
+		# Lista degli stati attuali (per rimuovere quelli obsoleti)
+		current_status_slugs = set()
+		
+		# Crea/aggiorna i Custom Fields per ogni stato
+		for status in lead_statuses:
+			status_name = status.name
+			status_slug = _slugify_status_name(status_name)
+			current_status_slugs.add(status_slug)
+			
+			# Nomi dei campi
+			enable_fieldname = f"enable_notification_{status_slug}"
+			message_fieldname = f"custom_message_{status_slug}"
+			
+			# Traduzione automatica del nome dello stato per le label
+			status_label = _(status_name)
+			
+			# Crea/aggiorna il campo boolean per abilitare/disabilitare la notifica
+			_create_or_update_custom_field(
+				doctype="FCRM Settings",
+				fieldname=enable_fieldname,
+				fieldtype="Check",
+				label=_("Enable notification for {0}").format(status_label),
+				default=1,
+				insert_after="status_notifications_section"
+			)
+			
+			# Crea/aggiorna il campo text per il messaggio personalizzato
+			_create_or_update_custom_field(
+				doctype="FCRM Settings",
+				fieldname=message_fieldname,
+				fieldtype="Long Text",
+				label=_("Custom message for {0}").format(status_label),
+				depends_on=f"enable_notification_{status_slug}",
+				insert_after=enable_fieldname
+			)
+		
+		# Rimuovi i Custom Fields per stati che non esistono più
+		_remove_obsolete_status_fields(current_status_slugs)
+		
+		# Ricarica il DocType per applicare le modifiche
+		frappe.clear_cache(doctype="FCRM Settings")
+		frappe.reload_doctype("FCRM Settings")
+		
+	except Exception as e:
+		frappe.log_error(
+			message=f"Errore durante la sincronizzazione dei Custom Fields per le notifiche stato: {str(e)}",
+			title="CRM Status Notification Fields Sync Error"
+		)
+
+
+def _create_or_update_custom_field(doctype: str, fieldname: str, fieldtype: str, label: str, 
+									default=None, depends_on=None, insert_after=None):
+	"""
+	Crea o aggiorna un Custom Field per un DocType.
+	"""
+	try:
+		# Verifica se il campo esiste già
+		custom_field_name = f"{doctype}-{fieldname}"
+		
+		if frappe.db.exists("Custom Field", custom_field_name):
+			# Aggiorna il campo esistente
+			custom_field = frappe.get_doc("Custom Field", custom_field_name)
+			custom_field.label = label
+			custom_field.fieldtype = fieldtype
+			if default is not None:
+				custom_field.default = default
+			if depends_on:
+				custom_field.depends_on = depends_on
+			if insert_after:
+				custom_field.insert_after = insert_after
+			custom_field.save(ignore_permissions=True)
+		else:
+			# Crea un nuovo campo
+			custom_field = frappe.get_doc({
+				"doctype": "Custom Field",
+				"dt": doctype,
+				"fieldname": fieldname,
+				"fieldtype": fieldtype,
+				"label": label,
+			})
+			if default is not None:
+				custom_field.default = default
+			if depends_on:
+				custom_field.depends_on = depends_on
+			if insert_after:
+				custom_field.insert_after = insert_after
+			custom_field.insert(ignore_permissions=True)
+		
+		frappe.db.commit()
+		
+	except Exception as e:
+		frappe.log_error(
+			message=f"Errore durante la creazione/aggiornamento del Custom Field {fieldname}: {str(e)}",
+			title="CRM Custom Field Creation Error"
+		)
+		frappe.db.rollback()
+
+
+def _remove_obsolete_status_fields(current_status_slugs: set):
+	"""
+	Rimuove i Custom Fields per stati che non esistono più.
+	"""
+	try:
+		# Recupera tutti i Custom Fields di FCRM Settings che iniziano con enable_notification_ o custom_message_
+		all_custom_fields = frappe.get_all(
+			"Custom Field",
+			filters={"dt": "FCRM Settings"},
+			fields=["name", "fieldname"]
+		)
+		
+		for custom_field in all_custom_fields:
+			fieldname = custom_field.fieldname
+			
+			# Verifica se è un campo di notifica stato
+			if fieldname.startswith("enable_notification_") or fieldname.startswith("custom_message_"):
+				# Estrai lo slug dello stato dal nome del campo
+				if fieldname.startswith("enable_notification_"):
+					status_slug = fieldname.replace("enable_notification_", "")
+				else:
+					status_slug = fieldname.replace("custom_message_", "")
+				
+				# Se lo stato non esiste più, rimuovi il campo
+				if status_slug not in current_status_slugs:
+					try:
+						frappe.delete_doc("Custom Field", custom_field.name, force=1, ignore_permissions=True)
+						frappe.db.commit()
+					except Exception as e:
+						frappe.log_error(
+							message=f"Errore durante la rimozione del Custom Field {fieldname}: {str(e)}",
+							title="CRM Custom Field Removal Error"
+						)
+						frappe.db.rollback()
+		
+	except Exception as e:
+		frappe.log_error(
+			message=f"Errore durante la rimozione dei Custom Fields obsoleti: {str(e)}",
+			title="CRM Custom Field Cleanup Error"
+		)
