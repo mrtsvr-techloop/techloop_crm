@@ -9,6 +9,7 @@ from frappe.custom.doctype.property_setter.property_setter import delete_propert
 from frappe.model.document import Document
 
 from crm.install import after_install, add_default_lead_statuses
+from crm.fcrm.doctype.crm_lead.remove_italian_statuses import execute as _remove_italian_statuses
 
 
 class FCRMSettings(Document):
@@ -82,6 +83,8 @@ def after_migrate():
 	sync_table("dropdown_items", "standard_dropdown_items")
 	# Assicura che i nuovi stati Lead vengano creati anche dopo un aggiornamento
 	add_default_lead_statuses()
+	# Rimuove gli stati italiani e li sostituisce con quelli inglesi
+	_remove_italian_statuses()
 	# Sincronizza i Custom Fields per le notifiche degli stati
 	sync_status_notification_fields()
 

@@ -21,6 +21,15 @@
   "favicon",
   "payment_info_section",
   "payment_info_text",
+  "status_notifications_section",
+  "enable_notification_rejected",
+  "custom_message_rejected",
+  "enable_notification_awaiting_payment",
+  "custom_message_awaiting_payment",
+  "enable_notification_confirmed",
+  "custom_message_confirmed",
+  "enable_notification_not_paid",
+  "custom_message_not_paid",
   "dropdown_items_tab",
   "dropdown_items"
  ],
@@ -73,10 +82,63 @@
    "label": "Informazioni Pagamento"
   },
   {
-   "description": "Inserisci qui le informazioni di pagamento che l'AI includerà nei messaggi WhatsApp quando lo stato è 'Attesa Pagamento'. Puoi includere IBAN, PayPal, istruzioni, ecc. L'AI comprenderà e formatterà automaticamente queste informazioni nel messaggio.",
+   "description": "Inserisci qui le informazioni di pagamento che verranno incluse nei messaggi WhatsApp quando lo stato è 'Attesa Pagamento'. Puoi includere IBAN, PayPal, istruzioni, ecc.",
    "fieldname": "payment_info_text",
    "fieldtype": "Long Text",
    "label": "Testo Informazioni Pagamento"
+  },
+  {
+   "fieldname": "status_notifications_section",
+   "fieldtype": "Section Break",
+   "label": "Notifiche Cambio Stato"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_notification_rejected",
+   "fieldtype": "Check",
+   "label": "Abilita notifica per Rifiutato"
+  },
+  {
+   "depends_on": "enable_notification_rejected",
+   "fieldname": "custom_message_rejected",
+   "fieldtype": "Long Text",
+   "label": "Messaggio personalizzato per Rifiutato"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_notification_awaiting_payment",
+   "fieldtype": "Check",
+   "label": "Abilita notifica per Attesa Pagamento"
+  },
+  {
+   "depends_on": "enable_notification_awaiting_payment",
+   "fieldname": "custom_message_awaiting_payment",
+   "fieldtype": "Long Text",
+   "label": "Messaggio personalizzato per Attesa Pagamento"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_notification_confirmed",
+   "fieldtype": "Check",
+   "label": "Abilita notifica per Confermato"
+  },
+  {
+   "depends_on": "enable_notification_confirmed",
+   "fieldname": "custom_message_confirmed",
+   "fieldtype": "Long Text",
+   "label": "Messaggio personalizzato per Confermato"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_notification_not_paid",
+   "fieldtype": "Check",
+   "label": "Abilita notifica per Non Pagato"
+  },
+  {
+   "depends_on": "enable_notification_not_paid",
+   "fieldname": "custom_message_not_paid",
+   "fieldtype": "Long Text",
+   "label": "Messaggio personalizzato per Non Pagato"
   },
   {
    "default": "0",

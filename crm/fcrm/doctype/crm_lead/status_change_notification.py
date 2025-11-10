@@ -68,11 +68,22 @@ def on_lead_status_change(doc, method=None):
 			)
 			return
 		
-		# Verifica se la notifica è abilitata per questo stato
+		# FLUSSO UNIFICATO: Verifica se la notifica è abilitata per questo stato
+		# La funzione normalizza automaticamente lo stato al nome inglese
 		notification_settings = _get_status_notification_settings(new_status)
+		
 		if not notification_settings.get("enabled", False):
 			frappe.log_error(
-				message=f"[STATUS_CHANGE] Notifica disabilitata per stato '{new_status}' per Lead {doc.name}",
+				message=f"[STATUS_CHANGE] Notifica disabilitata per stato '{new_status}' (normalizzato: '{notification_settings.get('status_en', 'N/A')}') per Lead {doc.name}",
+				title="CRM Status Change Debug"
+			)
+			return
+		
+		# Ottieni il nome inglese normalizzato per usarlo nel resto del flusso
+		normalized_status_en = notification_settings.get("status_en")
+		if not normalized_status_en:
+			frappe.log_error(
+				message=f"[STATUS_CHANGE] Impossibile normalizzare stato '{new_status}' per Lead {doc.name}",
 				title="CRM Status Change Debug"
 			)
 			return
@@ -91,8 +102,13 @@ def on_lead_status_change(doc, method=None):
 			title="CRM Status Change Debug"
 		)
 		
-		# Prepara i dati per il messaggio
-		context_data = _prepare_status_change_context(doc, old_status, new_status)
+		# Prepara i dati per il messaggio usando il nome inglese normalizzato
+		# Normalizza anche old_status per coerenza
+		normalized_old_status_en = _normalize_status_to_english(old_status) if old_status else None
+		context_data = _prepare_status_change_context(doc, normalized_old_status_en or old_status, normalized_status_en)
+		
+		# Aggiungi il messaggio dalle impostazioni al context per usarlo nella composizione
+		context_data["status_notification_message"] = notification_settings.get("message", "")
 		
 		frappe.log_error(
 			message=f"[STATUS_CHANGE] Context preparato - new_status_en: '{context_data.get('new_status_en')}', new_status: '{context_data.get('new_status')}'",
@@ -394,49 +410,129 @@ def _slugify_status_name(status_name: str) -> str:
 	return slug
 
 
-def _get_status_notification_settings(status_en: str) -> Dict[str, Any]:
+def _normalize_status_to_english(status_name: str) -> Optional[str]:
+	"""
+	Normalizza il nome di uno stato al nome inglese del database.
+	
+	NOTA: Tutti gli stati nel database sono in inglese. Questa funzione:
+	1. Verifica se lo stato esiste direttamente nel database (già in inglese)
+	2. Se non trovato, cerca usando la traduzione di Frappe (per gestire stati passati tradotti)
+	
+	Args:
+		status_name: Nome dello stato (può essere tradotto dall'UI o inglese dal DB)
+	
+	Returns:
+		Nome inglese dello stato nel database, o None se non trovato
+	
+	Esempi:
+		"Awaiting Payment" -> "Awaiting Payment" (se esiste nel DB)
+		"Attesa Pagamento" -> "Awaiting Payment" (tradotto da Frappe)
+	"""
+	if not status_name:
+		return None
+	
+	status_name = str(status_name).strip()
+	
+	# PRIORITÀ 1: Se lo stato esiste direttamente nel database (già in inglese), restituiscilo
+	if frappe.db.exists("CRM Lead Status", status_name):
+		return status_name
+	
+	# PRIORITÀ 2: Cerca nel database usando le traduzioni di Frappe
+	# (per gestire il caso in cui lo stato viene passato tradotto dall'UI)
+	all_statuses = frappe.get_all("CRM Lead Status", fields=["name"], limit=1000)
+	
+	for status in all_statuses:
+		# Confronta usando la traduzione di Frappe
+		translated = _(status.name)
+		if translated == status_name or status.name == status_name:
+			return status.name
+	
+	# PRIORITÀ 3: Cerca case-insensitive
+	for status in all_statuses:
+		if status.name.lower() == status_name.lower():
+			return status.name
+	
+	return None
+
+
+def _get_status_notification_settings(status: str) -> Dict[str, Any]:
 	"""
 	Restituisce le impostazioni di notifica per uno stato specifico.
 	Legge dinamicamente da FCRM Settings se la notifica è abilitata e il messaggio personalizzato.
 	Funziona con qualsiasi stato disponibile nel database, non solo quelli hardcoded.
+	
+	Args:
+		status: Nome dello stato (può essere tradotto o inglese)
+	
+	Returns:
+		Dict con "enabled" (bool) e "message" (str)
 	"""
+	if not status:
+		return {"enabled": False, "message": ""}
+	
+	# FLUSSO UNIFICATO: Converti sempre al nome inglese del database
+	status_en = _normalize_status_to_english(status)
+	
 	if not status_en:
+		# Se non riesco a normalizzare, restituisci disabled
+		frappe.log_error(
+			message=f"[STATUS_NOTIF] Impossibile normalizzare stato '{status}' al nome inglese",
+			title="CRM Status Notification Settings Error"
+		)
 		return {"enabled": False, "message": ""}
 	
-	status_en = str(status_en).strip()
-	
-	# Verifica se lo stato esiste nel database
-	try:
-		if not frappe.db.exists("CRM Lead Status", status_en):
-			# Se lo stato non esiste, restituisci disabled
-			return {"enabled": False, "message": ""}
-	except Exception:
+	# Verifica che lo stato esista nel database (dovrebbe esistere se normalizzato correttamente)
+	if not frappe.db.exists("CRM Lead Status", status_en):
+		frappe.log_error(
+			message=f"[STATUS_NOTIF] Stato normalizzato '{status_en}' non esiste nel database",
+			title="CRM Status Notification Settings Error"
+		)
 		return {"enabled": False, "message": ""}
 	
-	# Converti il nome dello stato in slug per i nomi dei campi
+	# Converti il nome inglese dello stato in slug per i nomi dei campi
 	status_slug = _slugify_status_name(status_en)
 	enable_fieldname = f"enable_notification_{status_slug}"
 	message_fieldname = f"custom_message_{status_slug}"
 	
 	try:
-		settings = frappe.get_cached_doc("FCRM Settings", "FCRM Settings")
+		# Usa get_doc invece di get_cached_doc per assicurarsi che i Custom Fields siano inclusi
+		settings = frappe.get_doc("FCRM Settings", "FCRM Settings")
 		
-		# Leggi se la notifica è abilitata (default: True se il campo esiste, altrimenti False)
+		# Leggi se la notifica è abilitata
+		# Prova prima con getattr, poi con get_value come fallback
 		enabled = getattr(settings, enable_fieldname, None)
+		
+		if enabled is None:
+			# Fallback: prova a leggere direttamente dal database
+			try:
+				enabled = frappe.db.get_value("FCRM Settings", "FCRM Settings", enable_fieldname)
+			except Exception:
+				pass
+		
 		if enabled is None:
 			# Se il campo non esiste ancora, potrebbe essere uno stato nuovo
 			# In questo caso, restituisci False per sicurezza
+			frappe.log_error(
+				message=f"[STATUS_NOTIF] Campo '{enable_fieldname}' non trovato per stato '{status_en}' (slug: '{status_slug}')",
+				title="CRM Status Notification Settings Warning"
+			)
 			enabled = False
 		else:
 			enabled = bool(enabled)
 		
 		# Leggi il messaggio personalizzato
 		custom_message = getattr(settings, message_fieldname, None)
+		if custom_message is None:
+			# Fallback: prova a leggere direttamente dal database
+			try:
+				custom_message = frappe.db.get_value("FCRM Settings", "FCRM Settings", message_fieldname)
+			except Exception:
+				pass
+		
 		if custom_message and custom_message.strip():
 			message = custom_message.strip()
 		else:
 			# Usa il messaggio di default (generico se non specificato)
-			# Mantieni i messaggi di default per gli stati esistenti per retrocompatibilità
 			default_messages = {
 				"Rejected": "La richiesta d'ordine è stata rifiutata, pertanto l'ordine è stato annullato.",
 				"Awaiting Payment": "Per proseguire con l'ordine, ti invitiamo a eseguire il pagamento utilizzando i metodi forniti di seguito.",
@@ -444,16 +540,21 @@ def _get_status_notification_settings(status_en: str) -> Dict[str, Any]:
 				"Not Paid": "L'ordine non è stato pagato nei tempi consentiti. Per maggiori informazioni, ti invitiamo a contattare l'assistenza.",
 			}
 			# Se c'è un messaggio di default per questo stato, usalo, altrimenti usa un messaggio generico
-			message = default_messages.get(status_en, f"Lo stato dell'ordine è stato aggiornato a: {status_en}.")
+			message = default_messages.get(status_en, f"Lo stato dell'ordine è stato aggiornato a: {_(status_en)}.")
 		
-		return {"enabled": enabled, "message": message}
+		return {"enabled": enabled, "message": message, "status_en": status_en}
 	except Exception as e:
-		frappe.log_error(
-			message=f"Errore nel recupero impostazioni notifica per stato '{status_en}': {str(e)}",
-			title="CRM Status Notification Settings Error"
-		)
-		# In caso di errore, restituisci disabled
-		return {"enabled": False, "message": ""}
+		error_msg = f"Errore nel recupero impostazioni notifica per stato '{status}' (normalizzato: '{status_en}'): {str(e)}\n{frappe.get_traceback()}"
+		try:
+			frappe.log_error(
+				message=error_msg,
+				title="CRM Status Notification Settings Error"
+			)
+		except Exception:
+			# Se non riesce a loggare, ignora (potrebbe essere problema di permessi)
+			pass
+		# In caso di errore, restituisci disabled ma mantieni status_en se disponibile
+		return {"enabled": False, "message": "", "status_en": status_en if status_en else None}
 
 
 def _get_status_specific_info(status_en: str) -> str:
@@ -481,30 +582,10 @@ def _compose_status_change_message(context_data: Dict[str, Any]) -> str:
 		f"old_status: '{old_status}', has_order_details: {context_data.get('has_order_details')}"
 	)
 	
-	# Se new_status_en è vuoto o None, prova a convertire new_status (tradotto) in inglese
-	# Oppure se new_status_en è uguale a new_status (significa che è già tradotto), convertilo
-	original_new_status_en = new_status_en
-	if not new_status_en or new_status_en == "" or new_status_en == new_status:
-		status_map = {
-			"Rifiutato": "Rejected",
-			"Attesa Pagamento": "Awaiting Payment",
-			"Confermato": "Confirmed",
-			"Non Pagato": "Not Paid",
-		}
-		# Prova prima con new_status (tradotto)
-		converted = status_map.get(new_status, "")
-		if converted:
-			new_status_en = converted
-		# Se non trovato e new_status_en originale non era vuoto, prova con quello
-		elif original_new_status_en and original_new_status_en != new_status:
-			converted = status_map.get(original_new_status_en, original_new_status_en)
-			if converted != original_new_status_en:
-				new_status_en = converted
-		
-		frappe.log_error(
-			message=f"[STATUS_CHANGE_MSG] Converted status (early) - new_status: '{new_status}', original_new_status_en: '{original_new_status_en}' -> new_status_en: '{new_status_en}'",
-			title="CRM Status Change Debug"
-		)
+	# FLUSSO UNIFICATO: new_status_en dovrebbe essere già normalizzato dal context
+	# Se non lo è, normalizzalo ora (fallback per sicurezza)
+	if not new_status_en or new_status_en == "":
+		new_status_en = _normalize_status_to_english(new_status) or new_status
 	
 	# Debug: verifica i valori prima del controllo
 	frappe.log_error(
@@ -549,11 +630,11 @@ def _compose_status_change_message(context_data: Dict[str, Any]) -> str:
 			message_parts.append(f"*Totale: {currency} {net_total:.2f}*")
 			message_parts.append("")
 		
-		# PRIMA: Aggiungi il messaggio bonus personalizzato per lo stato
-		notification_settings = _get_status_notification_settings(new_status_en)
-		if notification_settings.get("message"):
+		# PRIMA: Aggiungi il messaggio personalizzato per lo stato (dal context)
+		status_message = context_data.get("status_notification_message", "")
+		if status_message:
 			message_parts.append("")
-			message_parts.append(notification_settings["message"])
+			message_parts.append(status_message)
 		
 		# POI: Aggiungi informazioni pagamento (solo per "Awaiting Payment")
 		payment_info = context_data.get("payment_info", {})
@@ -626,11 +707,11 @@ def _compose_status_change_message(context_data: Dict[str, Any]) -> str:
 			message_parts.append("")
 			message_parts.append(f"ti informiamo che lo stato del tuo ordine {order_number} è cambiato da '{old_status}' a '{new_status}'.")
 		
-		# PRIMA: Aggiungi il messaggio bonus personalizzato per lo stato
-		notification_settings = _get_status_notification_settings(new_status_en)
-		if notification_settings.get("message"):
+		# PRIMA: Aggiungi il messaggio personalizzato dal context (già recuperato)
+		status_message = context_data.get("status_notification_message", "")
+		if status_message:
 			message_parts.append("")
-			message_parts.append(notification_settings["message"])
+			message_parts.append(status_message)
 		
 		# POI: Se lo stato è "Awaiting Payment", aggiungi le informazioni di pagamento
 		# anche se non ci sono dettagli ordine (has_order_details = False)
