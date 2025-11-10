@@ -45,17 +45,22 @@ def on_lead_status_change(doc, method=None):
 			return
 		
 		# Ottieni lo status precedente dal documento prima del salvataggio
-		old_status = _get_previous_status(doc)
-		new_status = doc.status
+		old_status_raw = _get_previous_status(doc)
+		new_status_raw = doc.status
+		
+		# NORMALIZZA IMMEDIATAMENTE: Converti sempre al nome inglese del database
+		# doc.status potrebbe essere tradotto dall'UI, ma nel DB è sempre inglese
+		old_status = _normalize_status_to_english(old_status_raw) if old_status_raw else None
+		new_status = _normalize_status_to_english(new_status_raw) if new_status_raw else None
 		
 		frappe.log_error(
-			message=f"[STATUS_CHANGE] Lead {doc.name} - old_status: '{old_status}', new_status: '{new_status}' (raw: {repr(new_status)})",
+			message=f"[STATUS_CHANGE] Lead {doc.name} - old_status_raw: '{old_status_raw}' -> '{old_status}', new_status_raw: '{new_status_raw}' -> '{new_status}'",
 			title="CRM Status Change Debug"
 		)
 		
 		if not new_status:
 			frappe.log_error(
-				message=f"[STATUS_CHANGE] new_status vuoto per Lead {doc.name}",
+				message=f"[STATUS_CHANGE] new_status vuoto o non normalizzabile per Lead {doc.name} (raw: '{new_status_raw}')",
 				title="CRM Status Change Debug"
 			)
 			return
@@ -69,7 +74,7 @@ def on_lead_status_change(doc, method=None):
 			return
 		
 		# FLUSSO UNIFICATO: Verifica se la notifica è abilitata per questo stato
-		# La funzione normalizza automaticamente lo stato al nome inglese
+		# new_status è già normalizzato al nome inglese
 		notification_settings = _get_status_notification_settings(new_status)
 		
 		if not notification_settings.get("enabled", False):
@@ -79,11 +84,11 @@ def on_lead_status_change(doc, method=None):
 			)
 			return
 		
-		# Ottieni il nome inglese normalizzato per usarlo nel resto del flusso
-		normalized_status_en = notification_settings.get("status_en")
+		# Ottieni il nome inglese normalizzato (dovrebbe essere già new_status, ma verifichiamo)
+		normalized_status_en = notification_settings.get("status_en") or new_status
 		if not normalized_status_en:
 			frappe.log_error(
-				message=f"[STATUS_CHANGE] Impossibile normalizzare stato '{new_status}' per Lead {doc.name}",
+				message=f"[STATUS_CHANGE] Impossibile ottenere stato normalizzato per Lead {doc.name}",
 				title="CRM Status Change Debug"
 			)
 			return
@@ -98,14 +103,13 @@ def on_lead_status_change(doc, method=None):
 			return
 		
 		frappe.log_error(
-			message=f"[STATUS_CHANGE] Preparando context per Lead {doc.name} - old_status: '{old_status}', new_status: '{new_status}'",
+			message=f"[STATUS_CHANGE] Preparando context per Lead {doc.name} - old_status: '{old_status}', new_status: '{normalized_status_en}'",
 			title="CRM Status Change Debug"
 		)
 		
 		# Prepara i dati per il messaggio usando il nome inglese normalizzato
-		# Normalizza anche old_status per coerenza
-		normalized_old_status_en = _normalize_status_to_english(old_status) if old_status else None
-		context_data = _prepare_status_change_context(doc, normalized_old_status_en or old_status, normalized_status_en)
+		# old_status e new_status sono già normalizzati
+		context_data = _prepare_status_change_context(doc, old_status, normalized_status_en)
 		
 		# Aggiungi il messaggio dalle impostazioni al context per usarlo nella composizione
 		context_data["status_notification_message"] = notification_settings.get("message", "")
@@ -248,38 +252,30 @@ def _get_contact_phone(doc) -> Optional[str]:
 def _prepare_status_change_context(doc, old_status: str, new_status: str) -> Dict[str, Any]:
 	"""
 	Prepara i dati strutturati per il messaggio in base al cambio di stato.
-	"""
-	# Debug: log per vedere cosa viene passato
-	frappe.logger("crm").info(
-		f"[STATUS_CHANGE_CTX] Preparing context - old_status: '{old_status}', new_status: '{new_status}'"
-	)
 	
-	# Traduci gli stati in italiano (gli stati nel DB sono in inglese)
+	Args:
+		doc: Documento CRM Lead
+		old_status: Nome inglese dello stato precedente (dal database)
+		new_status: Nome inglese del nuovo stato (dal database)
+	"""
+	# old_status e new_status sono SEMPRE in inglese (già normalizzati)
+	# Traduci solo per la visualizzazione nel messaggio
 	old_status_translated = _(old_status) if old_status else "N/A"
 	new_status_translated = _(new_status) if new_status else "N/A"
-	
-	frappe.logger("crm").info(
-		f"[STATUS_CHANGE_CTX] Translated - old_status_translated: '{old_status_translated}', new_status_translated: '{new_status_translated}'"
-	)
 	
 	context = {
 		"lead_id": doc.name,
 		"order_number": _format_order_number(doc.name),  # Formato abbreviato: 25-00021
-		"old_status": old_status_translated,  # Tradotto in italiano
-		"old_status_en": old_status,  # Mantieni anche la versione inglese per controlli
-		"new_status": new_status_translated,  # Tradotto in italiano
-		"new_status_en": new_status,  # Mantieni anche la versione inglese per controlli
+		"old_status": old_status_translated,  # Tradotto per il messaggio
+		"old_status_en": old_status,  # Nome inglese dal database
+		"new_status": new_status_translated,  # Tradotto per il messaggio
+		"new_status_en": new_status,  # Nome inglese dal database
 		"customer_name": doc.lead_name or doc.first_name or "Cliente",
 		"has_order_details": False,
 	}
 	
-	frappe.log_error(
-		message=f"[STATUS_CHANGE_CTX] Context created - new_status_en: '{context.get('new_status_en')}', new_status: '{context.get('new_status')}', new_status originale: '{new_status}'",
-		title="CRM Status Change Debug"
-	)
-	
-	# Se lo stato è "Awaiting Payment" (Attesa Pagamento), aggiungi dettagli ordine
-	# new_status qui è lo stato inglese dal DB (doc.status)
+	# Se lo stato è "Awaiting Payment", aggiungi dettagli ordine
+	# new_status è sempre in inglese (dal database)
 	if new_status == "Awaiting Payment":
 		frappe.log_error(
 			message="[STATUS_CHANGE_CTX] Stato è 'Awaiting Payment', aggiungo dettagli ordine e payment_info",
@@ -412,42 +408,67 @@ def _slugify_status_name(status_name: str) -> str:
 
 def _normalize_status_to_english(status_name: str) -> Optional[str]:
 	"""
-	Normalizza il nome di uno stato al nome inglese del database.
+	Converte il nome di uno stato al nome inglese del database.
 	
-	NOTA: Tutti gli stati nel database sono in inglese. Questa funzione:
-	1. Verifica se lo stato esiste direttamente nel database (già in inglese)
-	2. Se non trovato, cerca usando la traduzione di Frappe (per gestire stati passati tradotti)
+	NOTA: Tutti gli stati nel database sono SEMPRE in inglese.
+	Se lo stato viene passato tradotto dall'UI, lo converte usando le traduzioni di Frappe.
 	
 	Args:
-		status_name: Nome dello stato (può essere tradotto dall'UI o inglese dal DB)
+		status_name: Nome dello stato (può essere tradotto dall'UI)
 	
 	Returns:
 		Nome inglese dello stato nel database, o None se non trovato
-	
-	Esempi:
-		"Awaiting Payment" -> "Awaiting Payment" (se esiste nel DB)
-		"Attesa Pagamento" -> "Awaiting Payment" (tradotto da Frappe)
 	"""
 	if not status_name:
 		return None
 	
 	status_name = str(status_name).strip()
 	
-	# PRIORITÀ 1: Se lo stato esiste direttamente nel database (già in inglese), restituiscilo
+	# Se lo stato esiste direttamente nel database (già in inglese), restituiscilo
 	if frappe.db.exists("CRM Lead Status", status_name):
 		return status_name
 	
-	# PRIORITÀ 2: Cerca nel database usando le traduzioni di Frappe
+	# Se non trovato, cerca nel database confrontando con le traduzioni di Frappe
 	# (per gestire il caso in cui lo stato viene passato tradotto dall'UI)
 	all_statuses = frappe.get_all("CRM Lead Status", fields=["name"], limit=1000)
 	
-	for status in all_statuses:
-		# Confronta usando la traduzione di Frappe
-		translated = _(status.name)
-		if translated == status_name or status.name == status_name:
-			return status.name
+	# Salva la lingua corrente per ripristinarla dopo
+	original_lang = frappe.local.lang if hasattr(frappe.local, 'lang') else None
 	
-	# PRIORITÀ 3: Cerca case-insensitive
+	# Prova con tutte le lingue disponibili per trovare la traduzione
+	for status in all_statuses:
+		# Se il nome corrisponde esattamente, restituiscilo
+		if status.name == status_name:
+			return status.name
+		
+		# Confronta con la traduzione di Frappe (per gestire stati tradotti dall'UI)
+		# Prova con la lingua corrente
+		try:
+			translated = _(status.name)
+			if translated == status_name:
+				return status.name
+		except Exception:
+			pass
+		
+		# Prova anche con italiano esplicitamente
+		try:
+			frappe.local.lang = "it"
+			frappe.local.lang_full_dict = None
+			frappe.local.full_dict = None
+			translated = _(status.name)
+			if translated == status_name:
+				# Ripristina la lingua originale
+				if original_lang:
+					frappe.local.lang = original_lang
+				return status.name
+		except Exception:
+			pass
+	
+	# Ripristina la lingua originale
+	if original_lang:
+		frappe.local.lang = original_lang
+	
+	# Ultimo tentativo: case-insensitive
 	for status in all_statuses:
 		if status.name.lower() == status_name.lower():
 			return status.name
