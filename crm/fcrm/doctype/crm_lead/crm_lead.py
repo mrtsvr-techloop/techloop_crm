@@ -11,12 +11,50 @@ from crm.fcrm.doctype.crm_service_level_agreement.utils import get_sla
 from crm.fcrm.doctype.crm_status_change_log.crm_status_change_log import (
 	add_status_change_log,
 )
-from crm.fcrm.doctype.crm_lead.status_change_notification import (
-	on_lead_status_change,
-)
+from crm.fcrm.doctype.crm_lead.status_change_notification import send_status_change_notification
 
 
 class CRMLead(Document):
+	def _validate_links(self):
+		"""Fix: Converti lo status dalla traduzione al nome inglese prima della validazione."""
+		# Se lo status è impostato, cerca di trovare il record corrispondente nel database
+		if self.status:
+			# Controlla se esiste già come è
+			if not frappe.db.exists("CRM Lead Status", self.status):
+				# Non esiste: potrebbe essere tradotto
+				# Usa un mapping diretto italiano -> inglese
+				translation_map = self._get_status_translation_map()
+				if self.status in translation_map:
+					self.status = translation_map[self.status]
+		
+		# Chiama la validazione parent
+		super()._validate_links()
+	
+	def _get_status_translation_map(self):
+		"""
+		Ritorna un mapping dalle traduzioni ai nomi inglesi degli stati.
+		Usa un fallback hardcoded per garantire che funzioni sempre.
+		"""
+		# Mapping hardcoded per le traduzioni comuni (fallback robusto)
+		hardcoded_map = {
+			"Attesa Pagamento": "Awaiting Payment",
+			"Confermato": "Confirmed",
+			"Non Pagato": "Not Paid",
+			"Rifiutato": "Rejected",
+			"Nuovo": "New",
+			"Contattato": "Contacted",
+			"Negoziazione": "Negotiation",
+			"Ripianificato": "Rescheduled",
+		}
+		
+		# Verifica che gli stati esistano nel database
+		verified_map = {}
+		for translated, english in hardcoded_map.items():
+			if frappe.db.exists("CRM Lead Status", english):
+				verified_map[translated] = english
+		
+		return verified_map
+	
 	def before_validate(self):
 		self.set_sla()
 
@@ -30,8 +68,8 @@ class CRMLead(Document):
 			self.assign_agent(self.lead_owner)
 		if self.has_value_changed("status"):
 			add_status_change_log(self)
-			# Invia notifica WhatsApp tramite AI quando lo status cambia
-			on_lead_status_change(self)
+			# Invia notifica WhatsApp se configurata per questo stato
+			send_status_change_notification(self)
 
 	def after_insert(self):
 		if self.lead_owner:

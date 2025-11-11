@@ -1,0 +1,111 @@
+Traceback (most recent call last):
+  File "apps/frappe/frappe/app.py", line 115, in application
+    response = frappe.api.handle(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/__init__.py", line 50, in handle
+    data = endpoint(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/v1.py", line 36, in handle_rpc_call
+    return frappe.handler.handle()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 52, in handle
+    data = execute_cmd(cmd)
+           ^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 85, in execute_cmd
+    return frappe.call(method, **frappe.form_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/__init__.py", line 1754, in call
+    return fn(*args, **newargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/utils/typing_validations.py", line 32, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/client.py", line 188, in set_value
+    doc.save()
+  File "apps/frappe/frappe/model/document.py", line 378, in save
+    return self._save(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/model/document.py", line 417, in _save
+    self._validate()
+  File "apps/frappe/frappe/model/document.py", line 622, in _validate
+    self._validate_mandatory()
+  File "apps/frappe/frappe/model/document.py", line 960, in _validate_mandatory
+    raise frappe.MandatoryError(
+frappe.exceptions.MandatoryError: [CRM Lead, CRM-LEAD-2025-00022]: product_name
+
+172.18.0.7 - - [10/Nov/2025 14:23:19] "POST /api/method/frappe.client.set_value HTTP/1.1" 417 -
+Traceback (most recent call last):
+  File "apps/frappe/frappe/app.py", line 115, in application
+    response = frappe.api.handle(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/__init__.py", line 50, in handle
+    data = endpoint(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/v1.py", line 36, in handle_rpc_call
+    return frappe.handler.handle()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 52, in handle
+    data = execute_cmd(cmd)
+           ^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 85, in execute_cmd
+    return frappe.call(method, **frappe.form_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/__init__.py", line 1754, in call
+    return fn(*args, **newargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/utils/typing_validations.py", line 32, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/client.py", line 188, in set_value
+    doc.save()
+  File "apps/frappe/frappe/model/document.py", line 378, in save
+    return self._save(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/model/document.py", line 417, in _save
+    self._validate()
+  File "apps/frappe/frappe/model/document.py", line 622, in _validate
+    self._validate_mandatory()
+  File "apps/frappe/frappe/model/document.py", line 960, in _validate_mandatory
+    raise frappe.MandatoryError(
+frappe.exceptions.MandatoryError: [CRM Lead, CRM-LEAD-2025-00022]: product_name
+
+172.18.0.7 - - [10/Nov/2025 14:23:19] "POST /api/method/frappe.client.set_value HTTP/1.1" 417 -
+172.18.0.7 - - [10/Nov/2025 14:23:23] "POST /api/method/frappe.client.set_value HTTP/1.1" 200 -
+Traceback (most recent call last):
+  File "apps/frappe/frappe/app.py", line 115, in application
+    response = frappe.api.handle(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/__init__.py", line 50, in handle
+    data = endpoint(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/api/v1.py", line 36, in handle_rpc_call
+    return frappe.handler.handle()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 52, in handle
+    data = execute_cmd(cmd)
+           ^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/handler.py", line 85, in execute_cmd
+    return frappe.call(method, **frappe.form_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/__init__.py", line 1754, in call
+    return fn(*args, **newargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/utils/typing_validations.py", line 32, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/client.py", line 188, in set_value
+    doc.save()
+  File "apps/frappe/frappe/model/document.py", line 378, in save
+    return self._save(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/model/document.py", line 408, in _save
+    self.check_if_latest()
+  File "apps/frappe/frappe/model/document.py", line 867, in check_if_latest
+    frappe.msgprint(
+  File "apps/frappe/frappe/__init__.py", line 574, in msgprint
+    _raise_exception()
+  File "apps/frappe/frappe/__init__.py", line 525, in _raise_exception
+    raise exc
+frappe.exceptions.TimestampMismatchError: Errore: Il Documento è stato modificato dopo averlo aperto (2025-11-10 15:23:23.455088, 2025-11-10 15:23:23.575370). Si prega di aggiornare per ottenere l'ultimo documento.
+
+172.18.0.7 - - [10/Nov/2025 14:23:23] "POST /api/method/frappe.client.set_value HTTP/1.1" 417 -

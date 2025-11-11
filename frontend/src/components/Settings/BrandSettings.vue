@@ -201,18 +201,22 @@ function getMessageFieldName(statusName) {
 
 /**
  * Ottiene la label tradotta per il campo "Enable notification".
+ * Mostra il nome completo dello stato tradotto.
  */
 function getEnableNotificationLabel(statusName) {
   const statusLabel = __(statusName)
-  return __('Enable notification for {0}', statusLabel)
+  // Usa template literal invece di formato traduzione per evitare problemi con placeholder
+  return __('Enable notification for') + ' ' + statusLabel
 }
 
 /**
  * Ottiene la label tradotta per il campo "Custom message".
+ * Mostra il nome completo dello stato tradotto.
  */
 function getCustomMessageLabel(statusName) {
   const statusLabel = __(statusName)
-  return __('Custom message for {0}', statusLabel)
+  // Usa template literal invece di formato traduzione per evitare problemi con placeholder
+  return __('Custom message for') + ' ' + statusLabel
 }
 
 function updateSettings() {
