@@ -59,6 +59,9 @@
   "net_total",
   "section_break_delivery",
   "delivery_date",
+  "delivery_region",
+  "delivery_city",
+  "delivery_zip",
   "column_break_delivery",
   "delivery_address",
   "order_date",
@@ -395,6 +398,24 @@
    "fieldtype": "Date",
    "in_standard_filter": 1,
    "label": "Delivery Date"
+  },
+  {
+   "fieldname": "delivery_region",
+   "fieldtype": "Data",
+   "label": "Regione",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_city",
+   "fieldtype": "Data",
+   "label": "Città",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_zip",
+   "fieldtype": "Data",
+   "label": "CAP",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_delivery",

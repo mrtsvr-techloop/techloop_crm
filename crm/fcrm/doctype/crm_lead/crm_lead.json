@@ -37,6 +37,9 @@
   "converted",
   "prodotti_ordinati_tab",
   "products",
+  "delivery_region",
+  "delivery_city",
+  "delivery_zip",
   "delivery_date",
   "delivery_address",
   "order_date",
@@ -305,6 +308,24 @@
    "fieldtype": "Table",
    "label": "Prodotti",
    "options": "CRM Products"
+  },
+  {
+   "fieldname": "delivery_region",
+   "fieldtype": "Data",
+   "label": "Regione",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_city",
+   "fieldtype": "Data",
+   "label": "Città",
+   "reqd": 1
+  },
+  {
+   "fieldname": "delivery_zip",
+   "fieldtype": "Data",
+   "label": "CAP",
+   "reqd": 1
   },
   {
    "fieldname": "total",

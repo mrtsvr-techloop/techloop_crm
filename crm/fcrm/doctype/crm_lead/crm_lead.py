@@ -340,6 +340,13 @@ class CRMLead(Document):
 				new_deal.update({"delivery_date": self.delivery_date})
 			if hasattr(self, "delivery_address") and getattr(self, "delivery_address", None):
 				new_deal.update({"delivery_address": self.delivery_address})
+			# Copy new delivery fields (region, city, zip)
+			if hasattr(self, "delivery_region") and getattr(self, "delivery_region", None):
+				new_deal.update({"delivery_region": self.delivery_region})
+			if hasattr(self, "delivery_city") and getattr(self, "delivery_city", None):
+				new_deal.update({"delivery_city": self.delivery_city})
+			if hasattr(self, "delivery_zip") and getattr(self, "delivery_zip", None):
+				new_deal.update({"delivery_zip": self.delivery_zip})
 			if hasattr(self, "order_date") and getattr(self, "order_date", None):
 				new_deal.update({"order_date": self.order_date})
 			# Copy order notes from custom_order_details JSON field
