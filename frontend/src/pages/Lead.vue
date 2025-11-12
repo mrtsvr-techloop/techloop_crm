@@ -434,7 +434,7 @@ const tabs = computed(() => {
     },
     {
       name: 'Products',
-      label: __('PRODOTTI ORDINATI'),
+      label: __('Prodotti ordinati'),
       icon: ProductsIcon,
     },
   ]

@@ -3,7 +3,7 @@
     <div class="px-3 pb-3 sm:px-10 sm:pb-5">
       <div class="my-3 flex items-center justify-between text-lg font-medium sm:mb-4 sm:mt-8">
         <div class="flex h-8 items-center text-lg font-semibold text-ink-gray-8">
-          Prodotti Ordinati
+          Prodotti ordinati
         </div>
         <button 
           @click="addProduct" 
@@ -101,6 +101,18 @@
         <div class="flex justify-between items-start gap-6">
           <!-- Sinistra: Dettagli Consegna -->
           <div class="flex flex-col gap-3">
+            <div v-if="deliveryRegion">
+              <div class="text-sm text-gray-600 font-medium">Regione</div>
+              <div class="text-base text-gray-900">{{ deliveryRegion }}</div>
+            </div>
+            <div v-if="deliveryCity">
+              <div class="text-sm text-gray-600 font-medium">Città</div>
+              <div class="text-base text-gray-900">{{ deliveryCity }}</div>
+            </div>
+            <div v-if="deliveryZip">
+              <div class="text-sm text-gray-600 font-medium">CAP</div>
+              <div class="text-base text-gray-900">{{ deliveryZip }}</div>
+            </div>
             <div v-if="deliveryAddress">
               <div class="text-sm text-gray-600 font-medium">Indirizzo di Consegna</div>
               <div class="text-base text-gray-900">{{ deliveryAddress }}</div>
@@ -216,6 +228,18 @@ const deliveryDate = computed(() => {
 
 const deliveryAddress = computed(() => {
   return props.doc.delivery_address || null
+})
+
+const deliveryRegion = computed(() => {
+  return props.doc.delivery_region || null
+})
+
+const deliveryCity = computed(() => {
+  return props.doc.delivery_city || null
+})
+
+const deliveryZip = computed(() => {
+  return props.doc.delivery_zip || null
 })
 
 function addProduct() {
