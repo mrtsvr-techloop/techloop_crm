@@ -402,20 +402,17 @@
   {
    "fieldname": "delivery_region",
    "fieldtype": "Data",
-   "label": "Regione",
-   "reqd": 1
+   "label": "Regione"
   },
   {
    "fieldname": "delivery_city",
    "fieldtype": "Data",
-   "label": "Città",
-   "reqd": 1
+   "label": "Città"
   },
   {
    "fieldname": "delivery_zip",
    "fieldtype": "Data",
-   "label": "CAP",
-   "reqd": 1
+   "label": "CAP"
   },
   {
    "fieldname": "column_break_delivery",
