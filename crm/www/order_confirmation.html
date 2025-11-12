@@ -384,14 +384,44 @@ label {
                                 </div>
                             </div>
                         </div>
-                        
+
+                        <!-- Delivery Information Section -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="delivery_date">Data di Consegna</label>
-                                    <input type="date" class="form-control" id="delivery_date" name="delivery_date" value="{{ delivery_date or '' }}">
+                                    <label for="delivery_region">Regione di Consegna *</label>
+                                    <input type="text" class="form-control" id="delivery_region" name="delivery_region"
+                                           value="{{ delivery_region or '' }}" required>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="delivery_city">Città di Consegna *</label>
+                                    <input type="text" class="form-control" id="delivery_city" name="delivery_city"
+                                           value="{{ delivery_city or '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="delivery_zip">CAP di Consegna *</label>
+                                    <input type="text" class="form-control" id="delivery_zip" name="delivery_zip"
+                                           value="{{ delivery_zip or '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery_address">Indirizzo di Consegna *</label>
+                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3" required>{{ delivery_address or '' }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery_date">Data di Consegna *</label>
+                            <input type="date" class="form-control" id="delivery_date" name="delivery_date"
+                                   value="{{ delivery_date or '' }}" required>
                         </div>
 
                         <!-- Products Section -->
@@ -511,10 +541,6 @@ label {
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="delivery_address">Indirizzo di Consegna *</label>
-                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="3" required>{{ delivery_address or '' }}</textarea>
-                        </div>
                         
                         <div class="form-group">
                             <label for="notes">Note Aggiuntive</label>
@@ -964,9 +990,12 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
     formData.append('company_name', document.getElementById('company_name').value);
     formData.append('email', document.getElementById('email').value);
     formData.append('website', document.getElementById('website').value);
+    formData.append('delivery_region', document.getElementById('delivery_region').value);
+    formData.append('delivery_city', document.getElementById('delivery_city').value);
+    formData.append('delivery_zip', document.getElementById('delivery_zip').value);
+    formData.append('delivery_date', document.getElementById('delivery_date').value);
     formData.append('delivery_address', document.getElementById('delivery_address').value);
     formData.append('notes', document.getElementById('notes').value);
-    formData.append('delivery_date', document.getElementById('delivery_date').value);
     
     // Add products as JSON
     formData.append('products_json', JSON.stringify(products));

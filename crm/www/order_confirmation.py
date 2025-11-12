@@ -86,6 +86,10 @@ def get_context():
             context.phone_number = order_data.get('phone_number', '')
             context.company_name = order_data.get('company_name', '')
             context.delivery_address = order_data.get('delivery_address', '')
+            context.delivery_region = order_data.get('delivery_region', '')
+            context.delivery_city = order_data.get('delivery_city', '')
+            context.delivery_zip = order_data.get('delivery_zip', '')
+            context.delivery_date = order_data.get('delivery_date', '')
             context.notes = order_data.get('notes', '')
             context.products = order_data.get('products', [])
             
@@ -191,6 +195,10 @@ def submit_order():
             'customer_name': 'il Nome',
             'customer_surname': 'il Cognome',
             'phone_number': 'il Numero di Telefono',
+            'delivery_region': 'la Regione di Consegna',
+            'delivery_city': 'la Città di Consegna',
+            'delivery_zip': 'il CAP di Consegna',
+            'delivery_date': 'la Data di Consegna',
             'delivery_address': "l'Indirizzo di Consegna"
         }
         
@@ -315,6 +323,15 @@ def submit_order():
             
             if data.get('delivery_address'):
                 contact_params['delivery_address'] = data.get('delivery_address')
+
+            if data.get('delivery_region'):
+                contact_params['delivery_region'] = data.get('delivery_region')
+
+            if data.get('delivery_city'):
+                contact_params['delivery_city'] = data.get('delivery_city')
+
+            if data.get('delivery_zip'):
+                contact_params['delivery_zip'] = data.get('delivery_zip')
             
             result = update_contact_from_thread(**contact_params)
             
@@ -342,10 +359,16 @@ def submit_order():
             "net_total": total_price,
             "delivery_date": delivery_date,
             "delivery_address": data.get('delivery_address'),
+            "delivery_region": data.get('delivery_region'),
+            "delivery_city": data.get('delivery_city'),
+            "delivery_zip": data.get('delivery_zip'),
             "order_date": frappe.utils.now(),
             "order_notes": data.get('notes'),
             "custom_order_details": frappe.as_json({
                 "delivery_address": data.get('delivery_address'),
+                "delivery_region": data.get('delivery_region'),
+                "delivery_city": data.get('delivery_city'),
+                "delivery_zip": data.get('delivery_zip'),
                 "notes": data.get('notes'),
                 "delivery_date": delivery_date,
                 "confirmation_method": "WhatsApp Form",
@@ -443,6 +466,9 @@ def submit_order():
             "order_no": order_no,
             "customer": f"{data.get('customer_name', '')} {data.get('customer_surname', '')}".strip(),
             "total": f"{total_price:.2f}",
+            "delivery_region": data.get('delivery_region', '')[:30],
+            "delivery_city": data.get('delivery_city', '')[:30],
+            "delivery_zip": data.get('delivery_zip', '')[:10],
             "delivery_date": delivery_date or "",
             "delivery_address": data.get('delivery_address', '')[:50],  # Limit length
             "products_count": len(products_table)
