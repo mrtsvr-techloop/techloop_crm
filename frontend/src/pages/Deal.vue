@@ -39,7 +39,12 @@
   <div v-if="doc.name" class="flex h-full overflow-hidden">
     <Tabs as="div" v-model="tabIndex" :tabs="tabs">
       <template #tab-panel>
+        <DealProductsTab
+          v-if="tabs[tabIndex]?.name === 'Data'"
+          :doc="doc"
+        />
         <Activities
+          v-else
           ref="activities"
           doctype="CRM Deal"
           :docname="dealId"
@@ -335,6 +340,7 @@ import SuccessIcon from '@/components/Icons/SuccessIcon.vue'
 import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import Activities from '@/components/Activities/Activities.vue'
+import DealProductsTab from '@/components/DealProductsTab.vue'
 import OrganizationModal from '@/components/Modals/OrganizationModal.vue'
 import LostReasonModal from '@/components/Modals/LostReasonModal.vue'
 import AssignTo from '@/components/AssignTo.vue'
