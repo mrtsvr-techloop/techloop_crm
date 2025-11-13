@@ -4053,11 +4053,11 @@ msgstr ""
 
 #: crm/api/dashboard.py:1027 crm/api/dashboard.py:1084
 msgid "Number of deals"
-msgstr ""
+msgstr "Numero di ordini"
 
 #: crm/api/dashboard.py:1077
 msgid "Number of deals and total value per salesperson"
-msgstr ""
+msgstr "Numero di ordini e valore totale per venditore"
 
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:167
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:251
@@ -6617,4 +6617,48 @@ msgstr "Registro Chiamate"
 #: frontend/src/components/Layouts/AppSidebar.vue
 msgid "Email Templates"
 msgstr "Modelli Email"
+
+#: crm/api/dashboard.py:1389
+msgid "Revenue from Completed Orders"
+msgstr "Ricavi da Ordini Completati"
+
+#: crm/api/dashboard.py:1390
+msgid "Revenue from completed deals (orders) based on net_total"
+msgstr "Ricavi da ordini completati basati su net_total"
+
+#: crm/api/dashboard.py:1488
+msgid "Orders by Product Tag"
+msgstr "Ordini per Tag Prodotto"
+
+#: crm/api/dashboard.py:1489
+msgid "Number of orders containing products by tag (percentage)"
+msgstr "Numero di ordini contenenti prodotti per tag (percentuale)"
+
+#: crm/api/dashboard.py:1543
+msgid "Orders by Product Tag"
+msgstr "Ordini per Tag Prodotto"
+
+#: crm/api/dashboard.py:1544
+msgid "Number of orders containing products by tag"
+msgstr "Numero di ordini contenenti prodotti per tag"
+
+#: crm/api/dashboard.py:1624
+msgid "Orders by Product Type"
+msgstr "Ordini per Tipo Prodotto"
+
+#: crm/api/dashboard.py:1625
+msgid "Number of orders containing products by type (percentage)"
+msgstr "Numero di ordini contenenti prodotti per tipo (percentuale)"
+
+#: crm/api/dashboard.py:1683
+msgid "Orders by Product Type"
+msgstr "Ordini per Tipo Prodotto"
+
+#: crm/api/dashboard.py:1684
+msgid "Number of orders containing products by type"
+msgstr "Numero di ordini contenenti prodotti per tipo"
+
+#: crm/api/dashboard.py:1551
+msgid "Number of Orders"
+msgstr "Numero di Ordini"
 

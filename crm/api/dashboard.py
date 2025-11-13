@@ -24,6 +24,10 @@ def _translate_lead_deal(text):
 		text = text.replace('deal', 'ordini')
 		text = text.replace('Deals', 'Ordini')
 		text = text.replace('deals', 'ordini')
+		text = text.replace('Orders', 'Ordini')
+		text = text.replace('orders', 'ordini')
+		text = text.replace('Order', 'Ordine')
+		text = text.replace('order', 'ordine')
 	
 	return _(text)
 
@@ -1153,8 +1157,8 @@ def get_total_leads_by_status(from_date, to_date, user=""):
 		"data": result or [],
 		"title": _translate_lead_deal("Leads by Status"),
 		"subtitle": _translate_lead_deal("Distribution of leads by status"),
-		"labelKey": "status",
-		"valueKey": "count",
+		"categoryColumn": "status",
+		"valueColumn": "count",
 	}
 
 
@@ -1195,8 +1199,8 @@ def get_total_deals_by_status(from_date, to_date, user=""):
 		"data": result or [],
 		"title": _translate_lead_deal("Deals by Status"),
 		"subtitle": _translate_lead_deal("Distribution of deals by status"),
-		"labelKey": "status",
-		"valueKey": "count",
+		"categoryColumn": "status",
+		"valueColumn": "count",
 	}
 
 
@@ -1409,8 +1413,8 @@ def get_forecasted_revenue_new(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _("Revenue from Completed Orders"),
-		"subtitle": _("Revenue from completed deals (orders) based on net_total"),
+		"title": _translate_lead_deal("Revenue from Completed Orders"),
+		"subtitle": _translate_lead_deal("Revenue from completed deals (orders) based on net_total"),
 		"xAxis": {
 			"title": _("Month"),
 			"key": "month",
@@ -1485,10 +1489,10 @@ def get_products_by_tag_donut(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _("Orders by Product Tag"),
-		"subtitle": _("Number of orders containing products by tag (percentage)"),
-		"labelKey": "tag",
-		"valueKey": "percentage",
+		"title": _translate_lead_deal("Orders by Product Tag"),
+		"subtitle": _translate_lead_deal("Number of orders containing products by tag (percentage)"),
+		"categoryColumn": "tag",
+		"valueColumn": "percentage",
 	}
 
 
@@ -1548,8 +1552,8 @@ def get_products_by_tag_bar(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _("Orders by Product Tag"),
-		"subtitle": _("Number of orders containing products by tag"),
+		"title": _translate_lead_deal("Orders by Product Tag"),
+		"subtitle": _translate_lead_deal("Number of orders containing products by tag"),
 		"xAxis": {
 			"title": _("Tag"),
 			"key": "tag",
@@ -1621,10 +1625,10 @@ def get_products_by_type_donut(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _("Orders by Product Type"),
-		"subtitle": _("Number of orders containing products by type (percentage)"),
-		"labelKey": "product_type",
-		"valueKey": "percentage",
+		"title": _translate_lead_deal("Orders by Product Type"),
+		"subtitle": _translate_lead_deal("Number of orders containing products by type (percentage)"),
+		"categoryColumn": "product_type",
+		"valueColumn": "percentage",
 	}
 
 
@@ -1682,8 +1686,8 @@ def get_products_by_type_bar(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _("Orders by Product Type"),
-		"subtitle": _("Number of orders containing products by type"),
+		"title": _translate_lead_deal("Orders by Product Type"),
+		"subtitle": _translate_lead_deal("Number of orders containing products by type"),
 		"xAxis": {
 			"title": _("Product Type"),
 			"key": "product_type",
