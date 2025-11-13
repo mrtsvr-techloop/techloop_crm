@@ -1700,7 +1700,7 @@ msgstr ""
 #: frontend/src/pages/MobileDeal.vue:384
 #: frontend/src/pages/MobileOrganization.vue:325
 msgid "Deals"
-msgstr "Offerte"
+msgstr "Ordini"
 
 #: crm/api/dashboard.py:788
 #: frontend/src/components/Dashboard/AddChartModal.vue:97
@@ -3333,7 +3333,7 @@ msgstr ""
 #: frontend/src/pages/InvalidPage.vue:9 frontend/src/pages/Lead.vue:340
 #: frontend/src/pages/MobileLead.vue:291
 msgid "Leads"
-msgstr "Potenziali Clienti"
+msgstr "Richieste d'ordine"
 
 #: crm/api/dashboard.py:934
 #: frontend/src/components/Dashboard/AddChartModal.vue:106
@@ -6047,7 +6047,7 @@ msgstr ""
 #: frontend/src/components/Settings/AssignmentRules/AssigneeRules.vue:131
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:380
 msgid "deals"
-msgstr "offerte"
+msgstr "ordini"
 
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:190
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:274
@@ -6182,7 +6182,7 @@ msgstr ""
 #: frontend/src/components/Settings/AssignmentRules/AssigneeRules.vue:130
 #: frontend/src/components/Settings/AssignmentRules/AssignmentRuleView.vue:379
 msgid "leads"
-msgstr "opportunità"
+msgstr "richieste d'ordine"
 
 #. Option for the 'Type' (Select) field in DocType 'CRM View Settings'
 #: crm/fcrm/doctype/crm_view_settings/crm_view_settings.json
@@ -6464,11 +6464,11 @@ msgstr "Resetta tutte le viste default (Lista e Kanban) per:"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "CRM Lead (List and Kanban)"
-msgstr "Offerte CRM (Lista e Kanban)"
+msgstr "Richieste d'ordine CRM (Lista e Kanban)"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "CRM Deal (List and Kanban)"
-msgstr "Offerte CRM (Lista e Kanban)"
+msgstr "Ordini CRM (Lista e Kanban)"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Contact (List)"
@@ -6496,19 +6496,19 @@ msgstr "Viste Resettate"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Lead List"
-msgstr "Lista Offerte"
+msgstr "Lista Richieste d'ordine"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Lead Kanban"
-msgstr "Kanban Offerte"
+msgstr "Kanban Richieste d'ordine"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Deal List"
-msgstr "Lista Offerte"
+msgstr "Lista Ordini"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Deal Kanban"
-msgstr "Kanban Offerte"
+msgstr "Kanban Ordini"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "Contact List"
@@ -6532,11 +6532,11 @@ msgstr "Questo resetterà tutte le viste default (Lista e Kanban) per:\n"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "• CRM Lead (List and Kanban)\n"
-msgstr "• Offerte CRM (Lista e Kanban)\n"
+msgstr "• Richieste d'ordine CRM (Lista e Kanban)\n"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "• CRM Deal (List and Kanban)\n"
-msgstr "• Offerte CRM (Lista e Kanban)\n"
+msgstr "• Ordini CRM (Lista e Kanban)\n"
 
 #: frontend/src/components/Settings/SpecialFunctions.vue
 msgid "• Contact (List)\n\n"
