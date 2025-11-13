@@ -83,12 +83,14 @@
           :isSidebarCollapsed="isSidebarCollapsed"
           :afterUpgrade="() => capture('upgrade_plan_from_trial_banner')"
         />
-        <GettingStartedBanner
+        <!-- GettingStartedBanner disabled -->
+        <!-- <GettingStartedBanner
           v-if="!isOnboardingStepsCompleted"
           :isSidebarCollapsed="isSidebarCollapsed"
-        />
+        /> -->
       </div>
-      <SidebarLink
+      <!-- Help button disabled -->
+      <!-- <SidebarLink
         v-if="isOnboardingStepsCompleted"
         :label="__('Help')"
         :isCollapsed="isSidebarCollapsed"
@@ -102,7 +104,7 @@
         <template #icon>
           <HelpIcon class="h-4 w-4" />
         </template>
-      </SidebarLink>
+      </SidebarLink> -->
       <SidebarLink
         :label="isSidebarCollapsed ? __('Expand') : __('Collapse')"
         :isCollapsed="isSidebarCollapsed"
@@ -121,7 +123,8 @@
     </div>
     <Notifications />
     <Settings />
-    <HelpModal
+    <!-- HelpModal disabled -->
+    <!-- <HelpModal
       v-if="showHelpModal"
       v-model="showHelpModal"
       v-model:articles="articles"
@@ -131,7 +134,7 @@
       :afterReset="(step) => capture('onboarding_step_reset_' + step)"
       :afterResetAll="() => capture('onboarding_steps_reset')"
       docsLink="https://docs.frappe.io/crm"
-    />
+    /> -->
     <IntermediateStepModal
       v-model="showIntermediateModal"
       :currentStep="currentStep"
@@ -515,14 +518,15 @@ const steps = reactive([
 onMounted(async () => {
   await users.promise
 
-  const filteredSteps = steps.filter((step) => {
-    if (step.condition) {
-      return step.condition()
-    }
-    return true
-  })
+  // Onboarding disabled
+  // const filteredSteps = steps.filter((step) => {
+  //   if (step.condition) {
+  //     return step.condition()
+  //   }
+  //   return true
+  // })
 
-  setUp(filteredSteps)
+  // setUp(filteredSteps)
 })
 
 // help center
