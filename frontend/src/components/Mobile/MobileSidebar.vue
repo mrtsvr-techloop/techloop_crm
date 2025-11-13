@@ -114,12 +114,12 @@ const { getPinnedViews, getPublicViews } = viewsStore()
 
 const links = [
   {
-    label: __('Leads'),
+    label: 'Pre-Ordini',
     icon: LeadsIcon,
     to: 'Leads',
   },
   {
-    label: __('Deals'),
+    label: 'Ordini',
     icon: DealsIcon,
     to: 'Deals',
   },

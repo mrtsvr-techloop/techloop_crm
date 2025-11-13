@@ -146,17 +146,17 @@ def get_status_emoji(status):
 		
 		# Mappa colori a emoji
 		color_emoji_map = {
-			"green": "✅",
-			"red": "❌",
-			"orange": "⚠️",
-			"amber": "🟡",
-			"yellow": "💛",
+			"green": "🟢",
+			"red": "🔴",
+			"orange": "🟠",
+			"amber": "🟠",
+			"yellow": "🟡",
 			"blue": "🔵",
-			"cyan": "💙",
-			"teal": "🩵",
-			"violet": "💜",
+			"cyan": "🔵",
+			"teal": "🟢",
+			"violet": "🟣",
 			"purple": "🟣",
-			"pink": "💗",
+			"pink": "🔴",
 			"gray": "⚪",
 			"black": "⚫",
 		}

@@ -754,6 +754,105 @@ def _link_contact_to_org(contact: Any, org_name: str) -> None:
 		})
 
 
+def _update_contact_delivery_address(
+	contact: Any,
+	delivery_address: Optional[str] = None,
+	delivery_region: Optional[str] = None,
+	delivery_city: Optional[str] = None,
+	delivery_zip: Optional[str] = None
+) -> None:
+	"""Create or update Address for Contact with delivery information.
+	
+	Args:
+		contact: Contact document
+		delivery_address: Street address
+		delivery_region: Region/State
+		delivery_city: City
+		delivery_zip: ZIP/Postal code
+	"""
+	try:
+		# Build address title
+		address_title_parts = []
+		if delivery_city:
+			address_title_parts.append(delivery_city)
+		if delivery_zip:
+			address_title_parts.append(delivery_zip)
+		address_title = " - ".join(address_title_parts) if address_title_parts else "Delivery Address"
+		
+		# Check if address already exists for this contact
+		existing_address = None
+		contact_links = frappe.get_all(
+			"Dynamic Link",
+			filters={
+				"link_doctype": "Contact",
+				"link_name": contact.name,
+				"parenttype": "Address"
+			},
+			fields=["parent"]
+		)
+		
+		# Try to find existing delivery address
+		if contact_links:
+			for link in contact_links:
+				try:
+					addr = frappe.get_doc("Address", link.parent)
+					# Check if this looks like a delivery address (has city/zip match)
+					if (delivery_city and addr.city == delivery_city) or \
+					   (delivery_zip and addr.pincode == delivery_zip):
+						existing_address = addr
+						break
+				except Exception:
+					continue
+		
+		# Create or update address
+		if existing_address:
+			address = existing_address
+		else:
+			address = frappe.new_doc("Address")
+			address.address_title = address_title
+			address.address_type = "Delivery"
+		
+		# Update address fields
+		if delivery_address:
+			address.address_line1 = delivery_address
+		
+		if delivery_city:
+			address.city = delivery_city
+		
+		if delivery_zip:
+			address.pincode = delivery_zip
+		
+		if delivery_region:
+			address.state = delivery_region
+		
+		# Set country if not set (default to Italy)
+		if not address.country:
+			address.country = "Italy"
+		
+		# Save address
+		address.save(ignore_permissions=True)
+		
+		# Link address to contact if not already linked
+		contact_linked = False
+		for link in address.links:
+			if link.link_doctype == "Contact" and link.link_name == contact.name:
+				contact_linked = True
+				break
+		
+		if not contact_linked:
+			address.append("links", {
+				"link_doctype": "Contact",
+				"link_name": contact.name
+			})
+			address.save(ignore_permissions=True)
+		
+		_log().info(f"Updated delivery address for contact {contact.name}: {address.name}")
+		
+	except Exception as e:
+		_log().warning(f"Error updating delivery address for contact {contact.name}: {str(e)}")
+		# Don't fail the whole operation if address update fails
+
+
 def update_contact_from_thread(
 	first_name: str,
 	last_name: str,
@@ -762,6 +861,9 @@ def update_contact_from_thread(
 	confirm_organization: Optional[bool] = None,
 	phone_from: Optional[str] = None,
 	delivery_address: Optional[str] = None,
+	delivery_region: Optional[str] = None,
+	delivery_city: Optional[str] = None,
+	delivery_zip: Optional[str] = None,
 	website: Optional[str] = None,
 	company_name: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -782,18 +884,21 @@ def update_contact_from_thread(
 		- phone_from: Phone number (injected by AI runtime)
 		- website: Website URL
 		- company_name: Company name (saved as custom field if exists)
-		- delivery_address: Delivery address (parameter kept for compatibility, but NOT saved on Contact)
+		- delivery_address: Delivery street address (saved in Address doctype)
+		- delivery_region: Delivery region/state (saved in Address doctype)
+		- delivery_city: Delivery city (saved in Address doctype)
+		- delivery_zip: Delivery ZIP/postal code (saved in Address doctype)
 	
 	Behavior:
 		1. Finds Contact by phone (or creates new)
 		2. Updates name, email, website, and company_name
-		3. If organization provided:
+		3. Creates/updates Address with delivery information if provided
+		4. If organization provided:
 		   - Existing org + confirm=True: Link contact to org
 		   - Existing org + confirm=False: Return needs_confirmation
 		   - Non-existing org: Do NOT create (security)
 	
-	Note: delivery_address is NOT saved on Contact because the 'address' field
-	      is a Link to Address doctype. Delivery address is saved on Lead/Deal instead.
+	Note: Delivery address information is saved in Address doctype and linked to Contact.
 	
 	Returns:
 		{
@@ -892,9 +997,15 @@ def update_contact_from_thread(
 				except Exception:
 					_log().warning(f"Could not set company_name on contact: field may not exist")
 		
-		# Note: delivery_address is NOT saved on Contact because the 'address' field 
-		# is a Link field to Address doctype, not a text field.
-		# The delivery address is saved on the Lead/Deal documents instead.
+		# Create/Update Address for delivery information if provided
+		if delivery_address or delivery_city or delivery_zip or delivery_region:
+			_update_contact_delivery_address(
+				contact,
+				delivery_address,
+				delivery_region,
+				delivery_city,
+				delivery_zip
+			)
 		
 		contact.save(ignore_permissions=True)
 		_log().info(f"Updated contact: {contact.name}")

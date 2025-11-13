@@ -204,12 +204,12 @@ const links = [
     to: 'Dashboard',
   },
   {
-    label: __('Leads'),
+    label: 'Pre-Ordini',
     icon: LeadsIcon,
     to: 'Leads',
   },
   {
-    label: __('Deals'),
+    label: 'Ordini',
     icon: DealsIcon,
     to: 'Deals',
   },
