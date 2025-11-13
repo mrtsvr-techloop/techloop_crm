@@ -536,6 +536,92 @@ class CRMLead(Document):
 		}
 
 
+def _send_convert_to_deal_whatsapp_notification(lead, deal_name):
+	"""
+	Send WhatsApp notification when Lead is converted to Deal.
+	"""
+	try:
+		# Get deal document
+		deal = frappe.get_doc("CRM Deal", deal_name)
+		
+		# Check if lead has mobile number
+		if not lead.mobile_no:
+			return
+		
+		# Get brand name from settings
+		brand_name = frappe.db.get_single_value("FCRM Settings", "brand_name")
+		
+		# Format order number: CRM-DEAL-2025-00021 -> 25-00021
+		# or CRM-LEAD-2025-00021 -> 25-00021
+		order_number = deal_name
+		if "-" in deal_name:
+			parts = deal_name.split("-")
+			# Find the year (4 digits) and the number after it
+			for i, part in enumerate(parts):
+				if len(part) == 4 and part.isdigit():
+					# Found the year
+					year_short = part[-2:]  # Last 2 digits of year
+					if i + 1 < len(parts):
+						number = parts[i + 1]
+						order_number = f"{year_short}-{number}"
+						break
+		
+		# Build delivery address string
+		delivery_parts = []
+		if deal.delivery_address:
+			delivery_parts.append(deal.delivery_address)
+		if deal.delivery_region:
+			delivery_parts.append(deal.delivery_region)
+		if deal.delivery_city:
+			delivery_parts.append(deal.delivery_city)
+		if deal.delivery_zip:
+			delivery_parts.append(deal.delivery_zip)
+		delivery_address_str = ", ".join(delivery_parts) if delivery_parts else "Non specificato"
+		
+		# Format delivery date
+		delivery_date_str = ""
+		if deal.delivery_date:
+			from frappe.utils import formatdate
+			delivery_date_str = formatdate(deal.delivery_date, "dd/MM/yyyy")
+		
+		# Compose message
+		message_parts = []
+		message_parts.append("✅ Il tuo ordine è stato processato e preso in carico!")
+		message_parts.append("L'ordine è ora in preparazione.")
+		message_parts.append("")
+		message_parts.append("📋 Riepilogo Ordine:")
+		if delivery_date_str:
+			message_parts.append(f"📅 Data di consegna: {delivery_date_str}")
+		message_parts.append(f"📍 Indirizzo di consegna: {delivery_address_str}")
+		message_parts.append("")
+		message_parts.append(f"🔢 Numero ordine aggiornato: {order_number}")
+		
+		if brand_name:
+			message_parts.append("")
+			message_parts.append(f"Grazie per aver ordinato da {brand_name}")
+		
+		message = "\n".join(message_parts)
+		
+		# Send WhatsApp message
+		from crm.api.whatsapp import create_whatsapp_message
+		create_whatsapp_message(
+			reference_doctype="CRM Deal",
+			reference_name=deal_name,
+			message=message,
+			to=lead.mobile_no,
+			attach="",
+			reply_to=None,
+			content_type="text",
+			label="Convert to Deal Notification",
+		)
+	except Exception as e:
+		# Log error but don't fail the conversion
+		frappe.log_error(
+			title="Error sending WhatsApp notification on convert to deal",
+			message=f"Lead: {lead.name}, Deal: {deal_name}, Error: {str(e)}"
+		)
+
+
 @frappe.whitelist()
 def convert_to_deal(lead, doc=None, deal=None, existing_contact=None, existing_organization=None):
 	if not (doc and doc.flags.get("ignore_permissions")) and not frappe.has_permission(
@@ -552,4 +638,8 @@ def convert_to_deal(lead, doc=None, deal=None, existing_contact=None, existing_o
 	contact = lead.create_contact(existing_contact, False)
 	organization = lead.create_organization(existing_organization)
 	_deal = lead.create_deal(contact, organization, deal)
+	
+	# Send WhatsApp notification after deal creation
+	_send_convert_to_deal_whatsapp_notification(lead, _deal)
+	
 	return _deal
