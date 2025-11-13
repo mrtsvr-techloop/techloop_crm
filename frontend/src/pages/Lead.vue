@@ -448,6 +448,54 @@ const sections = createResource({
   cache: ['sidePanelSections', 'CRM Lead'],
   params: { doctype: 'CRM Lead' },
   auto: true,
+  transform: (data) => {
+    // Add delivery information section
+    const deliverySectionFields = [
+      {
+        fieldname: 'delivery_date',
+        fieldtype: 'Date',
+        label: __('Data di Consegna'),
+        visible: true,
+      },
+      {
+        fieldname: 'delivery_region',
+        fieldtype: 'Data',
+        label: __('Regione'),
+        visible: true,
+      },
+      {
+        fieldname: 'delivery_city',
+        fieldtype: 'Data',
+        label: __('Città'),
+        visible: true,
+      },
+      {
+        fieldname: 'delivery_zip',
+        fieldtype: 'Data',
+        label: __('CAP'),
+        visible: true,
+      },
+      {
+        fieldname: 'delivery_address',
+        fieldtype: 'Small Text',
+        label: __('Indirizzo di Consegna'),
+        visible: true,
+      },
+    ]
+    
+    data.push({
+      name: 'delivery_section',
+      label: __('Delivery Information'),
+      opened: true,
+      visible: true,
+      columns: [{
+        name: 'delivery_column',
+        fields: deliverySectionFields
+      }]
+    })
+    
+    return data
+  },
 })
 
 async function triggerStatusChange(value) {

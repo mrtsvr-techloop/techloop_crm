@@ -65,6 +65,33 @@
               :placeholder="__('Enter delivery address...')"
             ></textarea>
           </div>
+          <div>
+            <label class="block text-sm text-ink-gray-6 mb-2">{{ __('Delivery Region') }}</label>
+            <input
+              type="text"
+              v-model="document.doc.delivery_region"
+              class="w-full px-3 py-2 text-sm border border-outline-gray-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :placeholder="__('Enter delivery region...')"
+            />
+          </div>
+          <div>
+            <label class="block text-sm text-ink-gray-6 mb-2">{{ __('Delivery City') }}</label>
+            <input
+              type="text"
+              v-model="document.doc.delivery_city"
+              class="w-full px-3 py-2 text-sm border border-outline-gray-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :placeholder="__('Enter delivery city...')"
+            />
+          </div>
+          <div>
+            <label class="block text-sm text-ink-gray-6 mb-2">{{ __('Delivery ZIP Code') }}</label>
+            <input
+              type="text"
+              v-model="document.doc.delivery_zip"
+              class="w-full px-3 py-2 text-sm border border-outline-gray-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :placeholder="__('Enter delivery ZIP code...')"
+            />
+          </div>
         </div>
       </div>
       
