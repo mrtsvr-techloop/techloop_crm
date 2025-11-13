@@ -92,7 +92,7 @@ const routes = [
   {
     path: '/listino-prodotti',
     name: 'Listino Prodotti',
-    component: () => import('@/pages/Test.vue'),
+    component: () => import('@/pages/Listino_prodotti.vue'),
   },
   {
     path: '/:invalidpath',

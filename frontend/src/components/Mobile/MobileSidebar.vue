@@ -101,7 +101,7 @@ import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
-import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
+import ProductsIcon from '@/components/Icons/ProductsIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
 import { viewsStore } from '@/stores/views'
 import { unreadNotificationsCount } from '@/stores/notifications'
@@ -114,7 +114,7 @@ const { getPinnedViews, getPublicViews } = viewsStore()
 
 const links = [
   {
-    label: 'Pre-Ordini',
+    label: 'Richieste d\'ordine',
     icon: LeadsIcon,
     to: 'Leads',
   },
@@ -150,7 +150,7 @@ const links = [
   },
   {
     label: __('Listino Prodotti'),
-    icon: SquareAsterisk,
+    icon: ProductsIcon,
     to: 'Listino Prodotti',
   },
   {
@@ -218,7 +218,7 @@ function getIcon(routeName, icon) {
     case 'Call Logs':
       return PhoneIcon
     case 'Listino Prodotti':
-      return SquareAsterisk
+      return ProductsIcon
     default:
       return PinIcon
   }

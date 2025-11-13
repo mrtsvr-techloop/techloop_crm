@@ -150,7 +150,7 @@ import StepsIcon from '@/components/Icons/StepsIcon.vue'
 import Section from '@/components/Section.vue'
 import PinIcon from '@/components/Icons/PinIcon.vue'
 import UserDropdown from '@/components/UserDropdown.vue'
-import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
+import ProductsIcon from '@/components/Icons/ProductsIcon.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
@@ -161,6 +161,7 @@ import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import CollapseSidebar from '@/components/Icons/CollapseSidebar.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import HelpIcon from '@/components/Icons/HelpIcon.vue'
+import SettingsIcon from '@/components/Icons/SettingsIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
 import Notifications from '@/components/Notifications.vue'
 import Settings from '@/components/Settings/Settings.vue'
@@ -204,7 +205,7 @@ const links = [
     to: 'Dashboard',
   },
   {
-    label: 'Pre-Ordini',
+    label: 'Richieste d\'ordine',
     icon: LeadsIcon,
     to: 'Leads',
   },
@@ -240,7 +241,7 @@ const links = [
   },
   {
     label: __('Listino Prodotti'),
-    icon: SquareAsterisk,
+    icon: ProductsIcon,
     to: 'Listino Prodotti',
   },
 ]
@@ -308,7 +309,7 @@ function getIcon(routeName, icon) {
     case 'Call Logs':
       return PhoneIcon
     case 'Listino Prodotti':
-      return SquareAsterisk
+      return ProductsIcon
     default:
       return PinIcon
   }
@@ -338,7 +339,7 @@ const steps = reactive([
   {
     name: 'setup_your_password',
     title: __('Setup your password'),
-    icon: markRaw(SquareAsterisk),
+    icon: markRaw(SettingsIcon),
     completed: false,
     onClick: () => {
       minimize.value = true
