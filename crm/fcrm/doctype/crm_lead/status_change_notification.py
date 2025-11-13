@@ -136,6 +136,56 @@ def get_contact_phone(doc):
 	return None
 
 
+def get_status_emoji(status):
+	"""
+	Ottiene l'emoji appropriata basata sul colore/tipo dello stato.
+	"""
+	try:
+		# Ottieni il colore dello stato dal database
+		status_color = frappe.db.get_value("CRM Lead Status", status, "color")
+		
+		# Mappa colori a emoji
+		color_emoji_map = {
+			"green": "✅",
+			"red": "❌",
+			"orange": "⚠️",
+			"amber": "🟡",
+			"yellow": "💛",
+			"blue": "🔵",
+			"cyan": "💙",
+			"teal": "🩵",
+			"violet": "💜",
+			"purple": "🟣",
+			"pink": "💗",
+			"gray": "⚪",
+			"black": "⚫",
+		}
+		
+		# Emoji basata sul colore
+		emoji = color_emoji_map.get(status_color, "📋")
+		
+		# Emoji aggiuntive basate sul nome dello stato
+		status_emoji_map = {
+			"Awaiting Payment": "💳",
+			"Confirmed": "✅",
+			"Not Paid": "❌",
+			"Rejected": "🚫",
+			"Qualified": "⭐",
+			"New": "🆕",
+		}
+		
+		# Se c'è un'emoji specifica per lo stato, usala insieme al colore
+		status_emoji = status_emoji_map.get(status, "")
+		
+		# Combina emoji colore e stato
+		if status_emoji:
+			return f"{emoji} {status_emoji}"
+		return emoji
+		
+	except Exception:
+		return "📋"
+
+
 def compose_message(doc, status):
 	"""
 	Componi il messaggio WhatsApp per il cambio di stato.
@@ -144,25 +194,48 @@ def compose_message(doc, status):
 		customer_name = doc.lead_name or doc.first_name or "Cliente"
 		order_number = format_order_number(doc.name)
 		status_label = _(status)
+		status_emoji = get_status_emoji(status)
 		
 		# Ottieni il messaggio personalizzato o default
 		status_message = get_custom_message(status)
 		
-		# Componi il messaggio base
+		# Componi il messaggio base con emoji
 		message_parts = [
-			f"Ciao {customer_name},",
+			f"{status_emoji} Ciao {customer_name},",
 			"",
 			f"ti informiamo che lo stato del tuo ordine {order_number} è cambiato a '{status_label}'.",
 			"",
 			status_message,
 		]
 		
+		# Aggiungi informazioni di consegna se disponibili (per stati positivi)
+		if status in ["Confirmed", "Awaiting Payment"]:
+			delivery_info_parts = []
+			if hasattr(doc, "delivery_date") and doc.delivery_date:
+				from frappe.utils import formatdate
+				delivery_date_str = formatdate(doc.delivery_date, "dd/MM/yyyy")
+				delivery_info_parts.append(f"📅 Data di consegna: {delivery_date_str}")
+			
+			if hasattr(doc, "delivery_address") and doc.delivery_address:
+				delivery_address_str = doc.delivery_address
+				if hasattr(doc, "delivery_city") and doc.delivery_city:
+					delivery_address_str += f", {doc.delivery_city}"
+				if hasattr(doc, "delivery_zip") and doc.delivery_zip:
+					delivery_address_str += f" ({doc.delivery_zip})"
+				delivery_info_parts.append(f"📍 Indirizzo: {delivery_address_str}")
+			
+			if delivery_info_parts:
+				message_parts.append("")
+				message_parts.append("📦 *Dettagli Consegna:*")
+				for info in delivery_info_parts:
+					message_parts.append(info)
+		
 		# Se lo stato è "Awaiting Payment", aggiungi dettagli ordine e pagamento
 		if status == "Awaiting Payment":
 			# Aggiungi riepilogo prodotti se disponibili
 			if doc.products:
 				message_parts.append("")
-				message_parts.append("*Riepilogo Ordine:*")
+				message_parts.append("📋 *Riepilogo Ordine:*")
 				message_parts.append("")
 			
 				for product in doc.products:
@@ -170,17 +243,17 @@ def compose_message(doc, status):
 					qty = float(product.qty or 0)
 					rate = float(product.rate or 0)
 					amount = float(product.amount or 0)
-					message_parts.append(f"{product_name}: {qty:.1f} x €{rate:.2f} = €{amount:.2f}")
+					message_parts.append(f"• {product_name}: {qty:.1f} x €{rate:.2f} = €{amount:.2f}")
 				
 				message_parts.append("")
 				net_total = float(doc.net_total or 0)
-				message_parts.append(f"*Totale: EUR {net_total:.2f}*")
+				message_parts.append(f"💰 *Totale: EUR {net_total:.2f}*")
 			
 			# Aggiungi informazioni di pagamento
 			payment_info = get_payment_info()
 			if payment_info:
 				message_parts.append("")
-				message_parts.append("*Informazioni Pagamento:*")
+				message_parts.append("💳 *Informazioni Pagamento:*")
 				message_parts.append("")
 				# Sostituisci placeholder nel testo
 				payment_text = payment_info.replace("{numero_ordine}", order_number)
