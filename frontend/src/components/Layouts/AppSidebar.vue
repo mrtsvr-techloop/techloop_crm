@@ -208,12 +208,12 @@ const links = [
     to: 'Dashboard',
   },
   {
-    label: 'Richieste d\'ordine',
+    label: __('Leads'),
     icon: LeadsIcon,
     to: 'Leads',
   },
   {
-    label: 'Ordini',
+    label: __('Deals'),
     icon: DealsIcon,
     to: 'Deals',
   },

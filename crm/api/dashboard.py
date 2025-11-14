@@ -7,29 +7,6 @@ from crm.fcrm.doctype.crm_dashboard.crm_dashboard import create_default_manager_
 from crm.utils import sales_user_only
 
 
-def _translate_lead_deal(text):
-	"""
-	Helper function to translate Lead/Deal terminology in dashboard.
-	Replaces 'Lead' with 'Richieste d'ordine' and 'Deal' with 'Ordini'.
-	"""
-	# Get current language
-	lang = frappe.local.lang or 'en'
-	
-	if lang == 'it':
-		text = text.replace('Lead', 'Richieste d\'ordine')
-		text = text.replace('lead', 'richieste d\'ordine')
-		text = text.replace('Leads', 'Richieste d\'ordine')
-		text = text.replace('leads', 'richieste d\'ordine')
-		text = text.replace('Deal', 'Ordini')
-		text = text.replace('deal', 'ordini')
-		text = text.replace('Deals', 'Ordini')
-		text = text.replace('deals', 'ordini')
-		text = text.replace('Orders', 'Ordini')
-		text = text.replace('orders', 'ordini')
-		text = text.replace('Order', 'Ordine')
-		text = text.replace('order', 'ordine')
-	
-	return _(text)
 
 
 @frappe.whitelist()
@@ -151,8 +128,8 @@ def get_total_leads(from_date, to_date, user=""):
 	)
 
 	return {
-		"title": _translate_lead_deal("Total leads"),
-		"tooltip": _translate_lead_deal("Total number of leads"),
+		"title": _("Total leads"),
+		"tooltip": _("Total number of leads"),
 		"value": current_month_leads,
 		"delta": delta_in_percentage,
 		"deltaSuffix": "%",
@@ -212,8 +189,8 @@ def get_ongoing_deals(from_date, to_date, user=""):
 	)
 
 	return {
-		"title": _translate_lead_deal("Ongoing deals"),
-		"tooltip": _translate_lead_deal("Total number of non won/lost deals"),
+		"title": _("Ongoing deals"),
+		"tooltip": _("Total number of non won/lost deals"),
 		"value": current_month_deals,
 		"delta": delta_in_percentage,
 		"deltaSuffix": "%",
@@ -271,8 +248,8 @@ def get_average_ongoing_deal_value(from_date, to_date, user=""):
 	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. ongoing deal value"),
-		"tooltip": _translate_lead_deal("Average deal value of non won/lost deals"),
+		"title": _("Avg. ongoing deal value"),
+		"tooltip": _("Average deal value of non won/lost deals"),
 		"value": current_month_avg_value,
 		"delta": avg_value_delta,
 		"prefix": get_base_currency_symbol(),
@@ -332,8 +309,8 @@ def get_won_deals(from_date, to_date, user=""):
 	)
 
 	return {
-		"title": _translate_lead_deal("Won deals"),
-		"tooltip": _translate_lead_deal("Total number of won deals based on its closure date"),
+		"title": _("Won deals"),
+		"tooltip": _("Total number of won deals based on its closure date"),
 		"value": current_month_deals,
 		"delta": delta_in_percentage,
 		"deltaSuffix": "%",
@@ -391,8 +368,8 @@ def get_average_won_deal_value(from_date, to_date, user=""):
 	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. won deal value"),
-		"tooltip": _translate_lead_deal("Average deal value of won deals"),
+		"title": _("Avg. won deal value"),
+		"tooltip": _("Average deal value of won deals"),
 		"value": current_month_avg_value,
 		"delta": avg_value_delta,
 		"prefix": get_base_currency_symbol(),
@@ -450,8 +427,8 @@ def get_average_deal_value(from_date, to_date, user=""):
 	delta = current_month_avg - prev_month_avg if prev_month_avg else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. deal value"),
-		"tooltip": _translate_lead_deal("Average deal value of ongoing & won deals"),
+		"title": _("Avg. deal value"),
+		"tooltip": _("Average deal value of ongoing & won deals"),
 		"value": current_month_avg,
 		"prefix": get_base_currency_symbol(),
 		"delta": delta,
@@ -502,8 +479,8 @@ def get_average_time_to_close_a_lead(from_date, to_date, user=""):
 	delta_lead = current_avg_lead - prev_avg_lead if prev_avg_lead else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. time to close a lead"),
-		"tooltip": _translate_lead_deal("Average time taken from lead creation to deal closure"),
+		"title": _("Avg. time to close a lead"),
+		"tooltip": _("Average time taken from lead creation to deal closure"),
 		"value": current_avg_lead,
 		"suffix": " days",
 		"delta": delta_lead,
@@ -555,8 +532,8 @@ def get_average_time_to_close_a_deal(from_date, to_date, user=""):
 	delta_deal = current_avg_deal - prev_avg_deal if prev_avg_deal else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. time to close a deal"),
-		"tooltip": _translate_lead_deal("Average time taken from deal creation to deal closure"),
+		"title": _("Avg. time to close a deal"),
+		"tooltip": _("Average time taken from deal creation to deal closure"),
 		"value": current_avg_deal,
 		"suffix": " days",
 		"delta": delta_deal,
@@ -640,7 +617,7 @@ def get_sales_trend(from_date="", to_date="", user=""):
 	return {
 		"data": sales_trend,
 		"title": _("Sales trend"),
-		"subtitle": _translate_lead_deal("Daily performance of leads, deals, and wins"),
+		"subtitle": _("Daily performance of leads, deals, and wins"),
 		"xAxis": {
 			"title": _("Date"),
 			"key": "date",
@@ -772,7 +749,7 @@ def get_funnel_conversion(from_date="", to_date="", user=""):
 	total_leads_count = total_leads[0].count if total_leads else 0
 
 	# Translate stage name
-	stage_name = _translate_lead_deal("Leads")
+	stage_name = _("Leads")
 	result.append({"stage": stage_name, "count": total_leads_count})
 
 	result += get_deal_status_change_counts(from_date, to_date, deal_conds, deal_filters)
@@ -780,7 +757,7 @@ def get_funnel_conversion(from_date="", to_date="", user=""):
 	return {
 		"data": result or [],
 		"title": _("Funnel conversion"),
-		"subtitle": _translate_lead_deal("Lead to deal conversion pipeline"),
+		"subtitle": _("Lead to deal conversion pipeline"),
 		"xAxis": {
 			"title": _("Stage"),
 			"key": "stage",
@@ -842,7 +819,7 @@ def get_deals_by_stage_axis(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by ongoing & won stage"),
+		"title": _("Deals by ongoing & won stage"),
 		"xAxis": {
 			"title": _("Stage"),
 			"key": "stage",
@@ -895,7 +872,7 @@ def get_deals_by_stage_donut(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by stage"),
+		"title": _("Deals by stage"),
 		"subtitle": _("Current pipeline distribution"),
 		"categoryColumn": "stage",
 		"valueColumn": "count",
@@ -943,8 +920,8 @@ def get_lost_deal_reasons(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Lost deal reasons"),
-		"subtitle": _translate_lead_deal("Common reasons for losing deals"),
+		"title": _("Lost deal reasons"),
+		"subtitle": _("Common reasons for losing deals"),
 		"xAxis": {
 			"title": _("Reason"),
 			"key": "reason",
@@ -997,8 +974,8 @@ def get_leads_by_source(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Leads by source"),
-		"subtitle": _translate_lead_deal("Lead generation channel analysis"),
+		"title": _("Leads by source"),
+		"subtitle": _("Lead generation channel analysis"),
 		"categoryColumn": "source",
 		"valueColumn": "count",
 	}
@@ -1042,8 +1019,8 @@ def get_deals_by_source(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by source"),
-		"subtitle": _translate_lead_deal("Deal generation channel analysis"),
+		"title": _("Deals by source"),
+		"subtitle": _("Deal generation channel analysis"),
 		"categoryColumn": "source",
 		"valueColumn": "count",
 	}
@@ -1088,18 +1065,18 @@ def get_deals_by_territory(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by territory"),
-		"subtitle": _translate_lead_deal("Geographic distribution of deals and revenue"),
+		"title": _("Deals by territory"),
+		"subtitle": _("Geographic distribution of deals and revenue"),
 		"xAxis": {
 			"title": _("Territory"),
 			"key": "territory",
 			"type": "category",
 		},
 		"yAxis": {
-			"title": _translate_lead_deal("Number of deals"),
+			"title": _("Number of deals"),
 		},
 		"y2Axis": {
-			"title": _translate_lead_deal("Deal value") + f" ({get_base_currency_symbol()})",
+			"title": _("Deal value") + f" ({get_base_currency_symbol()})",
 		},
 		"series": [
 			{"name": "deals", "type": "bar"},
@@ -1148,18 +1125,18 @@ def get_deals_by_salesperson(from_date="", to_date="", user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by salesperson"),
-		"subtitle": _translate_lead_deal("Number of deals and total value per salesperson"),
+		"title": _("Deals by salesperson"),
+		"subtitle": _("Number of deals and total value per salesperson"),
 		"xAxis": {
 			"title": _("Salesperson"),
 			"key": "salesperson",
 			"type": "category",
 		},
 		"yAxis": {
-			"title": _translate_lead_deal("Number of deals"),
+			"title": _("Number of deals"),
 		},
 		"y2Axis": {
-			"title": _translate_lead_deal("Deal value") + f" ({get_base_currency_symbol()})",
+			"title": _("Deal value") + f" ({get_base_currency_symbol()})",
 		},
 		"series": [
 			{"name": "deals", "type": "bar"},
@@ -1203,8 +1180,8 @@ def get_total_leads_by_status(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Leads by Status"),
-		"subtitle": _translate_lead_deal("Distribution of leads by status"),
+		"title": _("Leads by Status"),
+		"subtitle": _("Distribution of leads by status"),
 		"categoryColumn": "status",
 		"valueColumn": "count",
 	}
@@ -1245,8 +1222,8 @@ def get_total_deals_by_status(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Deals by Status"),
-		"subtitle": _translate_lead_deal("Distribution of deals by status"),
+		"title": _("Deals by Status"),
+		"subtitle": _("Distribution of deals by status"),
 		"categoryColumn": "status",
 		"valueColumn": "count",
 	}
@@ -1300,8 +1277,8 @@ def get_average_lead_value(from_date, to_date, user=""):
 	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. lead value"),
-		"tooltip": _translate_lead_deal("Average net total value of leads"),
+		"title": _("Avg. lead value"),
+		"tooltip": _("Average net total value of leads"),
 		"value": current_month_avg_value,
 		"delta": avg_value_delta,
 		"prefix": get_base_currency_symbol(),
@@ -1356,8 +1333,8 @@ def get_average_deal_value_new(from_date, to_date, user=""):
 	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
 
 	return {
-		"title": _translate_lead_deal("Avg. deal value"),
-		"tooltip": _translate_lead_deal("Average net total value of deals"),
+		"title": _("Avg. deal value"),
+		"tooltip": _("Average net total value of deals"),
 		"value": current_month_avg_value,
 		"delta": avg_value_delta,
 		"prefix": get_base_currency_symbol(),
@@ -1412,8 +1389,8 @@ def get_total_deals(from_date, to_date, user=""):
 	)
 
 	return {
-		"title": _translate_lead_deal("Total deals"),
-		"tooltip": _translate_lead_deal("Total number of deals"),
+		"title": _("Total deals"),
+		"tooltip": _("Total number of deals"),
 		"value": current_month_deals,
 		"delta": delta_in_percentage,
 		"deltaSuffix": "%",
@@ -1461,8 +1438,8 @@ def get_forecasted_revenue_new(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Revenue from Completed Orders"),
-		"subtitle": _translate_lead_deal("Revenue from completed deals (orders) based on net_total"),
+		"title": _("Revenue from Completed Orders"),
+		"subtitle": _("Revenue from completed deals (orders) based on net_total"),
 		"xAxis": {
 			"title": _("Month"),
 			"key": "month",
@@ -1537,8 +1514,8 @@ def get_products_by_tag_donut(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Orders by Product Tag"),
-		"subtitle": _translate_lead_deal("Number of orders containing products by tag (percentage)"),
+		"title": _("Orders by Product Tag"),
+		"subtitle": _("Number of orders containing products by tag (percentage)"),
 		"categoryColumn": "tag",
 		"valueColumn": "percentage",
 	}
@@ -1600,8 +1577,8 @@ def get_products_by_tag_bar(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Orders by Product Tag"),
-		"subtitle": _translate_lead_deal("Number of orders containing products by tag"),
+		"title": _("Orders by Product Tag"),
+		"subtitle": _("Number of orders containing products by tag"),
 		"xAxis": {
 			"title": _("Tag"),
 			"key": "tag",
@@ -1673,8 +1650,8 @@ def get_products_by_type_donut(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Orders by Product Type"),
-		"subtitle": _translate_lead_deal("Number of orders containing products by type (percentage)"),
+		"title": _("Orders by Product Type"),
+		"subtitle": _("Number of orders containing products by type (percentage)"),
 		"categoryColumn": "product_type",
 		"valueColumn": "percentage",
 	}
@@ -1734,8 +1711,8 @@ def get_products_by_type_bar(from_date, to_date, user=""):
 
 	return {
 		"data": result or [],
-		"title": _translate_lead_deal("Orders by Product Type"),
-		"subtitle": _translate_lead_deal("Number of orders containing products by type"),
+		"title": _("Orders by Product Type"),
+		"subtitle": _("Number of orders containing products by type"),
 		"xAxis": {
 			"title": _("Product Type"),
 			"key": "product_type",
