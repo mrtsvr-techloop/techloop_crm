@@ -356,6 +356,7 @@ def add_default_lead_sources():
 		"Customer's Vendor",
 		"Campaign",
 		"Walk In",
+		"Facebook"
 	]
 
 	for source in lead_sources:

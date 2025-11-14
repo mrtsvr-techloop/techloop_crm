@@ -20,3 +20,4 @@ crm.patches.v1_0.add_fields_in_assignment_rule
 crm.patches.v1_0.add_default_quick_filters
 crm.patches.v1_0.update_lead_and_deal_statuses
 crm.patches.v1_0.reset_dashboard_layout
+crm.patches.v1_0.add_fb_lead_source
