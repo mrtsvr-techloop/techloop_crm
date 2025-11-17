@@ -270,9 +270,8 @@ function onProductChange(index) {
   if (selectedProduct) {
     product.product_name = selectedProduct.product_name
     product.rate = selectedProduct.standard_rate || 0
+    // calculateTotals emetterà l'update dopo il debounce
     calculateTotals(index)
-    // Emetti update solo quando un prodotto valido è stato selezionato
-    emit('update', products.value)
   } else {
     // Se il prodotto viene deselezionato, resetta i campi
     product.product_name = ''

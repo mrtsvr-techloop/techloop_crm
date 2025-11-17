@@ -579,9 +579,26 @@ function reloadAssignees(data) {
   }
 }
 
+// Lock per evitare chiamate simultanee
+let isUpdatingProducts = false
+
 function updateProducts(products) {
+  // Se c'è già un aggiornamento in corso, ignora questa chiamata
+  if (isUpdatingProducts) {
+    return
+  }
+  
   // Filtra i prodotti vuoti (senza product_name) prima di salvare
   const validProducts = products.filter(p => p.product_name && p.product_name.trim() !== '')
+  
+  // Calcola i totali
+  const total = validProducts.reduce((sum, product) => sum + (product.amount || 0), 0)
+  const netTotal = validProducts.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
+  
+  // Aggiorna i valori locali prima di salvare
+  doc.value.products = validProducts
+  doc.value.total = total
+  doc.value.net_total = netTotal
   
   // Disabilita temporaneamente i toast durante l'aggiornamento
   const originalShowAlert = window.frappe?.show_alert
@@ -594,27 +611,65 @@ function updateProducts(products) {
     window.frappe.msgprint = () => {}
   }
   
-  try {
-    // Salva solo i prodotti validi
-    updateField('products', validProducts)
-    // Update totals
-    const total = validProducts.reduce((sum, product) => sum + (product.amount || 0), 0)
-    const netTotal = validProducts.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
-    updateField(['total', 'net_total'], [total, netTotal])
-  } catch (error) {
-    // Se c'è un errore di timestamp mismatch, ricarica il documento
-    if (error.exc_type === 'TimestampMismatchError') {
-      document.reload()
-    }
-    // Silenzia gli altri errori per evitare toast fastidiosi
-    console.log('Products updated silently', error)
-  } finally {
-    // Ripristina le funzioni originali
+  // Imposta il lock
+  isUpdatingProducts = true
+  
+  // Funzione helper per ripristinare i toast
+  const restoreToastFunctions = () => {
     if (window.frappe && originalShowAlert) {
       window.frappe.show_alert = originalShowAlert
       window.frappe.show_message = originalShowMessage
       window.frappe.msgprint = originalMsgprint
     }
   }
+  
+  // Salva tutti i campi in una singola chiamata per evitare conflitti di timestamp
+  document.save.submit(null, {
+    onSuccess: () => {
+      isUpdatingProducts = false
+      reload.value = true
+      restoreToastFunctions()
+    },
+    onError: (err) => {
+      isUpdatingProducts = false
+      restoreToastFunctions()
+      
+      // Se c'è un errore di timestamp mismatch, ricarica il documento e riprova
+      if (err.exc_type === 'TimestampMismatchError') {
+        document.reload().then(() => {
+          // Riprova dopo il reload
+          doc.value.products = validProducts
+          doc.value.total = total
+          doc.value.net_total = netTotal
+          isUpdatingProducts = true
+          
+          // Disabilita di nuovo i toast per il retry
+          if (window.frappe) {
+            window.frappe.show_alert = () => {}
+            window.frappe.show_message = () => {}
+            window.frappe.msgprint = () => {}
+          }
+          
+          document.save.submit(null, {
+            onSuccess: () => {
+              isUpdatingProducts = false
+              reload.value = true
+              restoreToastFunctions()
+            },
+            onError: (retryErr) => {
+              isUpdatingProducts = false
+              restoreToastFunctions()
+              // Ripristina i valori originali se anche il retry fallisce
+              document.reload()
+            },
+          })
+        })
+        return
+      }
+      
+      // Per altri errori, ricarica il documento per sincronizzare
+      document.reload()
+    },
+  })
 }
 </script>
