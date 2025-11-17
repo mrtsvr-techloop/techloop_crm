@@ -48,6 +48,7 @@ def get_linked_deals(contact):
 			d.parent,
 			fields=[
 				"name",
+				"status",
 				"order_date",
 				"delivery_date",
 				"delivery_address",
@@ -149,6 +150,7 @@ def get_linked_leads(contact):
 			Lead.total,
 		)
 		.where(or_condition)
+		.where(Lead.converted == 0)
 		.orderby(Lead.modified, order=Order.desc)
 	)
 	

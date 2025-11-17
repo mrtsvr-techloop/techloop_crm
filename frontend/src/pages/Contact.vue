@@ -497,6 +497,10 @@ const columns = computed(() => orderColumns)
 function getDealRowObject(deal) {
   return {
     name: deal.name,
+    status: {
+      label: __(deal.status),
+      color: getDealStatus(deal.status)?.color,
+    },
     order_date: deal.order_date ? formatDate(deal.order_date, '', true) : '',
     delivery_date: deal.delivery_date ? formatDate(deal.delivery_date, '', true) : '',
     delivery_address: deal.delivery_address || '',
