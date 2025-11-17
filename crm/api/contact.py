@@ -64,37 +64,96 @@ def get_linked_deals(contact):
 
 @frappe.whitelist()
 def get_linked_leads(contact):
-	"""Get linked leads for a contact"""
+	"""Get linked leads for a contact by phone number"""
 
 	if not frappe.has_permission("Contact", "read", contact):
 		frappe.throw("Not permitted", frappe.PermissionError)
 
-	lead_names = frappe.get_all(
-		"CRM Contacts",
-		filters={"contact": contact, "parenttype": "CRM Lead"},
-		fields=["parent"],
-		distinct=True,
-	)
-
-	# get leads data with required fields for contact view
-	leads = []
-	for l in lead_names:
-		lead = frappe.get_cached_doc(
-			"CRM Lead",
-			l.parent,
-			fields=[
-				"name",
-				"order_date",
-				"delivery_date",
-				"delivery_address",
-				"delivery_region",
-				"currency",
-				"net_total",
-				"total",
-			],
+	# Get contact phone numbers
+	contact_doc = frappe.get_cached_doc("Contact", contact)
+	phone_numbers = []
+	
+	# Add primary mobile number
+	if contact_doc.mobile_no:
+		phone_numbers.append(contact_doc.mobile_no)
+	
+	# Add all phone numbers from child table
+	if contact_doc.phone_nos:
+		for phone in contact_doc.phone_nos:
+			if phone.phone:
+				phone_numbers.append(phone.phone)
+	
+	if not phone_numbers:
+		return []
+	
+	# Normalize phone numbers (remove spaces, dashes, parentheses, plus)
+	normalized_numbers = []
+	for phone in phone_numbers:
+		cleaned = (
+			phone.strip()
+			.replace(" ", "")
+			.replace("-", "")
+			.replace("(", "")
+			.replace(")", "")
+			.replace("+", "")
 		)
-		leads.append(lead.as_dict())
-
+		if cleaned:
+			normalized_numbers.append(cleaned)
+	
+	if not normalized_numbers:
+		return []
+	
+	# Search for leads by phone number using QB
+	from frappe.query_builder import DocType, Order
+	from pypika.functions import Replace
+	
+	Lead = DocType("CRM Lead")
+	
+	# Build query to find leads matching any of the normalized phone numbers
+	conditions = []
+	for normalized in normalized_numbers:
+		# Normalize Lead.mobile_no in the query
+		normalized_lead_phone = Replace(
+			Replace(
+				Replace(
+					Replace(
+						Replace(Lead.mobile_no, " ", ""),
+						"-", ""
+					),
+					"(", ""
+				),
+				")", ""
+			),
+			"+", ""
+		)
+		conditions.append(normalized_lead_phone.like(f"%{normalized}%"))
+	
+	if not conditions:
+		return []
+	
+	# Combine conditions with OR
+	or_condition = conditions[0]
+	for cond in conditions[1:]:
+		or_condition = or_condition | cond
+	
+	query = (
+		frappe.qb.from_(Lead)
+		.select(
+			Lead.name,
+			Lead.order_date,
+			Lead.delivery_date,
+			Lead.delivery_address,
+			Lead.delivery_region,
+			Lead.currency,
+			Lead.net_total,
+			Lead.total,
+		)
+		.where(or_condition)
+		.orderby(Lead.modified, order=Order.desc)
+	)
+	
+	leads = query.run(as_dict=True)
+	
 	return leads
 
 

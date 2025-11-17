@@ -497,8 +497,8 @@ const columns = computed(() => orderColumns)
 function getDealRowObject(deal) {
   return {
     name: deal.name,
-    order_date: deal.order_date ? formatDate(deal.order_date) : '',
-    delivery_date: deal.delivery_date ? formatDate(deal.delivery_date) : '',
+    order_date: deal.order_date ? formatDate(deal.order_date, '', true) : '',
+    delivery_date: deal.delivery_date ? formatDate(deal.delivery_date, '', true) : '',
     delivery_address: deal.delivery_address || '',
     delivery_region: deal.delivery_region || '',
     total: getFormattedCurrencyDeal('net_total', deal) || getFormattedCurrencyDeal('total', deal) || '',
@@ -508,8 +508,8 @@ function getDealRowObject(deal) {
 function getLeadRowObject(lead) {
   return {
     name: lead.name,
-    order_date: lead.order_date ? formatDate(lead.order_date) : '',
-    delivery_date: lead.delivery_date ? formatDate(lead.delivery_date) : '',
+    order_date: lead.order_date ? formatDate(lead.order_date, '', true) : '',
+    delivery_date: lead.delivery_date ? formatDate(lead.delivery_date, '', true) : '',
     delivery_address: lead.delivery_address || '',
     delivery_region: lead.delivery_region || '',
     total: getFormattedCurrencyLead('net_total', lead) || getFormattedCurrencyLead('total', lead) || '',
