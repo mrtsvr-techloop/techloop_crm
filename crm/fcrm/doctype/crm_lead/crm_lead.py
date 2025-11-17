@@ -682,8 +682,8 @@ def convert_to_deal(lead, doc=None, deal=None, existing_contact=None, existing_o
 		frappe.throw(_("Not allowed to convert Lead to Deal"), frappe.PermissionError)
 
 	lead = frappe.get_cached_doc("CRM Lead", lead)
-	if frappe.db.exists("CRM Lead Status", "Qualified"):
-		lead.db_set("status", "Qualified")
+	if frappe.db.exists("CRM Lead Status", "Confirmed"):
+		lead.db_set("status", "Confirmed")
 	lead.db_set("converted", 1)
 	if lead.sla and frappe.db.exists("CRM Communication Status", "Replied"):
 		lead.db_set("communication_status", "Replied")
