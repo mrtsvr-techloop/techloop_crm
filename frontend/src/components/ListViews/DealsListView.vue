@@ -1,13 +1,22 @@
 <template>
-  <ListView
+    <ListView
     :class="$attrs.class"
     :columns="columns"
     :rows="rows"
     :options="{
-      getRowRoute: (row) => ({
-        name: 'Deal',
-        params: { dealId: row.name },
-        query: { view: route.query.view, viewType: route.params.viewType },
+      getRowRoute: options.getRowRoute || ((row) => {
+        if (props.doctype === 'CRM Lead') {
+          return {
+            name: 'Lead',
+            params: { leadId: row.name },
+            query: { view: route.query.view, viewType: route.params.viewType },
+          }
+        }
+        return {
+          name: 'Deal',
+          params: { dealId: row.name },
+          query: { view: route.query.view, viewType: route.params.viewType },
+        }
       }),
       selectable: options.selectable,
       showTooltip: options.showTooltip,
@@ -40,7 +49,7 @@
     <ListRows
       :rows="rows"
       v-slot="{ idx, column, item, row }"
-      doctype="CRM Deal"
+      :doctype="props.doctype"
     >
       <div v-if="column.key === '_assign'" class="flex items-center">
         <MultipleAvatar
@@ -193,7 +202,7 @@
     }"
     @loadMore="emit('loadMore')"
   />
-  <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="CRM Deal" />
+  <ListBulkActions ref="listBulkActionsRef" v-model="list" :doctype="props.doctype" />
 </template>
 
 <script setup>
@@ -236,6 +245,10 @@ const props = defineProps({
       totalCount: 0,
       rowCount: 0,
     }),
+  },
+  doctype: {
+    type: String,
+    default: 'CRM Deal',
   },
 })
 

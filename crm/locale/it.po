@@ -5859,7 +5859,7 @@ msgstr ""
 #: crm/fcrm/doctype/crm_deal/crm_deal.json
 #: crm/fcrm/doctype/crm_lead/crm_lead.json
 msgid "Total"
-msgstr ""
+msgstr "Totale"
 
 #. Label of the total_holidays (Int) field in DocType 'CRM Holiday List'
 #: crm/fcrm/doctype/crm_holiday_list/crm_holiday_list.json
@@ -6750,6 +6750,10 @@ msgstr "Data di Consegna"
 msgid "Delivery Address"
 msgstr "Indirizzo di Consegna"
 
+#: frontend/src/pages/Contact.vue:535
+msgid "Region"
+msgstr "Regione"
+
 #: frontend/src/components/Activities/DataFields.vue
 msgid "Order Notes"
 msgstr "Note Ordine"
@@ -6927,6 +6931,10 @@ msgstr "Email"
 #: crm/fcrm/doctype/crm_lead/crm_lead.py
 msgid "Delivery Address"
 msgstr "Indirizzo di Consegna"
+
+#: frontend/src/pages/Contact.vue:535
+msgid "Region"
+msgstr "Regione"
 
 #: crm/fcrm/doctype/crm_lead/crm_lead.py
 msgid "Net Total"

@@ -148,10 +148,11 @@
       </template>
       <template #tab-panel="{ tab }">
         <DealsListView
-          v-if="tab.label === 'Deals' && rows.length"
+          v-if="rows.length"
           class="mt-4"
           :rows="rows"
           :columns="columns"
+          :doctype="tabIndex === 0 ? 'CRM Deal' : 'CRM Lead'"
           :options="{ selectable: false, showTooltip: false }"
         />
         <div
@@ -189,6 +190,7 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import { formatDate, timeAgo, validateIsImageFile, setupCustomizations } from '@/utils'
@@ -299,6 +301,11 @@ const tabs = [
     icon: h(DealsIcon, { class: 'h-4 w-4' }),
     count: computed(() => deals.data?.length),
   },
+  {
+    label: 'Leads',
+    icon: h(LeadsIcon, { class: 'h-4 w-4' }),
+    count: computed(() => leads.data?.length),
+  },
 ]
 
 const deals = createResource({
@@ -308,10 +315,21 @@ const deals = createResource({
   auto: true,
 })
 
-const rows = computed(() => {
-  if (!deals.data || deals.data == []) return []
+const leads = createResource({
+  url: 'crm.api.contact.get_linked_leads',
+  cache: ['leads', props.contactId],
+  params: { contact: props.contactId },
+  auto: true,
+})
 
-  return deals.data.map((row) => getDealRowObject(row))
+const rows = computed(() => {
+  if (tabIndex.value === 0) {
+    if (!deals.data || deals.data == []) return []
+    return deals.data.map((row) => getDealRowObject(row))
+  } else {
+    if (!leads.data || leads.data == []) return []
+    return leads.data.map((row) => getLeadRowObject(row))
+  }
 })
 
 const sections = createResource({
@@ -471,71 +489,59 @@ async function deleteOption(doctype, name) {
   toast.success(__('Contact updated'))
 }
 
-const { getFormattedCurrency } = getMeta('CRM Deal')
+const { getFormattedCurrency: getFormattedCurrencyDeal } = getMeta('CRM Deal')
+const { getFormattedCurrency: getFormattedCurrencyLead } = getMeta('CRM Lead')
 
-const columns = computed(() => dealColumns)
+const columns = computed(() => orderColumns)
 
 function getDealRowObject(deal) {
   return {
     name: deal.name,
-    organization: {
-      label: deal.organization,
-      logo: getOrganization(deal.organization)?.organization_logo,
-    },
-    annual_revenue: getFormattedCurrency('annual_revenue', deal),
-    status: {
-      label: __(deal.status),
-      color: getDealStatus(deal.status)?.color,
-    },
-    email: deal.email,
-    mobile_no: deal.mobile_no,
-    deal_owner: {
-      label: deal.deal_owner && getUser(deal.deal_owner).full_name,
-      ...(deal.deal_owner && getUser(deal.deal_owner)),
-    },
-    modified: {
-      label: formatDate(deal.modified),
-      timeAgo: __(timeAgo(deal.modified)),
-    },
+    order_date: deal.order_date ? formatDate(deal.order_date) : '',
+    delivery_date: deal.delivery_date ? formatDate(deal.delivery_date) : '',
+    delivery_address: deal.delivery_address || '',
+    delivery_region: deal.delivery_region || '',
+    total: getFormattedCurrencyDeal('net_total', deal) || getFormattedCurrencyDeal('total', deal) || '',
   }
 }
 
-const dealColumns = [
+function getLeadRowObject(lead) {
+  return {
+    name: lead.name,
+    order_date: lead.order_date ? formatDate(lead.order_date) : '',
+    delivery_date: lead.delivery_date ? formatDate(lead.delivery_date) : '',
+    delivery_address: lead.delivery_address || '',
+    delivery_region: lead.delivery_region || '',
+    total: getFormattedCurrencyLead('net_total', lead) || getFormattedCurrencyLead('total', lead) || '',
+  }
+}
+
+const orderColumns = [
   {
-    label: __('Organization'),
-    key: 'organization',
-    width: '11rem',
+    label: __('Order Date'),
+    key: 'order_date',
+    width: '10rem',
   },
   {
-    label: __('Amount'),
-    key: 'annual_revenue',
+    label: __('Delivery Date'),
+    key: 'delivery_date',
+    width: '10rem',
+  },
+  {
+    label: __('Delivery Address'),
+    key: 'delivery_address',
+    width: '15rem',
+  },
+  {
+    label: __('Region'),
+    key: 'delivery_region',
+    width: '10rem',
+  },
+  {
+    label: __('Total'),
+    key: 'total',
     align: 'right',
-    width: '9rem',
-  },
-  {
-    label: __('Status'),
-    key: 'status',
     width: '10rem',
-  },
-  {
-    label: __('Email'),
-    key: 'email',
-    width: '12rem',
-  },
-  {
-    label: __('Mobile no'),
-    key: 'mobile_no',
-    width: '11rem',
-  },
-  {
-    label: __('Deal owner'),
-    key: 'deal_owner',
-    width: '10rem',
-  },
-  {
-    label: __('Last modified'),
-    key: 'modified',
-    width: '8rem',
   },
 ]
 

@@ -40,7 +40,7 @@ def get_linked_deals(contact):
 		distinct=True,
 	)
 
-	# get deals data
+	# get deals data with required fields for contact view
 	deals = []
 	for d in deal_names:
 		deal = frappe.get_cached_doc(
@@ -48,19 +48,54 @@ def get_linked_deals(contact):
 			d.parent,
 			fields=[
 				"name",
-				"organization",
+				"order_date",
+				"delivery_date",
+				"delivery_address",
+				"delivery_region",
 				"currency",
-				"annual_revenue",
-				"status",
-				"email",
-				"mobile_no",
-				"deal_owner",
-				"modified",
+				"net_total",
+				"total",
 			],
 		)
 		deals.append(deal.as_dict())
 
 	return deals
+
+
+@frappe.whitelist()
+def get_linked_leads(contact):
+	"""Get linked leads for a contact"""
+
+	if not frappe.has_permission("Contact", "read", contact):
+		frappe.throw("Not permitted", frappe.PermissionError)
+
+	lead_names = frappe.get_all(
+		"CRM Contacts",
+		filters={"contact": contact, "parenttype": "CRM Lead"},
+		fields=["parent"],
+		distinct=True,
+	)
+
+	# get leads data with required fields for contact view
+	leads = []
+	for l in lead_names:
+		lead = frappe.get_cached_doc(
+			"CRM Lead",
+			l.parent,
+			fields=[
+				"name",
+				"order_date",
+				"delivery_date",
+				"delivery_address",
+				"delivery_region",
+				"currency",
+				"net_total",
+				"total",
+			],
+		)
+		leads.append(lead.as_dict())
+
+	return leads
 
 
 @frappe.whitelist()
