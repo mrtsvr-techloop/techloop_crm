@@ -103,11 +103,11 @@ def add_task_to_call_log(call_sid, task):
 
 	return _task
 
-frappe.whitelist()
+@frappe.whitelist()
 def get_contact_lead_or_deal_from_number(number):
 	"""Get contact, lead or deal from the given number."""
 	contact = get_contact_by_phone_number(number)
-	if contact.get("name"):
+	if contact and contact.get("name"):
 		doctype = "Contact"
 		docname = contact.get("name")
 		if contact.get("lead"):
@@ -117,6 +117,7 @@ def get_contact_lead_or_deal_from_number(number):
 			doctype = "CRM Deal"
 			docname = contact.get("deal")
 		return docname, doctype
+	return None
 
 @frappe.whitelist()
 def get_contact_by_phone_number(phone_number):

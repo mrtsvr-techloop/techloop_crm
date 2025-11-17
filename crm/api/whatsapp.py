@@ -10,16 +10,20 @@ from crm.integrations.api import get_contact_lead_or_deal_from_number
 
 def validate(doc, method):
 	if doc.type == "Incoming" and doc.get("from"):
-		name, doctype = get_contact_lead_or_deal_from_number(doc.get("from"))
-		if name is not None:
-			doc.reference_doctype = doctype
-			doc.reference_name = name
+		result = get_contact_lead_or_deal_from_number(doc.get("from"))
+		if result:
+			name, doctype = result
+			if name is not None:
+				doc.reference_doctype = doctype
+				doc.reference_name = name
 
 	if doc.type == "Outgoing" and doc.get("to"):
-		name, doctype = get_contact_lead_or_deal_from_number(doc.get("to"))
-		if name is not None:
-			doc.reference_doctype = doctype
-			doc.reference_name = name
+		result = get_contact_lead_or_deal_from_number(doc.get("to"))
+		if result:
+			name, doctype = result
+			if name is not None:
+				doc.reference_doctype = doctype
+				doc.reference_name = name
 
 
 def on_update(doc, method):
