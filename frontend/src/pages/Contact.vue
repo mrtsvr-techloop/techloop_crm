@@ -223,7 +223,7 @@ const { makeCall, $dialog, $socket } = globalStore()
 
 const { getUser } = usersStore()
 const { getOrganization } = organizationsStore()
-const { getDealStatus } = statusesStore()
+const { getDealStatus, getLeadStatus } = statusesStore()
 const { doctypeMeta } = getMeta('Contact')
 
 const props = defineProps({
@@ -508,6 +508,10 @@ function getDealRowObject(deal) {
 function getLeadRowObject(lead) {
   return {
     name: lead.name,
+    status: {
+      label: __(lead.status),
+      color: getLeadStatus(lead.status)?.color,
+    },
     order_date: lead.order_date ? formatDate(lead.order_date, '', true) : '',
     delivery_date: lead.delivery_date ? formatDate(lead.delivery_date, '', true) : '',
     delivery_address: lead.delivery_address || '',
@@ -517,6 +521,11 @@ function getLeadRowObject(lead) {
 }
 
 const orderColumns = [
+  {
+    label: __('Status'),
+    key: 'status',
+    width: '10rem',
+  },
   {
     label: __('Order Date'),
     key: 'order_date',

@@ -140,6 +140,7 @@ def get_linked_leads(contact):
 		frappe.qb.from_(Lead)
 		.select(
 			Lead.name,
+			Lead.status,
 			Lead.order_date,
 			Lead.delivery_date,
 			Lead.delivery_address,
