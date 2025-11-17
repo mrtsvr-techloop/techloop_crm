@@ -64,7 +64,7 @@
 {% block head_include %}
 {{ super() }}
 <meta name="lang" content="{{ frappe.local.lang or 'it' }}">
-<script>
+<script type="text/javascript">
 	// Forza traduzione automatica basata sulla lingua del browser o impostazione
 	document.documentElement.lang = "{{ frappe.local.lang or 'it' }}";
 </script>
