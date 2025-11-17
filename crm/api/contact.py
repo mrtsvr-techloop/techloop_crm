@@ -144,7 +144,6 @@ def get_linked_leads(contact):
 			Lead.delivery_date,
 			Lead.delivery_address,
 			Lead.delivery_region,
-			Lead.currency,
 			Lead.net_total,
 			Lead.total,
 		)
