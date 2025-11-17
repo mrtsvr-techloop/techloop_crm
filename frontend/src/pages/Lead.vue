@@ -519,6 +519,32 @@ function updateField(name, value) {
   document.save.submit(null, {
     onSuccess: () => (reload.value = true),
     onError: (err) => {
+      // Se c'è un errore di timestamp mismatch, ricarica il documento e riprova
+      if (err.exc_type === 'TimestampMismatchError') {
+        document.reload().then(() => {
+          // Riprova dopo il reload
+          if (Array.isArray(name)) {
+            name.forEach((field) => (doc.value[field] = value))
+          } else {
+            doc.value[name] = value
+          }
+          document.save.submit(null, {
+            onSuccess: () => (reload.value = true),
+            onError: (retryErr) => {
+              // Ripristina i valori originali se anche il retry fallisce
+              if (Array.isArray(name)) {
+                name.forEach((field) => (doc.value[field] = oldValues[field]))
+              } else {
+                doc.value[name] = oldValues
+              }
+              toast.error(retryErr.messages?.[0] || __('Error updating field'))
+            },
+          })
+        })
+        return
+      }
+      
+      // Per altri errori, ripristina i valori originali
       if (Array.isArray(name)) {
         name.forEach((field) => (doc.value[field] = oldValues[field]))
       } else {
@@ -554,6 +580,9 @@ function reloadAssignees(data) {
 }
 
 function updateProducts(products) {
+  // Filtra i prodotti vuoti (senza product_name) prima di salvare
+  const validProducts = products.filter(p => p.product_name && p.product_name.trim() !== '')
+  
   // Disabilita temporaneamente i toast durante l'aggiornamento
   const originalShowAlert = window.frappe?.show_alert
   const originalShowMessage = window.frappe?.show_message
@@ -566,14 +595,19 @@ function updateProducts(products) {
   }
   
   try {
-    updateField('products', products)
+    // Salva solo i prodotti validi
+    updateField('products', validProducts)
     // Update totals
-    const total = products.reduce((sum, product) => sum + (product.amount || 0), 0)
-    const netTotal = products.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
+    const total = validProducts.reduce((sum, product) => sum + (product.amount || 0), 0)
+    const netTotal = validProducts.reduce((sum, product) => sum + (product.net_amount || product.amount || 0), 0)
     updateField(['total', 'net_total'], [total, netTotal])
   } catch (error) {
-    // Silenzia gli errori per evitare toast fastidiosi
-    console.log('Products updated silently')
+    // Se c'è un errore di timestamp mismatch, ricarica il documento
+    if (error.exc_type === 'TimestampMismatchError') {
+      document.reload()
+    }
+    // Silenzia gli altri errori per evitare toast fastidiosi
+    console.log('Products updated silently', error)
   } finally {
     // Ripristina le funzioni originali
     if (window.frappe && originalShowAlert) {

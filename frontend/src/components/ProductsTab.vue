@@ -252,12 +252,15 @@ function addProduct() {
     amount: 0,
     net_amount: 0
   })
-  emit('update', products.value)
+  // Non emettere update quando si aggiunge un prodotto vuoto
+  // L'update verrà emesso quando l'utente seleziona un prodotto
 }
 
 function removeProduct(index) {
   products.value.splice(index, 1)
-  emit('update', products.value)
+  // Filtra i prodotti vuoti prima di emettere l'update
+  const validProducts = products.value.filter(p => p.product_name && p.product_name.trim() !== '')
+  emit('update', validProducts.length > 0 ? products.value : validProducts)
 }
 
 function onProductChange(index) {
@@ -268,6 +271,14 @@ function onProductChange(index) {
     product.product_name = selectedProduct.product_name
     product.rate = selectedProduct.standard_rate || 0
     calculateTotals(index)
+    // Emetti update solo quando un prodotto valido è stato selezionato
+    emit('update', products.value)
+  } else {
+    // Se il prodotto viene deselezionato, resetta i campi
+    product.product_name = ''
+    product.rate = 0
+    product.amount = 0
+    product.net_amount = 0
   }
 }
 
@@ -283,13 +294,18 @@ function calculateTotals(index) {
   // Calcola net_amount (amount - discount)
   product.net_amount = product.amount - discountAmount
   
-  // Debounce per evitare troppi aggiornamenti rapidi
-  if (updateTimeout) {
-    clearTimeout(updateTimeout)
+  // Emetti update solo se il prodotto ha un product_name valido
+  if (product.product_name && product.product_name.trim() !== '') {
+    // Debounce per evitare troppi aggiornamenti rapidi
+    if (updateTimeout) {
+      clearTimeout(updateTimeout)
+    }
+    updateTimeout = setTimeout(() => {
+      // Filtra i prodotti vuoti prima di emettere l'update
+      const validProducts = products.value.filter(p => p.product_name && p.product_name.trim() !== '')
+      emit('update', validProducts)
+    }, 300) // 300ms di delay
   }
-  updateTimeout = setTimeout(() => {
-    emit('update', products.value)
-  }, 300) // 300ms di delay
 }
 
 onMounted(() => {
