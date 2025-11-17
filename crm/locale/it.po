@@ -784,7 +784,11 @@ msgstr ""
 
 #: crm/api/dashboard.py:428
 msgid "Avg. deal value"
-msgstr ""
+msgstr "Valore medio ordini"
+
+#: crm/api/dashboard.py:1280
+msgid "Avg. lead value"
+msgstr "Valore medio richieste d'ordine"
 
 #: crm/api/dashboard.py:249
 msgid "Avg. ongoing deal value"
@@ -5872,7 +5876,20 @@ msgstr ""
 #: crm/api/dashboard.py:129
 #: frontend/src/components/Dashboard/AddChartModal.vue:76
 msgid "Total leads"
-msgstr ""
+msgstr "Totale richieste d'ordine"
+
+#: crm/api/dashboard.py:1392
+msgid "Total deals"
+msgstr "Totale ordini"
+
+
+#: crm/api/dashboard.py:1183
+msgid "Leads by Status"
+msgstr "Richieste d'ordine per stato"
+
+#: crm/api/dashboard.py:1225
+msgid "Deals by Status"
+msgstr "Ordini per stato"
 
 #: crm/api/dashboard.py:130
 msgid "Total number of leads"

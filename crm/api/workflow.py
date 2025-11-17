@@ -226,19 +226,23 @@ def _link_contact_to_organization(mobile_no: str, org_name: str, email: Optional
 	contact = frappe.get_doc("Contact", existing_contact[0].name)
 	
 	# Update email if provided and different
-	if email and (contact.get("email_id") or "").strip().lower() != email.lower():
-		contact.email_id = email.lower()
+	# Skip if email is "unknown@unknown" or similar placeholder values
+	email_normalized = (email or "").strip().lower()
+	is_placeholder_email = email_normalized in ("unknown@unknown", "unknown@unknown.com", "")
+	
+	if email and not is_placeholder_email and (contact.get("email_id") or "").strip().lower() != email_normalized:
+		contact.email_id = email_normalized
 		
 		# Update/create primary email row
 		primary_found = False
 		for row in (getattr(contact, "email_ids", []) or []):
 			if int(getattr(row, "is_primary", 0) or 0) == 1:
-				row.email_id = email.lower()
+				row.email_id = email_normalized
 				primary_found = True
 				break
 		
 		if not primary_found:
-			contact.append("email_ids", {"email_id": email.lower(), "is_primary": 1})
+			contact.append("email_ids", {"email_id": email_normalized, "is_primary": 1})
 	
 	# Link to organization if not already linked
 	links = list(getattr(contact, "links", []) or [])
@@ -710,6 +714,11 @@ def _update_contact_email(contact: Any, email: str) -> None:
 		email: Email address to set
 	"""
 	email_normalized = email.strip().lower()
+	
+	# Skip if email is "unknown@unknown" or similar placeholder values
+	is_placeholder_email = email_normalized in ("unknown@unknown", "unknown@unknown.com", "")
+	if is_placeholder_email:
+		return
 	
 	# Set main email_id field
 	contact.email_id = email_normalized
