@@ -340,8 +340,8 @@ class CRMDeal(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "delivery_date",
-			"kanban_fields": '["order_date", "last_name", "first_name", "email", "mobile_no", "delivery_address"]',
+			"title_field": "first_name",  # Will show first_name + last_name in card
+			"kanban_fields": '["first_name", "last_name", "mobile_no", "order_date", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 		}
 
 
