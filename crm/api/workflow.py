@@ -819,7 +819,7 @@ def _update_contact_delivery_address(
 		else:
 			address = frappe.new_doc("Address")
 			address.address_title = address_title
-			address.address_type = "Delivery"
+			address.address_type = "Shipping"  # Standard Frappe value for delivery addresses
 		
 		# Update address fields
 		if delivery_address:
@@ -858,7 +858,15 @@ def _update_contact_delivery_address(
 		_log().info(f"Updated delivery address for contact {contact.name}: {address.name}")
 		
 	except Exception as e:
-		_log().warning(f"Error updating delivery address for contact {contact.name}: {str(e)}")
+		# Use frappe.log_error instead of logger to avoid permission issues
+		try:
+			frappe.log_error(
+				message=f"Error updating delivery address for contact {contact.name}: {str(e)}\n{frappe.get_traceback()}",
+				title="Update Contact Delivery Address Error"
+			)
+		except Exception:
+			# If logging fails, just print to console
+			print(f"Error updating delivery address for contact {contact.name}: {str(e)}")
 		# Don't fail the whole operation if address update fails
 
 
