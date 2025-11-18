@@ -238,8 +238,14 @@ def create_or_update_standard_view(view):
 	rows = rows + default_rows if default_rows else rows
 	rows = remove_duplicates(rows)
 
-	# Only sync default columns if we don't have any columns yet
-	if not kanban_columns and view.type == "kanban":
+	# Always sync default columns if creating new view or if columns are empty
+	# This ensures new users get the full default view, not just name and modified
+	if not doc:  # Creating new view - always use defaults
+		if view.type == "kanban":
+			kanban_columns = sync_default_columns(view)
+		else:
+			columns = sync_default_columns(view)
+	elif not kanban_columns and view.type == "kanban":
 		kanban_columns = sync_default_columns(view)
 	elif not columns:
 		columns = sync_default_columns(view)

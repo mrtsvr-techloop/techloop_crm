@@ -332,15 +332,6 @@ def get_data(
 			columns = frappe.parse_json(columns)
 			rows = frappe.parse_json(rows)
 
-		if not columns:
-			columns = [
-				{"label": "Name", "type": "Data", "key": "name", "width": "16rem"},
-				{"label": "Last Modified", "type": "Datetime", "key": "modified", "width": "8rem"},
-			]
-
-		if not rows:
-			rows = ["name"]
-
 		default_view_filters = {
 			"dt": doctype,
 			"type": view_type or "list",
@@ -348,11 +339,27 @@ def get_data(
 			"user": frappe.session.user,
 		}
 
+		# First check if standard view exists for user
 		if not custom_view and frappe.db.exists("CRM View Settings", default_view_filters):
 			list_view_settings = frappe.get_doc("CRM View Settings", default_view_filters)
 			columns = frappe.parse_json(list_view_settings.columns)
 			rows = frappe.parse_json(list_view_settings.rows)
 			is_default = False
+		# If no standard view exists, use default_list_data() from the controller
+		elif not custom_view and hasattr(_list, "default_list_data"):
+			default_data = _list.default_list_data()
+			columns = default_data.get("columns", [])
+			rows = default_data.get("rows", [])
+			is_default = True
+		# Only use minimal fallback if no defaults available
+		elif not columns:
+			columns = [
+				{"label": "Name", "type": "Data", "key": "name", "width": "16rem"},
+				{"label": "Last Modified", "type": "Datetime", "key": "modified", "width": "8rem"},
+			]
+
+		if not rows:
+			rows = ["name"] if not hasattr(_list, "default_list_data") else default_rows
 	elif not custom_view or (is_default and hasattr(_list, "default_list_data")):
 		rows = default_rows
 		columns = _list.default_list_data().get("columns")
