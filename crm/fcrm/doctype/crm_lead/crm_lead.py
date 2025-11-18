@@ -550,6 +550,13 @@ class CRMLead(Document):
 				"key": "delivery_date",
 				"width": "12rem",
 			},
+			{
+				"label": _("Status"),
+				"type": "Link",
+				"key": "status",
+				"options": "CRM Lead Status",
+				"width": "12rem",
+			},
 		]
 		rows = [
 			"name",
