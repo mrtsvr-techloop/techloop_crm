@@ -257,6 +257,12 @@ class CRMDeal(Document):
 	def default_list_data():
 		columns = [
 			{
+				"label": _("ID"),
+				"type": "Data",
+				"key": "name",
+				"width": "12rem",
+			},
+			{
 				"label": _("First Name"),
 				"type": "Data",
 				"key": "first_name",
@@ -340,8 +346,8 @@ class CRMDeal(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "first_name",  # Will show first_name + last_name in card
-			"kanban_fields": '["first_name", "last_name", "mobile_no", "order_date", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
+			"title_field": "name",  # ID del deal
+			"kanban_fields": '["first_name", "last_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 		}
 
 

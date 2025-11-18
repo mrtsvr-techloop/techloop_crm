@@ -97,12 +97,6 @@
           />
         </div>
         <div
-          v-else-if="titleField === 'first_name'"
-          class="truncate text-base"
-        >
-          {{ [getRow(itemName, 'first_name').label, getRow(itemName, 'last_name').label].filter(Boolean).join(' ') || __('No Title') }}
-        </div>
-        <div
           v-else-if="getRow(itemName, titleField).label"
           class="truncate text-base"
         >
