@@ -5899,6 +5899,26 @@ msgstr "Distribuzione delle richieste d'ordine per stato"
 msgid "Distribution of deals by status"
 msgstr "Distribuzione degli ordini per stato"
 
+#: frontend/src/pages/Dashboard.vue
+msgid "Last 7 Days"
+msgstr "Ultimi 7 giorni"
+
+#: frontend/src/pages/Dashboard.vue
+msgid "Last 30 Days"
+msgstr "Ultimi 30 giorni"
+
+#: frontend/src/pages/Dashboard.vue
+msgid "Last 60 Days"
+msgstr "Ultimi 60 giorni"
+
+#: frontend/src/pages/Dashboard.vue
+msgid "Last 90 Days"
+msgstr "Ultimi 90 giorni"
+
+#: frontend/src/pages/Dashboard.vue
+msgid "Custom Range"
+msgstr "Intervallo personalizzato"
+
 #: crm/api/dashboard.py:130
 msgid "Total number of leads"
 msgstr ""

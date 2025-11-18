@@ -70,7 +70,7 @@
               showDatePicker = false
               if (!v) {
                 filters.period = getLastXDays()
-                preset = 'Last 30 Days'
+                preset = __('Last 30 Days')
               } else {
                 preset = formatter(v)
               }
@@ -82,36 +82,6 @@
           <LucideCalendar class="size-4 text-ink-gray-5 mr-2" />
         </template>
       </DateRangePicker>
-      <Link
-        v-if="isAdmin() || isManager()"
-        class="form-control w-48"
-        variant="outline"
-        :value="filters.user && getUser(filters.user).full_name"
-        doctype="User"
-        :filters="{ name: ['in', users.data.crmUsers?.map((u) => u.name)] }"
-        @change="(v) => updateFilter('user', v)"
-        :placeholder="__('Sales user')"
-        :hideMe="true"
-      >
-        <template #prefix>
-          <UserAvatar
-            v-if="filters.user"
-            class="mr-2"
-            :user="filters.user"
-            size="sm"
-          />
-        </template>
-        <template #item-prefix="{ option }">
-          <UserAvatar class="mr-2" :user="option.value" size="sm" />
-        </template>
-        <template #item-label="{ option }">
-          <Tooltip :text="option.value">
-            <div class="cursor-pointer">
-              {{ getUser(option.value).full_name }}
-            </div>
-          </Tooltip>
-        </template>
-      </Link>
     </div>
 
     <div class="w-full overflow-y-scroll">
@@ -136,10 +106,8 @@ import LucideRefreshCcw from '~icons/lucide/refresh-ccw'
 import LucideUndo2 from '~icons/lucide/undo-2'
 import LucidePenLine from '~icons/lucide/pen-line'
 import DashboardGrid from '@/components/Dashboard/DashboardGrid.vue'
-import UserAvatar from '@/components/UserAvatar.vue'
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
-import Link from '@/components/Controls/Link.vue'
 import { usersStore } from '@/stores/users'
 import { copy } from '@/utils'
 import { getLastXDays, formatter, formatRange } from '@/utils/dashboard'
@@ -148,17 +116,16 @@ import {
   createResource,
   DateRangePicker,
   Dropdown,
-  Tooltip,
 } from 'frappe-ui'
 import { ref, reactive, computed, provide } from 'vue'
 
-const { users, getUser, isManager, isAdmin } = usersStore()
+const { isAdmin } = usersStore()
 
 const editing = ref(false)
 
 const showDatePicker = ref(false)
 const datePickerRef = ref(null)
-const preset = ref('Last 30 Days')
+const preset = ref(__('Last 30 Days'))
 const showAddChartModal = ref(false)
 
 const filters = reactive({
@@ -188,33 +155,33 @@ const options = computed(() => [
     hideLabel: true,
     items: [
       {
-        label: 'Last 7 Days',
+        label: __('Last 7 Days'),
         onClick: () => {
-          preset.value = 'Last 7 Days'
+          preset.value = __('Last 7 Days')
           filters.period = getLastXDays(7)
           dashboardItems.reload()
         },
       },
       {
-        label: 'Last 30 Days',
+        label: __('Last 30 Days'),
         onClick: () => {
-          preset.value = 'Last 30 Days'
+          preset.value = __('Last 30 Days')
           filters.period = getLastXDays(30)
           dashboardItems.reload()
         },
       },
       {
-        label: 'Last 60 Days',
+        label: __('Last 60 Days'),
         onClick: () => {
-          preset.value = 'Last 60 Days'
+          preset.value = __('Last 60 Days')
           filters.period = getLastXDays(60)
           dashboardItems.reload()
         },
       },
       {
-        label: 'Last 90 Days',
+        label: __('Last 90 Days'),
         onClick: () => {
-          preset.value = 'Last 90 Days'
+          preset.value = __('Last 90 Days')
           filters.period = getLastXDays(90)
           dashboardItems.reload()
         },
@@ -222,11 +189,11 @@ const options = computed(() => [
     ],
   },
   {
-    label: 'Custom Range',
+    label: __('Custom Range'),
     onClick: () => {
       showDatePicker.value = true
       setTimeout(() => datePickerRef.value?.open(), 0)
-      preset.value = 'Custom Range'
+      preset.value = __('Custom Range')
       filters.period = null // Reset period to allow custom date selection
     },
   },
