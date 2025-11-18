@@ -346,8 +346,8 @@ class CRMDeal(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "name",  # ID del deal
-			"kanban_fields": '["first_name", "last_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
+			"title_field": "lead_name",  # Lead name del deal
+			"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 		}
 
 

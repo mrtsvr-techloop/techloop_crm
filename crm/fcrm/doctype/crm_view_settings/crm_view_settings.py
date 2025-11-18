@@ -378,7 +378,7 @@ def reset_default_views():
 				"doctype": "CRM Lead",
 				"type": "kanban",
 				"column_field": "status",
-				"title_field": "name",
+				"title_field": "lead_name",
 				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
 				"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 				"is_default": True,
@@ -404,9 +404,9 @@ def reset_default_views():
 				"doctype": "CRM Deal",
 				"type": "kanban",
 				"column_field": "status",
-				"title_field": "name",
+				"title_field": "lead_name",
 				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
-				"kanban_fields": '["first_name", "last_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
+				"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 				"is_default": True,
 			})
 			reset_stats["deals"]["kanban"] = True

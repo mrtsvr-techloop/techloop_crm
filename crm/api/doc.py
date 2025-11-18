@@ -192,7 +192,8 @@ def get_quick_filters(doctype: str, cached: bool = True):
 		fields = []
 
 		for filter in _quick_filters:
-			if filter == "name":
+			# Handle "name" field specially (it's not in meta.fields)
+			if filter == "name" or (isinstance(filter, str) and filter.strip() == "name"):
 				fields.append({"label": "ID", "fieldname": "name", "fieldtype": "Data"})
 			else:
 				field = next((f for f in meta.fields if f.fieldname == filter), None)
