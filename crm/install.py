@@ -506,12 +506,13 @@ def create_assignment_rule_custom_fields():
 
 def add_default_quick_filters(force=False):
 	"""
-	Add default quick filters for CRM Deal and CRM Lead to ensure delivery_date and order_date
-	are always available as quick filters.
+	Add default quick filters for CRM Deal and CRM Lead.
+	Default filters: ID (name), Data ordine (order_date), Data consegna (delivery_date)
 	"""
 	quick_filters = [
-		"order_date",
-		"delivery_date",
+		"name",  # ID
+		"order_date",  # Data ordine
+		"delivery_date",  # Data consegna
 	]
 
 	# Configure quick filters for both CRM Deal and CRM Lead
@@ -528,17 +529,17 @@ def add_default_quick_filters(force=False):
 				doc = frappe.get_doc("CRM Global Settings", name)
 				existing_filters = json.loads(doc.json or "[]")
 				
-				# Always ensure required filters (order_date and delivery_date) are present
+				# Always ensure required filters (name, order_date, delivery_date) are present in correct order
 				merged_filters = []
 				filter_set = set()
 				
-				# First add order_date and delivery_date if they exist
+				# First add default filters in order if they exist in existing_filters
 				for f in quick_filters:
 					if f in existing_filters:
 						merged_filters.append(f)
 						filter_set.add(f)
 				
-				# Add order_date and delivery_date if missing
+				# Add default filters if missing (in order)
 				for f in quick_filters:
 					if f not in filter_set:
 						merged_filters.append(f)
