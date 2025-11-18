@@ -238,8 +238,14 @@ def create_or_update_standard_view(view):
 	rows = rows + default_rows if default_rows else rows
 	rows = remove_duplicates(rows)
 
-	# Only sync default columns if we don't have any columns yet
-	if not kanban_columns and view.type == "kanban":
+	# Always sync default columns if creating new view or if columns are empty
+	# This ensures new users get the full default view, not just name and modified
+	if not doc:  # Creating new view - always use defaults
+		if view.type == "kanban":
+			kanban_columns = sync_default_columns(view)
+		else:
+			columns = sync_default_columns(view)
+	elif not kanban_columns and view.type == "kanban":
 		kanban_columns = sync_default_columns(view)
 	elif not columns:
 		columns = sync_default_columns(view)
@@ -374,7 +380,7 @@ def reset_default_views():
 				"column_field": "status",
 				"title_field": "lead_name",
 				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
-				"kanban_fields": '["organization", "email", "mobile_no", "_assign", "modified"]',
+				"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 				"is_default": True,
 			})
 			reset_stats["leads"]["kanban"] = True
@@ -398,9 +404,9 @@ def reset_default_views():
 				"doctype": "CRM Deal",
 				"type": "kanban",
 				"column_field": "status",
-				"title_field": "delivery_date",
+				"title_field": "lead_name",
 				"kanban_columns": "",  # Stringa vuota forza sincronizzazione default (con stati dal DB)
-				"kanban_fields": '["order_date", "last_name", "first_name", "email", "mobile_no", "delivery_address"]',
+				"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 				"is_default": True,
 			})
 			reset_stats["deals"]["kanban"] = True

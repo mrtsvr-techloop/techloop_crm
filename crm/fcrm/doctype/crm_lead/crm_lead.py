@@ -501,6 +501,12 @@ class CRMLead(Document):
 	def default_list_data():
 		columns = [
 			{
+				"label": _("ID"),
+				"type": "Data",
+				"key": "name",
+				"width": "12rem",
+			},
+			{
 				"label": _("Full Name"),
 				"type": "Data",
 				"key": "lead_name",
@@ -583,8 +589,8 @@ class CRMLead(Document):
 	def default_kanban_settings():
 		return {
 			"column_field": "status",
-			"title_field": "lead_name",
-			"kanban_fields": '["organization", "email", "mobile_no", "_assign", "modified"]',
+			"title_field": "lead_name",  # Full name del lead
+			"kanban_fields": '["lead_name", "mobile_no", "delivery_date", "delivery_region", "delivery_address", "net_total"]',
 		}
 
 
