@@ -193,7 +193,7 @@ def get_quick_filters(doctype: str, cached: bool = True):
 
 		for filter in _quick_filters:
 			if filter == "name":
-				fields.append({"label": "Name", "fieldname": "name", "fieldtype": "Data"})
+				fields.append({"label": "ID", "fieldname": "name", "fieldtype": "Data"})
 			else:
 				field = next((f for f in meta.fields if f.fieldname == filter), None)
 				if field:
