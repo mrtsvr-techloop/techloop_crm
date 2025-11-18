@@ -5891,6 +5891,14 @@ msgstr "Richieste d'ordine per stato"
 msgid "Deals by Status"
 msgstr "Ordini per stato"
 
+#: crm/api/dashboard.py:1184
+msgid "Distribution of leads by status"
+msgstr "Distribuzione delle richieste d'ordine per stato"
+
+#: crm/api/dashboard.py:1226
+msgid "Distribution of deals by status"
+msgstr "Distribuzione degli ordini per stato"
+
 #: crm/api/dashboard.py:130
 msgid "Total number of leads"
 msgstr ""
