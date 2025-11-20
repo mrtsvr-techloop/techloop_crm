@@ -173,25 +173,73 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 	
 	# Filter messages by phone number match - show ALL messages for this phone number
 	messages = []
+	
+	# Normalize phone numbers for comparison (remove all non-digit characters)
+	def normalize_phone(phone_str):
+		if not phone_str:
+			return ""
+		# Remove all non-digit characters
+		cleaned = "".join(c for c in str(phone_str) if c.isdigit())
+		return cleaned
+	
+	# Create mapping of normalized -> original phone numbers
+	phone_mapping = {}
+	for phone in phone_numbers:
+		if phone:
+			normalized = normalize_phone(phone)
+			if normalized:
+				phone_mapping[normalized] = phone
+	
 	for msg in all_messages:
 		# Check if message from/to matches any of our phone numbers
-		msg_from = msg.get("from") or ""
-		msg_to = msg.get("to") or ""
+		msg_from = (msg.get("from") or "").strip()
+		msg_to = (msg.get("to") or "").strip()
 		
 		# For incoming messages, check if 'from' matches
 		# For outgoing messages, check if 'to' matches
 		should_include = False
 		
 		if msg.get("type") == "Incoming" and msg_from:
-			for phone in phone_numbers:
-				if phone and are_same_phone_number(msg_from, phone, validate=False):
+			msg_from_normalized = normalize_phone(msg_from)
+			for phone_normalized, phone_original in phone_mapping.items():
+				if not phone_normalized or not msg_from_normalized:
+					continue
+				# Try exact match first
+				if msg_from_normalized == phone_normalized:
 					should_include = True
 					break
+				# Try robust comparison with original phone
+				if are_same_phone_number(msg_from, phone_original, validate=False):
+					should_include = True
+					break
+				# Fallback: check if one ends with the other (for country code variations)
+				# e.g., "393926012793" vs "3926012793" or "+393926012793"
+				if msg_from_normalized.endswith(phone_normalized) or phone_normalized.endswith(msg_from_normalized):
+					# Only match if the difference is reasonable (country code length)
+					diff = abs(len(msg_from_normalized) - len(phone_normalized))
+					if diff <= 4:  # Country code is usually 1-4 digits
+						should_include = True
+						break
 		elif msg.get("type") == "Outgoing" and msg_to:
-			for phone in phone_numbers:
-				if phone and are_same_phone_number(msg_to, phone, validate=False):
+			msg_to_normalized = normalize_phone(msg_to)
+			for phone_normalized, phone_original in phone_mapping.items():
+				if not phone_normalized or not msg_to_normalized:
+					continue
+				# Try exact match first
+				if msg_to_normalized == phone_normalized:
 					should_include = True
 					break
+				# Try robust comparison with original phone
+				if are_same_phone_number(msg_to, phone_original, validate=False):
+					should_include = True
+					break
+				# Fallback: check if one ends with the other (for country code variations)
+				if msg_to_normalized.endswith(phone_normalized) or phone_normalized.endswith(msg_to_normalized):
+					# Only match if the difference is reasonable (country code length)
+					diff = abs(len(msg_to_normalized) - len(phone_normalized))
+					if diff <= 4:  # Country code is usually 1-4 digits
+						should_include = True
+						break
 		
 		if should_include:
 			messages.append(msg)

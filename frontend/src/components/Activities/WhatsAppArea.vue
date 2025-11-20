@@ -263,7 +263,13 @@ function messageOptions(message) {
 }
 
 function scrollToMessage(name) {
+  if (!name) {
+    return
+  }
   const element = document.getElementById(name)
+  if (!element) {
+    return
+  }
   element.scrollIntoView({ behavior: 'smooth' })
 
   // Highlight the message
