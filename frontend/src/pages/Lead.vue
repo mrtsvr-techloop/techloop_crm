@@ -37,7 +37,7 @@
       <Button
         :label="__('Accetta ordine')"
         variant="solid"
-        @click="showConvertToDealModal = true"
+        @click="convertToDealDirectly"
       />
     </template>
   </LayoutHeader>
@@ -262,6 +262,8 @@ import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
 import { whatsappEnabled, callEnabled } from '@/composables/settings'
+import { sessionStore } from '@/stores/session'
+import { capture } from '@/telemetry'
 import {
   createResource,
   FileUploader,
@@ -277,11 +279,14 @@ import {
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
+import { useOnboarding } from 'frappe-ui/frappe'
 
 const { brand } = getSettings()
 const { $dialog, $socket, makeCall } = globalStore()
 const { statusOptions, getLeadStatus } = statusesStore()
 const { doctypeMeta } = getMeta('CRM Lead')
+const { user } = sessionStore()
+const { updateOnboardingStep } = useOnboarding('frappecrm')
 
 const route = useRoute()
 const router = useRouter()
@@ -557,6 +562,48 @@ function updateField(name, value) {
 
 function deleteLead() {
   showDeleteLinkedDocModal.value = true
+}
+
+async function convertToDealDirectly() {
+  try {
+    // Chiama direttamente convert_to_deal senza aprire la modale
+    // Passa None per existing_contact e existing_organization per creazione automatica
+    let _deal = await call('crm.fcrm.doctype.crm_lead.crm_lead.convert_to_deal', {
+      lead: props.leadId,
+      deal: {},
+      existing_contact: null,
+      existing_organization: null,
+    }).catch((err) => {
+      if (err.exc_type == 'MandatoryError') {
+        const errorMessage = err.messages
+          ?.map((msg) => {
+            let arr = msg.split(': ')
+            return arr[arr.length - 1].trim()
+          })
+          .join(', ') || __('Some required fields are missing')
+        
+        toast.error(__('Error converting to deal: {0}', [errorMessage]))
+        return null
+      }
+      toast.error(__('Error converting to deal: {0}', [err.messages?.[0] || __('Unknown error')]))
+      return null
+    })
+    
+    if (_deal) {
+      try {
+        updateOnboardingStep('convert_lead_to_deal', true, false, () => {
+          localStorage.setItem('firstDeal' + user, _deal)
+        })
+      } catch (err) {
+        // Ignora errori di onboarding, non bloccano la conversione
+        console.warn('Onboarding step update failed:', err)
+      }
+      capture('convert_lead_to_deal')
+      router.push({ name: 'Deal', params: { dealId: _deal } })
+    }
+  } catch (err) {
+    toast.error(__('Error converting to deal: {0}', [err.message || __('Unknown error')]))
+  }
 }
 
 function openEmailBox() {
