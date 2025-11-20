@@ -90,6 +90,51 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 	if not frappe.db.exists("DocType", "WhatsApp Message"):
 		return []
 	messages = []
+	
+	# Get phone numbers associated with this document
+	phone_numbers = []
+	doc = frappe.get_doc(reference_doctype, reference_name)
+	
+	if reference_doctype == "CRM Lead":
+		if doc.mobile_no:
+			phone_numbers.append(doc.mobile_no)
+		if doc.phone:
+			phone_numbers.append(doc.phone)
+	elif reference_doctype == "CRM Deal":
+		# Get lead phone numbers
+		if doc.lead:
+			lead = frappe.get_doc("CRM Lead", doc.lead)
+			if lead.mobile_no:
+				phone_numbers.append(lead.mobile_no)
+			if lead.phone:
+				phone_numbers.append(lead.phone)
+		# Get contact phone numbers
+		if doc.contacts:
+			for contact_link in doc.contacts:
+				if contact_link.contact:
+					contact = frappe.get_doc("Contact", contact_link.contact)
+					if contact.mobile_no:
+						phone_numbers.append(contact.mobile_no)
+					if contact.phone:
+						phone_numbers.append(contact.phone)
+					# Also check phone_nos child table
+					if hasattr(contact, "phone_nos") and contact.phone_nos:
+						for phone in contact.phone_nos:
+							if phone.phone:
+								phone_numbers.append(phone.phone)
+	
+	# Normalize phone numbers (remove spaces, +, etc.)
+	from crm.utils import parse_phone_number
+	normalized_phones = set()
+	for phone in phone_numbers:
+		if phone:
+			parsed = parse_phone_number(phone)
+			if parsed.get("is_valid"):
+				# Add both formats: with and without country code
+				normalized_phones.add(parsed.get("national_number", phone))
+				normalized_phones.add(phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", ""))
+			else:
+				normalized_phones.add(phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", ""))
 
 	if reference_doctype == "CRM Deal":
 		lead = frappe.db.get_value(reference_doctype, reference_name, "lead")
@@ -151,6 +196,70 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 			"template_header_parameters",
 		],
 	)
+	
+	# Also get messages by phone number (even if reference_doctype/reference_name is not set)
+	# This ensures we show all messages even if they weren't properly linked during creation
+	if phone_numbers:
+		from crm.utils import are_same_phone_number
+		existing_message_names = {msg["name"] for msg in messages}
+		
+		# Get all messages and filter by phone number match
+		# This is necessary because messages might not have reference_doctype/reference_name set
+		# if the phone number matching failed during creation
+		all_messages = frappe.get_all(
+			"WhatsApp Message",
+			fields=[
+				"name",
+				"type",
+				"to",
+				"from",
+				"content_type",
+				"message_type",
+				"attach",
+				"template",
+				"use_template",
+				"message_id",
+				"is_reply",
+				"reply_to_message_id",
+				"creation",
+				"message",
+				"status",
+				"reference_doctype",
+				"reference_name",
+				"template_parameters",
+				"template_header_parameters",
+			],
+			order_by="creation asc",
+		)
+		
+		# Filter messages by phone number match using robust comparison
+		for msg in all_messages:
+			# Skip if already in messages list
+			if msg["name"] in existing_message_names:
+				continue
+			
+			# Check if message from/to matches any of our phone numbers
+			msg_from = msg.get("from") or ""
+			msg_to = msg.get("to") or ""
+			
+			# For incoming messages, check if 'from' matches
+			# For outgoing messages, check if 'to' matches
+			should_include = False
+			
+			if msg.get("type") == "Incoming" and msg_from:
+				for phone in phone_numbers:
+					if phone and are_same_phone_number(msg_from, phone, validate=False):
+						should_include = True
+						break
+			elif msg.get("type") == "Outgoing" and msg_to:
+				for phone in phone_numbers:
+					if phone and are_same_phone_number(msg_to, phone, validate=False):
+						should_include = True
+						break
+			
+			if should_include:
+				messages.append(msg)
+				existing_message_names.add(msg["name"])
 
 	# Filter messages to get only Template messages
 	template_messages = [message for message in messages if message["message_type"] == "Template"]
@@ -219,7 +328,13 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 			# If replied message not found, set default values
 			reply_message["reply_to_from"] = _("Unknown")
 
-	return [message for message in messages if message["content_type"] != "reaction"]
+	# Filter out reactions and sort by creation date
+	filtered_messages = [message for message in messages if message["content_type"] != "reaction"]
+	
+	# Sort by creation date (ascending - oldest first)
+	filtered_messages.sort(key=lambda x: x.get("creation", ""))
+	
+	return filtered_messages
 
 
 @frappe.whitelist()
