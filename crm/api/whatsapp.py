@@ -9,6 +9,12 @@ from crm.integrations.api import get_contact_lead_or_deal_from_number
 
 
 def validate(doc, method):
+	# Ensure incoming messages never have label="Manual"
+	# Manual label is only for outgoing messages sent from CRM (not from AI)
+	if doc.type == "Incoming":
+		if doc.get("label") == "Manual":
+			doc.label = None  # Clear Manual label for incoming messages
+	
 	if doc.type == "Incoming" and doc.get("from"):
 		result = get_contact_lead_or_deal_from_number(doc.get("from"))
 		if result:
@@ -241,6 +247,19 @@ def create_whatsapp_message(
 			}
 		)
 
+	# Determine message type and label
+	# Outgoing messages from CRM should have label="Manual" (unless explicitly set)
+	# Incoming messages should never have label="Manual"
+	message_type = "Manual"
+	final_label = label
+	
+	# If no label specified and this is an outgoing message, default to "Manual"
+	# For incoming messages, label should be None or explicitly set (not "Manual")
+	if not final_label:
+		# Default to "Manual" only for outgoing messages
+		# The type will be set to "Outgoing" by Frappe based on the "to" field
+		final_label = "Manual"
+	
 	doc.update(
 		{
 			"reference_doctype": reference_doctype,
@@ -249,8 +268,8 @@ def create_whatsapp_message(
 			"to": to,
 			"attach": attach,
 			"content_type": content_type,
-			"message_type": "Manual",
-			"label": label or "Manual",
+			"message_type": message_type,
+			"label": final_label,
 		}
 	)
 	doc.insert(ignore_permissions=True)
