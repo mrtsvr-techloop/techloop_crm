@@ -373,7 +373,7 @@ const steps = reactive([
   },
   {
     name: 'convert_lead_to_deal',
-    title: __('Convert lead to deal'),
+    title: __('Accetta ordine'),
     icon: markRaw(ConvertIcon),
     completed: false,
     dependsOn: 'create_first_lead',
@@ -381,8 +381,8 @@ const steps = reactive([
       minimize.value = true
 
       currentStep.value = {
-        title: __('Convert lead to deal'),
-        buttonLabel: __('Convert'),
+        title: __('Accetta ordine'),
+        buttonLabel: __('Accetta'),
         videoURL: '/assets/crm/videos/convertToDeal.mov',
         onClick: async () => {
           showIntermediateModal.value = false

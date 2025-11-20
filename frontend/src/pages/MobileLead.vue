@@ -101,11 +101,11 @@
   <Dialog
     v-model="showConvertToDealModal"
     :options="{
-      title: __('Convert to Deal'),
+      title: __('Accetta ordine'),
       size: 'xl',
       actions: [
         {
-          label: __('Convert'),
+          label: __('Accetta'),
           variant: 'solid',
           onClick: convertToDeal,
         },

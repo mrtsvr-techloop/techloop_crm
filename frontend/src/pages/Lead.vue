@@ -35,7 +35,7 @@
         </template>
       </Dropdown>
       <Button
-        :label="__('Convert to Deal')"
+        :label="__('Accetta ordine')"
         variant="solid"
         @click="showConvertToDealModal = true"
       />

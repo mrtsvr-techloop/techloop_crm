@@ -4,7 +4,7 @@
       <div class="mb-6 flex items-center justify-between">
         <div>
           <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-            {{ __('Convert to Deal') }}
+            {{ __('Accetta ordine') }}
           </h3>
         </div>
         <div class="flex items-center gap-1">
@@ -80,7 +80,7 @@
     </template>
     <template #actions>
       <div class="flex justify-end">
-        <Button :label="__('Convert')" variant="solid" @click="convertToDeal" />
+        <Button :label="__('Accetta')" variant="solid" @click="convertToDeal" />
       </div>
     </template>
   </Dialog>
@@ -182,9 +182,14 @@ async function convertToDeal() {
     existingContact.value = ''
     existingOrganization.value = ''
     error.value = ''
-    updateOnboardingStep('convert_lead_to_deal', true, false, () => {
-      localStorage.setItem('firstDeal' + user, _deal)
-    })
+    try {
+      updateOnboardingStep('convert_lead_to_deal', true, false, () => {
+        localStorage.setItem('firstDeal' + user, _deal)
+      })
+    } catch (err) {
+      // Ignora errori di onboarding, non bloccano la conversione
+      console.warn('Onboarding step update failed:', err)
+    }
     capture('convert_lead_to_deal')
     router.push({ name: 'Deal', params: { dealId: _deal } })
   }
