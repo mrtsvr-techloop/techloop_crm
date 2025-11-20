@@ -113,6 +113,7 @@ async function sendWhatsAppMessage() {
     attach: whatsapp.value.attach || '',
     reply_to: reply.value?.name || '',
     content_type: whatsapp.value.content_type,
+    label: 'Manual',
   }
   content.value = ''
   fileType.value = ''
