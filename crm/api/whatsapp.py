@@ -9,20 +9,10 @@ from crm.integrations.api import get_contact_lead_or_deal_from_number
 
 
 def validate(doc, method):
-	# Fix message_type for incoming messages - they should NOT be "Manual"
-	# "Manual" should only be for messages sent manually from CRM
+	# Ensure incoming messages never have label="Manual"
 	if doc.type == "Incoming":
-		# Incoming messages from WhatsApp should not have message_type "Manual"
-		if doc.get("message_type") == "Manual":
-			# Set to empty or None, or keep it as is if it's a template
-			if not doc.get("use_template"):
-				doc.message_type = None
-	
-	# Set message_type for outgoing messages sent from CRM
-	if doc.type == "Outgoing" and not doc.get("use_template"):
-		# If message_type is not set and it's not a template, it's a manual message
-		if not doc.get("message_type"):
-			doc.message_type = "Manual"
+		if doc.get("label") == "Manual":
+			doc.label = None  # Clear Manual label for incoming messages
 	
 	if doc.type == "Incoming" and doc.get("from"):
 		result = get_contact_lead_or_deal_from_number(doc.get("from"))
@@ -104,49 +94,46 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 		return []
 	if not frappe.db.exists("DocType", "WhatsApp Message"):
 		return []
-	
-	# Get phone numbers associated with this document
-	phone_numbers = []
-	doc = frappe.get_doc(reference_doctype, reference_name)
-	
-	if reference_doctype == "CRM Lead":
-		if doc.mobile_no:
-			phone_numbers.append(doc.mobile_no)
-		if doc.phone:
-			phone_numbers.append(doc.phone)
-	elif reference_doctype == "CRM Deal":
-		# Get lead phone numbers
-		if doc.lead:
-			lead = frappe.get_doc("CRM Lead", doc.lead)
-			if lead.mobile_no:
-				phone_numbers.append(lead.mobile_no)
-			if lead.phone:
-				phone_numbers.append(lead.phone)
-		# Get contact phone numbers
-		if doc.contacts:
-			for contact_link in doc.contacts:
-				if contact_link.contact:
-					contact = frappe.get_doc("Contact", contact_link.contact)
-					if contact.mobile_no:
-						phone_numbers.append(contact.mobile_no)
-					if contact.phone:
-						phone_numbers.append(contact.phone)
-					# Also check phone_nos child table
-					if hasattr(contact, "phone_nos") and contact.phone_nos:
-						for phone in contact.phone_nos:
-							if phone.phone:
-								phone_numbers.append(phone.phone)
-	
-	# If no phone numbers found, return empty list
-	if not phone_numbers:
-		return []
-	
-	# Get ALL messages and filter by phone number match
-	# This ensures we show ALL messages for this phone number, regardless of reference_doctype/reference_name
-	from crm.utils import are_same_phone_number
-	
-	all_messages = frappe.get_all(
+	messages = []
+
+	if reference_doctype == "CRM Deal":
+		lead = frappe.db.get_value(reference_doctype, reference_name, "lead")
+		if lead:
+			messages = frappe.get_all(
+				"WhatsApp Message",
+				filters={
+					"reference_doctype": "CRM Lead",
+					"reference_name": lead,
+				},
+				fields=[
+					"name",
+					"type",
+					"to",
+					"from",
+					"content_type",
+					"message_type",
+					"attach",
+					"template",
+					"use_template",
+					"message_id",
+					"is_reply",
+					"reply_to_message_id",
+					"creation",
+					"message",
+					"status",
+					"reference_doctype",
+					"reference_name",
+					"template_parameters",
+					"template_header_parameters",
+				],
+			)
+
+	messages += frappe.get_all(
 		"WhatsApp Message",
+		filters={
+			"reference_doctype": reference_doctype,
+			"reference_name": reference_name,
+		},
 		fields=[
 			"name",
 			"type",
@@ -168,81 +155,7 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 			"template_parameters",
 			"template_header_parameters",
 		],
-		order_by="creation asc",
 	)
-	
-	# Filter messages by phone number match - show ALL messages for this phone number
-	messages = []
-	
-	# Normalize phone numbers for comparison (remove all non-digit characters)
-	def normalize_phone(phone_str):
-		if not phone_str:
-			return ""
-		# Remove all non-digit characters
-		cleaned = "".join(c for c in str(phone_str) if c.isdigit())
-		return cleaned
-	
-	# Create mapping of normalized -> original phone numbers
-	phone_mapping = {}
-	for phone in phone_numbers:
-		if phone:
-			normalized = normalize_phone(phone)
-			if normalized:
-				phone_mapping[normalized] = phone
-	
-	for msg in all_messages:
-		# Check if message from/to matches any of our phone numbers
-		msg_from = (msg.get("from") or "").strip()
-		msg_to = (msg.get("to") or "").strip()
-		
-		# For incoming messages, check if 'from' matches
-		# For outgoing messages, check if 'to' matches
-		should_include = False
-		
-		if msg.get("type") == "Incoming" and msg_from:
-			msg_from_normalized = normalize_phone(msg_from)
-			for phone_normalized, phone_original in phone_mapping.items():
-				if not phone_normalized or not msg_from_normalized:
-					continue
-				# Try exact match first
-				if msg_from_normalized == phone_normalized:
-					should_include = True
-					break
-				# Try robust comparison with original phone
-				if are_same_phone_number(msg_from, phone_original, validate=False):
-					should_include = True
-					break
-				# Fallback: check if one ends with the other (for country code variations)
-				# e.g., "393926012793" vs "3926012793" or "+393926012793"
-				if msg_from_normalized.endswith(phone_normalized) or phone_normalized.endswith(msg_from_normalized):
-					# Only match if the difference is reasonable (country code length)
-					diff = abs(len(msg_from_normalized) - len(phone_normalized))
-					if diff <= 4:  # Country code is usually 1-4 digits
-						should_include = True
-						break
-		elif msg.get("type") == "Outgoing" and msg_to:
-			msg_to_normalized = normalize_phone(msg_to)
-			for phone_normalized, phone_original in phone_mapping.items():
-				if not phone_normalized or not msg_to_normalized:
-					continue
-				# Try exact match first
-				if msg_to_normalized == phone_normalized:
-					should_include = True
-					break
-				# Try robust comparison with original phone
-				if are_same_phone_number(msg_to, phone_original, validate=False):
-					should_include = True
-					break
-				# Fallback: check if one ends with the other (for country code variations)
-				if msg_to_normalized.endswith(phone_normalized) or phone_normalized.endswith(msg_to_normalized):
-					# Only match if the difference is reasonable (country code length)
-					diff = abs(len(msg_to_normalized) - len(phone_normalized))
-					if diff <= 4:  # Country code is usually 1-4 digits
-						should_include = True
-						break
-		
-		if should_include:
-			messages.append(msg)
 
 	# Filter messages to get only Template messages
 	template_messages = [message for message in messages if message["message_type"] == "Template"]
@@ -296,8 +209,8 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 		)
 
 		# If the replied message is found, add the reply details to the reply message
+		from_name = get_from_name(reply_message) if replied_message["from"] else _("You")
 		if replied_message:
-			from_name = get_from_name(reply_message) if replied_message.get("from") else _("You")
 			message = replied_message["message"]
 			if replied_message["message_type"] == "Template":
 				message = replied_message["template"]
@@ -307,17 +220,8 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 			reply_message["reply_to"] = replied_message["name"]
 			reply_message["reply_to_type"] = replied_message["type"]
 			reply_message["reply_to_from"] = from_name
-		else:
-			# If replied message not found, set default values
-			reply_message["reply_to_from"] = _("Unknown")
 
-	# Filter out reactions and sort by creation date
-	filtered_messages = [message for message in messages if message["content_type"] != "reaction"]
-	
-	# Sort by creation date (ascending - oldest first)
-	filtered_messages.sort(key=lambda x: x.get("creation", ""))
-	
-	return filtered_messages
+	return [message for message in messages if message["content_type"] != "reaction"]
 
 
 @frappe.whitelist()
