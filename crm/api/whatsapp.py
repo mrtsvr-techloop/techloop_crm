@@ -9,6 +9,21 @@ from crm.integrations.api import get_contact_lead_or_deal_from_number
 
 
 def validate(doc, method):
+	# Fix message_type for incoming messages - they should NOT be "Manual"
+	# "Manual" should only be for messages sent manually from CRM
+	if doc.type == "Incoming":
+		# Incoming messages from WhatsApp should not have message_type "Manual"
+		if doc.get("message_type") == "Manual":
+			# Set to empty or None, or keep it as is if it's a template
+			if not doc.get("use_template"):
+				doc.message_type = None
+	
+	# Set message_type for outgoing messages sent from CRM
+	if doc.type == "Outgoing" and not doc.get("use_template"):
+		# If message_type is not set and it's not a template, it's a manual message
+		if not doc.get("message_type"):
+			doc.message_type = "Manual"
+	
 	if doc.type == "Incoming" and doc.get("from"):
 		result = get_contact_lead_or_deal_from_number(doc.get("from"))
 		if result:
