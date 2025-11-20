@@ -204,8 +204,8 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 		)
 
 		# If the replied message is found, add the reply details to the reply message
-		from_name = get_from_name(reply_message) if replied_message["from"] else _("You")
 		if replied_message:
+			from_name = get_from_name(reply_message) if replied_message.get("from") else _("You")
 			message = replied_message["message"]
 			if replied_message["message_type"] == "Template":
 				message = replied_message["template"]
@@ -215,6 +215,9 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 			reply_message["reply_to"] = replied_message["name"]
 			reply_message["reply_to_type"] = replied_message["type"]
 			reply_message["reply_to_from"] = from_name
+		else:
+			# If replied message not found, set default values
+			reply_message["reply_to_from"] = _("Unknown")
 
 	return [message for message in messages if message["content_type"] != "reaction"]
 
