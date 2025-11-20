@@ -18,7 +18,7 @@
       />
       <AssignTo v-model="assignees.data" doctype="CRM Lead" :docname="leadId" />
       <Dropdown
-        v-if="doc && (document.statuses || document._statuses) && statuses?.length"
+        v-if="doc && (document.statuses || document._statuses)"
         :options="statuses"
         placement="right"
       >
