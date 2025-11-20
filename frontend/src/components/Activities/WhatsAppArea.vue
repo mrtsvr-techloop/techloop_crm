@@ -37,7 +37,7 @@
             <div v-if="whatsapp.header" class="text-base font-semibold">
               {{ whatsapp.header }}
             </div>
-            <div v-html="formatWhatsAppMessage(whatsapp.reply_message)" />
+            <div v-if="whatsapp.reply_message" v-html="formatWhatsAppMessage(whatsapp.reply_message)" />
             <div v-if="whatsapp.footer" class="text-xs text-ink-gray-5">
               {{ whatsapp.footer }}
             </div>
@@ -70,17 +70,17 @@
             <div v-if="whatsapp.header" class="text-base font-semibold">
               {{ whatsapp.header }}
             </div>
-            <div v-html="formatWhatsAppMessage(whatsapp.template)" />
+            <div v-if="whatsapp.template" v-html="formatWhatsAppMessage(whatsapp.template)" />
             <div v-if="whatsapp.footer" class="text-xs text-ink-gray-5">
               {{ whatsapp.footer }}
             </div>
           </div>
           <div
-            v-else-if="whatsapp.content_type == 'text'"
+            v-else-if="whatsapp.content_type == 'text' && whatsapp.message"
             v-html="formatWhatsAppMessage(whatsapp.message)"
           />
           <div
-            v-else-if="whatsapp.content_type == 'button'"
+            v-else-if="whatsapp.content_type == 'button' && whatsapp.message"
             v-html="formatWhatsAppMessage(whatsapp.message)"
           />
           <div v-else-if="whatsapp.content_type == 'image'">
@@ -90,7 +90,7 @@
               @click="() => openFileInAnotherTab(whatsapp.attach)"
             />
             <div
-              v-if="!whatsapp.message.startsWith('/files/')"
+              v-if="whatsapp.message && !whatsapp.message.startsWith('/files/')"
               class="mt-1.5"
               v-html="formatWhatsAppMessage(whatsapp.message)"
             />
@@ -121,7 +121,7 @@
               class="h-40 cursor-pointer rounded-md"
             />
             <div
-              v-if="!whatsapp.message.startsWith('/files/')"
+              v-if="whatsapp.message && !whatsapp.message.startsWith('/files/')"
               class="mt-1.5"
               v-html="formatWhatsAppMessage(whatsapp.message)"
             />
@@ -191,6 +191,10 @@ function openFileInAnotherTab(url) {
 }
 
 function formatWhatsAppMessage(message) {
+  // Ensure message is a string
+  if (typeof message !== 'string') {
+    return ''
+  }
   // if message contains _text_, make it italic
   message = message.replace(/_(.*?)_/g, '<i>$1</i>')
   // if message contains *text*, make it bold

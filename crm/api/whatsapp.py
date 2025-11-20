@@ -95,68 +95,60 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 		return []
 	if not frappe.db.exists("DocType", "WhatsApp Message"):
 		return []
-	messages = []
-
-	if reference_doctype == "CRM Deal":
-		lead = frappe.db.get_value(reference_doctype, reference_name, "lead")
-		if lead:
-			messages = frappe.get_all(
-				"WhatsApp Message",
-				filters={
-					"reference_doctype": "CRM Lead",
-					"reference_name": lead,
-				},
-				fields=[
-					"name",
-					"type",
-					"to",
-					"from",
-					"content_type",
-					"message_type",
-					"attach",
-					"template",
-					"use_template",
-					"message_id",
-					"is_reply",
-					"reply_to_message_id",
-					"creation",
-					"message",
-					"status",
-					"reference_doctype",
-					"reference_name",
-					"template_parameters",
-					"template_header_parameters",
-				],
-			)
-
-	messages += frappe.get_all(
-		"WhatsApp Message",
-		filters={
-			"reference_doctype": reference_doctype,
-			"reference_name": reference_name,
-		},
-		fields=[
-			"name",
-			"type",
-			"to",
-			"from",
-			"content_type",
-			"message_type",
-			"attach",
-			"template",
-			"use_template",
-			"message_id",
-			"is_reply",
-			"reply_to_message_id",
-			"creation",
-			"message",
-			"status",
-			"reference_doctype",
-			"reference_name",
-			"template_parameters",
-			"template_header_parameters",
-		],
-	)
+	
+	# Get phone number from Lead or Deal
+	phone_numbers = []
+	
+	if reference_doctype and reference_name:
+		try:
+			ref_doc = frappe.get_doc(reference_doctype, reference_name)
+			mobile_no = ref_doc.get("mobile_no")
+			if mobile_no:
+				phone_numbers.append(mobile_no)
+			
+			# For Deal, also get phone from associated Lead
+			if reference_doctype == "CRM Deal":
+				lead = ref_doc.get("lead")
+				if lead:
+					lead_doc = frappe.get_doc("CRM Lead", lead)
+					lead_mobile = lead_doc.get("mobile_no")
+					if lead_mobile:
+						phone_numbers.append(lead_mobile)
+		except Exception:
+			pass
+	
+	if not phone_numbers:
+		return []
+	
+	# Normalize phone numbers: remove spaces, dashes, parentheses, and +
+	# This function normalizes a phone number for comparison
+	def normalize_phone(phone):
+		if not phone:
+			return ""
+		return phone.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "").replace("+", "")
+	
+	normalized_phones = [normalize_phone(p) for p in phone_numbers if p]
+	
+	if not normalized_phones:
+		return []
+	
+	# Get ALL messages (incoming and outgoing) for these phone numbers
+	# Normalize phone numbers in SQL for comparison
+	messages = frappe.db.sql("""
+		SELECT 
+			name, type, `to`, `from`, profile_name, content_type, message_type,
+			attach, template, use_template, message_id, is_reply, reply_to_message_id,
+			creation, message, status, reference_doctype, reference_name,
+			template_parameters, template_header_parameters
+		FROM `tabWhatsApp Message`
+		WHERE (
+			REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`from`, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') IN %(normalized_phones)s
+			OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`to`, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') IN %(normalized_phones)s
+		)
+		ORDER BY creation ASC
+	""", {
+		"normalized_phones": normalized_phones,
+	}, as_dict=True)
 
 	# Filter messages to get only Template messages
 	template_messages = [message for message in messages if message["message_type"] == "Template"]
@@ -173,12 +165,12 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 				parameters = json.loads(template_message["template_parameters"])
 				template.template = parse_template_parameters(template.template, parameters)
 
-			template_message["template"] = template.template
+			template_message["template"] = template.template or ""
 			if template_message["template_header_parameters"]:
 				header_parameters = json.loads(template_message["template_header_parameters"])
 				template.header = parse_template_parameters(template.header, header_parameters)
-			template_message["header"] = template.header
-			template_message["footer"] = template.footer
+			template_message["header"] = template.header or ""
+			template_message["footer"] = template.footer or ""
 
 	# Filter messages to get only reaction messages
 	reaction_messages = [message for message in messages if message["content_type"] == "reaction"]
@@ -203,25 +195,94 @@ def get_whatsapp_messages(reference_doctype, reference_name):
 
 	# Iterate through reply messages
 	for reply_message in reply_messages:
-		# Find the message that this message is replying to
+		if not reply_message:
+			continue
+		
+		reply_to_message_id = reply_message.get("reply_to_message_id")
+		if not reply_to_message_id:
+			# Message marked as reply but has no reply_to_message_id - data inconsistency
+			frappe.log_error(
+				f"WhatsApp Message {reply_message.get('name')} has is_reply=True but no reply_to_message_id",
+				"WhatsApp Message Data Inconsistency"
+			)
+			continue
+		
+		# Find the message that this message is replying to in the local messages list
 		replied_message = next(
-			(m for m in messages if m["message_id"] == reply_message["reply_to_message_id"]),
+			(m for m in messages if m.get("message_id") == reply_to_message_id),
 			None,
 		)
+		
+		# If not found locally, search in the database
+		if not replied_message:
+			replied_message_list = frappe.get_all(
+				"WhatsApp Message",
+				filters={"message_id": reply_to_message_id},
+				fields=[
+					"name",
+					"type",
+					"to",
+					"from",
+					"profile_name",
+					"content_type",
+					"message_type",
+					"attach",
+					"template",
+					"use_template",
+					"message_id",
+					"message",
+					"status",
+					"reference_doctype",
+					"reference_name",
+					"template_parameters",
+					"template_header_parameters",
+				],
+				limit=1,
+			)
+			
+			if replied_message_list:
+				replied_message = replied_message_list[0]
+				# If it's a template message, process it
+				if replied_message.get("message_type") == "Template" and replied_message.get("template"):
+					template = frappe.get_doc("WhatsApp Templates", replied_message["template"])
+					if template:
+						replied_message["template_name"] = template.template_name
+						if replied_message.get("template_parameters"):
+							parameters = json.loads(replied_message["template_parameters"])
+							template.template = parse_template_parameters(template.template, parameters)
+						replied_message["template"] = template.template or ""
+						if replied_message.get("template_header_parameters"):
+							header_parameters = json.loads(replied_message["template_header_parameters"])
+							template.header = parse_template_parameters(template.header, header_parameters)
+						replied_message["header"] = template.header or ""
+						replied_message["footer"] = template.footer or ""
 
 		# If the replied message is found, add the reply details to the reply message
-		from_name = get_from_name(reply_message) if replied_message["from"] else _("You")
 		if replied_message:
-			message = replied_message["message"]
-			if replied_message["message_type"] == "Template":
-				message = replied_message["template"]
-			reply_message["reply_message"] = message
+			from_name = get_from_name(replied_message) if replied_message.get("from") else _("You")
+			message = replied_message.get("message") or ""
+			if replied_message.get("message_type") == "Template":
+				message = replied_message.get("template") or ""
+			reply_message["reply_message"] = message or ""
 			reply_message["header"] = replied_message.get("header") or ""
 			reply_message["footer"] = replied_message.get("footer") or ""
-			reply_message["reply_to"] = replied_message["name"]
-			reply_message["reply_to_type"] = replied_message["type"]
+			reply_message["reply_to"] = replied_message.get("name") or ""
+			reply_message["reply_to_type"] = replied_message.get("type") or ""
 			reply_message["reply_to_from"] = from_name
+		else:
+			# Message references a reply_to_message_id that doesn't exist - log error
+			frappe.log_error(
+				f"WhatsApp Message {reply_message.get('name')} references reply_to_message_id {reply_to_message_id} which doesn't exist",
+				"WhatsApp Message Missing Reference"
+			)
 
+	# Ensure all messages have message field as string (never None)
+	for message in messages:
+		if message.get("message") is None:
+			message["message"] = ""
+		if message.get("template") is None:
+			message["template"] = ""
+	
 	return [message for message in messages if message["content_type"] != "reaction"]
 
 
@@ -323,16 +384,41 @@ def parse_template_parameters(string, parameters):
 
 
 def get_from_name(message):
-	doc = frappe.get_doc(message["reference_doctype"], message["reference_name"])
-	from_name = ""
-	if message["reference_doctype"] == "CRM Deal":
-		if doc.get("contacts"):
-			for c in doc.get("contacts"):
-				if c.is_primary:
-					from_name = c.full_name or c.mobile_no
-					break
+	reference_doctype = message.get("reference_doctype")
+	reference_name = message.get("reference_name")
+	
+	# If message doesn't have reference, try to get name from profile_name or from field
+	if not reference_doctype or not reference_name:
+		# Try to get profile name from the message itself
+		profile_name = message.get("profile_name")
+		if profile_name:
+			return profile_name
+		# Fallback to phone number
+		from_field = message.get("from")
+		if from_field:
+			return from_field
+		return _("Unknown")
+	
+	try:
+		doc = frappe.get_doc(reference_doctype, reference_name)
+		from_name = ""
+		if reference_doctype == "CRM Deal":
+			if doc.get("contacts"):
+				for c in doc.get("contacts"):
+					if c.is_primary:
+						from_name = c.full_name or c.mobile_no
+						break
+			else:
+				from_name = doc.get("lead_name")
 		else:
-			from_name = doc.get("lead_name")
-	else:
-		from_name = " ".join(filter(None, [doc.get("first_name"), doc.get("last_name")]))
-	return from_name
+			from_name = " ".join(filter(None, [doc.get("first_name"), doc.get("last_name")]))
+		return from_name or _("Unknown")
+	except Exception:
+		# If document doesn't exist or can't be accessed, fallback to profile_name or from
+		profile_name = message.get("profile_name")
+		if profile_name:
+			return profile_name
+		from_field = message.get("from")
+		if from_field:
+			return from_field
+		return _("Unknown")
