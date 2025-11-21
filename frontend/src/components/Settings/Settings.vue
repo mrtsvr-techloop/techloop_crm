@@ -79,7 +79,6 @@ import {
 import { Dialog, Avatar } from 'frappe-ui'
 import { ref, markRaw, computed, watch, h } from 'vue'
 import AssignmentRulePage from './AssignmentRules/AssignmentRulePage.vue'
-import SpecialFunctions from './SpecialFunctions.vue'
 
 const { isManager, isTelephonyAgent, getUser } = usersStore()
 
@@ -148,20 +147,6 @@ const tabs = computed(() => {
         },
       ],
       condition: () => isManager(),
-    },
-    {
-      label: __('System Tools'),
-      items: [
-        {
-          label: __('Special Functions'),
-          icon: 'settings',
-          component: markRaw(SpecialFunctions),
-          condition: () => isManager(),
-          hidden: true, // Nascosto ma accessibile
-        },
-      ],
-      condition: () => isManager(),
-      hidden: true, // Nascosto ma accessibile
     },
   ]
 

@@ -157,6 +157,11 @@ def create_random_lead(contact_name: str = None, organization_name: str = None) 
     order_date = datetime.now() - timedelta(days=random.randint(0, 30))
     delivery_date = order_date + timedelta(days=random.randint(1, 14))
     
+    # Generate random city and region
+    city = random.choice(CITIES)
+    region = random.choice(["Lombardia", "Lazio", "Campania", "Sicilia", "Veneto", "Emilia-Romagna", "Piemonte", "Puglia", "Toscana", "Calabria"])
+    zip_code = f"{random.randint(10000, 99999)}"
+    
     # Create lead
     lead = frappe.get_doc({
         "doctype": "CRM Lead",
@@ -167,7 +172,10 @@ def create_random_lead(contact_name: str = None, organization_name: str = None) 
         "status": random.choice(LEAD_STATUSES),
         "order_date": order_date.strftime("%Y-%m-%d"),
         "delivery_date": delivery_date.strftime("%Y-%m-%d"),
-        "delivery_address": f"{random.choice(STREETS)}, {random.randint(1, 200)}, {random.choice(CITIES)}",
+        "delivery_address": f"{random.choice(STREETS)}, {random.randint(1, 200)}, {city}",
+        "delivery_region": region,
+        "delivery_city": city,
+        "delivery_zip": zip_code,
         "order_notes": random.choice([
             "Consegna urgente richiesta",
             "Consegna in orario lavorativo",
@@ -244,6 +252,11 @@ def create_random_deal(lead_name: str = None, contact_name: str = None, organiza
     expected_closure_date = datetime.now() + timedelta(days=random.randint(7, 60))
     delivery_date = datetime.now() + timedelta(days=random.randint(1, 30))
     
+    # Generate random city and region
+    city = random.choice(CITIES)
+    region = random.choice(["Lombardia", "Lazio", "Campania", "Sicilia", "Veneto", "Emilia-Romagna", "Piemonte", "Puglia", "Toscana", "Calabria"])
+    zip_code = f"{random.randint(10000, 99999)}"
+    
     deal_value = random.randint(500, 10000)
     probability = random.choice([10, 25, 50, 75, 90, 100])
     
@@ -260,7 +273,10 @@ def create_random_deal(lead_name: str = None, contact_name: str = None, organiza
         "probability": probability,
         "expected_closure_date": expected_closure_date.strftime("%Y-%m-%d"),
         "delivery_date": delivery_date.strftime("%Y-%m-%d"),
-        "delivery_address": f"{random.choice(STREETS)}, {random.randint(1, 200)}, {random.choice(CITIES)}",
+        "delivery_address": f"{random.choice(STREETS)}, {random.randint(1, 200)}, {city}",
+        "delivery_region": region,
+        "delivery_city": city,
+        "delivery_zip": zip_code,
         "order_notes": random.choice([
             "Deal in fase di negoziazione",
             "Cliente interessato",
@@ -351,11 +367,7 @@ def generate_test_data(count: int = 20):
     
     try:
         for i in range(count):
-            # Decide randomly: create Lead or Deal (or both)
-            create_lead = random.choice([True, True, False])  # 66% chance for lead
-            create_deal = random.choice([True, False, False])  # 33% chance for deal
-            
-            # Create contact
+            # Create contact (always)
             contact_name = create_random_contact()
             created_contacts.append(contact_name)
             
@@ -366,23 +378,21 @@ def generate_test_data(count: int = 20):
                 if organization_name not in created_organizations:
                     created_organizations.append(organization_name)
             
-            # Create lead
-            if create_lead:
-                lead_name = create_random_lead(
-                    contact_name=contact_name,
-                    organization_name=organization_name
-                )
-                created_leads.append(lead_name)
+            # Create lead (always)
+            lead_name = create_random_lead(
+                contact_name=contact_name,
+                organization_name=organization_name
+            )
+            created_leads.append(lead_name)
             
-            # Create deal (sometimes linked to lead)
-            if create_deal:
-                lead_link = random.choice(created_leads) if created_leads else None
-                deal_name = create_random_deal(
-                    lead_name=lead_link,
-                    contact_name=contact_name,
-                    organization_name=organization_name
-                )
-                created_deals.append(deal_name)
+            # Create deal (always, sometimes linked to a random lead)
+            lead_link = random.choice(created_leads) if created_leads and random.choice([True, False]) else None
+            deal_name = create_random_deal(
+                lead_name=lead_link,
+                contact_name=contact_name,
+                organization_name=organization_name
+            )
+            created_deals.append(deal_name)
             
             # Commit every 5 records
             if (i + 1) % 5 == 0:

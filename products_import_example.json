@@ -1,0 +1,36 @@
+[
+  {
+    "product_code": "EXTRA-CHOCOLATE",
+    "product_name": "Extra chocolate",
+    "standard_rate": 40.00,
+    "description": "Impasto al cioccolato con cubetti di cioccolato fondente. Disponibile solo in formato da 1KG.",
+    "tags": ["limited-edition", "cioccolato", "cioccolato-fondente", "1kg"]
+  },
+  {
+    "product_code": "CARAMELLO-CAFFE",
+    "product_name": "Caramello e caffè",
+    "standard_rate": 45.00,
+    "description": "Impasto al caramello con cubetti di caramello mau e glassa al caffè. Con vasetto di caramello salato al caffè. Disponibile solo in formato da 1KG.",
+    "tags": ["limited-edition", "caramello", "caffè", "1kg"]
+  },
+  {
+    "product_code": "ORO-VERDE",
+    "product_name": "Oro verde",
+    "standard_rate": 50.00,
+    "description": "Pistacchio e cioccolato bianco Valrhona. Senza lattosio. Disponibile solo in formato da 1KG.",
+    "tags": ["limited-edition", "pistacchio", "cioccolato-bianco", "senza-lattosio", "1kg"]
+  },
+  {
+    "product_code": "PROD-SEMPLICE",
+    "product_name": "Prodotto Semplice",
+    "standard_rate": 25.50,
+    "description": "Un prodotto senza tag opzionali"
+  },
+  {
+    "product_code": "PROD-SENZA-DESC",
+    "product_name": "Prodotto Senza Descrizione",
+    "standard_rate": 15.00
+  }
+]
+
+
