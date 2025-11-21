@@ -5,7 +5,6 @@ import frappe
 from frappe import _
 
 
-@frappe.whitelist()
 def reset_crm_database():
     """
     Pulisce completamente il database CRM eliminando tutti i dati operativi.
@@ -26,10 +25,12 @@ def reset_crm_database():
     
     ATTENZIONE: Questa funzione elimina TUTTI i dati operativi!
     
+    NOTA: Questa funzione NON è esposta come API. Può essere eseguita solo tramite:
+    - bench --site <site> execute crm.api.products.reset_crm_database
+    
     Returns:
         dict: Risultato dell'operazione con statistiche
     """
-    frappe.only_for("System Manager")
     
     try:
         print("🧹 Pulizia completa database CRM...")
@@ -107,7 +108,6 @@ def reset_crm_database():
         }
 
 
-@frappe.whitelist()
 def create_products():
     """
     Crea prodotti di default nel CRM.
@@ -116,6 +116,9 @@ def create_products():
     - Tag master per le caratteristiche dei prodotti
     - 6 prodotti di esempio con prezzi realistici
     - Associa i tag appropriati a ogni prodotto
+    
+    NOTA: Questa funzione NON è esposta come API. Può essere eseguita solo tramite:
+    - bench --site <site> execute crm.api.products.create_products
     
     Returns:
         dict: Risultato dell'operazione con lista prodotti creati

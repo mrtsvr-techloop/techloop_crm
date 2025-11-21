@@ -310,7 +310,6 @@ def get_route_name(doctype):
 	return doctype
 
 
-@frappe.whitelist()
 def reset_default_views():
 	"""
 	Resetta tutte le viste default (List e Kanban) per CRM Lead, CRM Deal e Contact.
@@ -324,10 +323,12 @@ def reset_default_views():
 	Se gli status "Attesa Pagamento", "Confermato" o "Non Pagato" non esistono per CRM Lead,
 	viene mostrato un messaggio di errore.
 	
+	NOTA: Questa funzione NON è esposta come API. Può essere eseguita solo tramite:
+	- bench --site <site> execute crm.fcrm.doctype.crm_view_settings.crm_view_settings.reset_default_views
+	
 	Returns:
 		dict: Risultato dell'operazione con statistiche
 	"""
-	frappe.only_for("System Manager")
 	
 	try:
 		# Verifica che gli status nuovi esistano per CRM Lead (nomi in inglese)

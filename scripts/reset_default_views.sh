@@ -27,3 +27,4 @@ echo ""
 echo "✅ Reset completato!"
 
 
+
