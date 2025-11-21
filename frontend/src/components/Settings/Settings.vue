@@ -14,7 +14,7 @@
           <div class="flex flex-col overflow-y-auto">
             <template v-for="tab in tabs" :key="tab.label">
               <div
-                v-if="!tab.hideLabel"
+                v-if="!tab.hideLabel && !tab.hidden"
                 class="py-[7px] px-2 my-1 flex cursor-pointer gap-1.5 text-base text-ink-gray-5 transition-all duration-300 ease-in-out"
               >
                 <span>{{ __(tab.label) }}</span>
@@ -22,14 +22,16 @@
               <nav class="space-y-1 px-1">
                 <SidebarLink
                   v-for="i in tab.items"
+                  :key="i.label"
                   :icon="i.icon"
                   :label="__(i.label)"
                   class="w-full"
-                  :class="
+                  :class="[
                     activeTab?.label == i.label
                       ? 'bg-surface-selected shadow-sm hover:bg-surface-selected'
-                      : 'hover:bg-surface-gray-3'
-                  "
+                      : 'hover:bg-surface-gray-3',
+                    i.hidden ? 'opacity-0 h-0 overflow-hidden' : ''
+                  ]"
                   @click="activeSettingsPage = i.label"
                 />
               </nav>
@@ -86,29 +88,8 @@ const user = computed(() => getUser() || {})
 const tabs = computed(() => {
   let _tabs = [
     {
-      label: __('Personal Settings'),
-      hideLabel: true,
-      items: [
-        {
-          label: __('Profile'),
-          icon: () =>
-            h(Avatar, {
-              size: 'xs',
-              label: user.value.full_name,
-              image: user.value.user_image,
-            }),
-          component: markRaw(ProfileSettings),
-        },
-      ],
-    },
-    {
       label: __('System Configuration'),
       items: [
-        {
-          label: __('Forecasting'),
-          component: markRaw(ForecastingSettings),
-          icon: TrendingUpDownIcon,
-        },
         {
           label: __('Currency & Exchange Rate'),
           icon: CircleDollarSignIcon,
@@ -141,71 +122,16 @@ const tabs = computed(() => {
       condition: () => isManager(),
     },
     {
-      label: __('Email Settings'),
-      items: [
-        {
-          label: __('Email Accounts'),
-          icon: Email2Icon,
-          component: markRaw(EmailConfig),
-          condition: () => isManager(),
-        },
-        {
-          label: __('Email Templates'),
-          icon: EmailTemplateIcon,
-          component: markRaw(EmailTemplatePage),
-        },
-      ],
-    },
-    {
-      label: __('Automation & Rules'),
-      items: [
-        {
-          label: __('Assignment rules'),
-          icon: markRaw(h(SettingsIcon2, { class: 'rotate-90' })),
-          component: markRaw(AssignmentRulePage),
-        },
-      ],
-    },
-    {
-      label: __('Customization'),
-      items: [
-        {
-          label: __('Home Actions'),
-          component: markRaw(HomeActions),
-          icon: 'home',
-        },
-      ],
-      condition: () => isManager(),
-    },
-    {
       label: __('Integrations', null, 'FCRM'),
       items: [
-        {
-          label: __('Telephony'),
-          icon: PhoneIcon,
-          component: markRaw(TelephonySettings),
-          condition: () => isManager() || isTelephonyAgent(),
-        },
         {
           label: __('WhatsApp'),
           icon: WhatsAppIcon,
           component: markRaw(WhatsAppSettings),
           condition: () => isWhatsappInstalled.value && isManager(),
         },
-        {
-          label: __('ERPNext'),
-          icon: ERPNextIcon,
-          component: markRaw(ERPNextSettings),
-          condition: () => isManager(),
-        },
-        {
-          label: __('Lead Syncing'),
-          icon: 'refresh-cw',
-          component: markRaw(LeadSyncSourcePage),
-          condition: () => isManager(),
-        },
       ],
-      condition: () => isManager() || isTelephonyAgent(),
+      condition: () => isManager(),
     },
     {
       label: __('System Tools'),
@@ -215,9 +141,11 @@ const tabs = computed(() => {
           icon: 'settings',
           component: markRaw(SpecialFunctions),
           condition: () => isManager(),
+          hidden: true, // Nascosto ma accessibile
         },
       ],
       condition: () => isManager(),
+      hidden: true, // Nascosto ma accessibile
     },
   ]
 

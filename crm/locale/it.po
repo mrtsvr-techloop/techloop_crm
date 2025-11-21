@@ -222,11 +222,11 @@ msgstr ""
 
 #: frontend/src/components/Settings/CurrencySettings.vue:90
 msgid "Access key"
-msgstr ""
+msgstr "Chiave di accesso"
 
 #: frontend/src/components/Settings/CurrencySettings.vue:94
 msgid "Access key for Exchangerate Host. Required for fetching exchange rates."
-msgstr ""
+msgstr "Chiave di accesso per Exchangerate Host. Richiesta per recuperare i tassi di cambio."
 
 #: crm/lead_syncing/doctype/lead_sync_source/facebook.py:133
 msgid "Access token is required"
@@ -845,19 +845,19 @@ msgstr ""
 
 #: frontend/src/components/Settings/Settings.vue:119
 msgid "Brand Settings"
-msgstr ""
+msgstr "Impostazioni Brand"
 
 #: frontend/src/components/Settings/BrandSettings.vue:52
 msgid "Brand logo"
-msgstr ""
+msgstr "Logo del brand"
 
 #: frontend/src/components/Settings/BrandSettings.vue:32
 msgid "Brand name"
-msgstr ""
+msgstr "Nome del brand"
 
 #: frontend/src/components/Settings/BrandSettings.vue:7
 msgid "Brand settings"
-msgstr ""
+msgstr "Impostazioni brand"
 
 #. Label of the branding_tab (Tab Break) field in DocType 'FCRM Settings'
 #: crm/fcrm/doctype/fcrm_settings/fcrm_settings.json
@@ -1052,7 +1052,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/CurrencySettings.vue:35
 msgid "CRM currency for all monetary values. Once set, cannot be edited."
-msgstr ""
+msgstr "Valuta CRM per tutti i valori monetari. Una volta impostata, non può essere modificata."
 
 #: frontend/src/components/ViewControls.vue:272
 msgid "CSV"
@@ -1365,7 +1365,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/CurrencySettings.vue:11
 msgid "Configure the currency and exchange rate provider for your CRM"
-msgstr ""
+msgstr "Configura la valuta e il fornitore del tasso di cambio per il tuo CRM"
 
 #: frontend/src/components/Settings/CurrencySettings.vue:63
 msgid "Configure the exchange rate provider for your CRM"
@@ -1373,7 +1373,7 @@ msgstr "Configura un exchange rate provider per il tuo CRM"
 
 #: frontend/src/components/Settings/BrandSettings.vue:10
 msgid "Configure your brand name, logo, and favicon"
-msgstr ""
+msgstr "Configura il nome del brand, il logo e il favicon"
 
 #: frontend/src/composables/frappecloud.js:29
 msgid "Confirm"
@@ -1621,11 +1621,11 @@ msgstr "Valuta"
 
 #: frontend/src/components/Settings/Settings.vue:114
 msgid "Currency & Exchange Rate"
-msgstr ""
+msgstr "Valuta e Tasso di Cambio"
 
 #: frontend/src/components/Settings/CurrencySettings.vue:7
 msgid "Currency & Exchange rate provider"
-msgstr ""
+msgstr "Valuta e Fornitore del tasso di cambio"
 
 #: frontend/src/components/Settings/CurrencySettings.vue:179
 msgid "Currency set as {0} successfully"
@@ -2410,6 +2410,7 @@ msgstr "Inserisci la chiave di accesso"
 
 #: frontend/src/components/Settings/BrandSettings.vue:33
 msgid "Enter brand name"
+msgstr "Inserisci il nome del brand"
 msgstr ""
 
 #: frontend/src/components/Settings/LeadSyncing/leadSyncSourceConfig.js:30
@@ -2517,7 +2518,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/CurrencySettings.vue:60
 msgid "Exchange rate provider"
-msgstr ""
+msgstr "Fornitore del tasso di cambio"
 
 #. Option for the 'Telephony Medium' (Select) field in DocType 'CRM Call Log'
 #. Label of the exotel (Check) field in DocType 'CRM Telephony Agent'
@@ -2726,7 +2727,7 @@ msgstr ""
 #: crm/fcrm/doctype/fcrm_settings/fcrm_settings.json
 #: frontend/src/components/Settings/BrandSettings.vue:87
 msgid "Favicon"
-msgstr ""
+msgstr "Favicon"
 
 #: frontend/src/components/ConditionsFilter/CFCondition.vue:38
 #: frontend/src/components/Modals/EditValueModal.vue:5
@@ -2805,7 +2806,7 @@ msgstr ""
 #: frontend/src/components/Filter.vue:130
 #: frontend/src/components/Settings/ProfileSettings.vue:78
 msgid "First name"
-msgstr ""
+msgstr "Nome"
 
 #: frontend/src/components/Settings/EmailTemplate/EditEmailTemplate.vue:48
 #: frontend/src/components/Settings/EmailTemplate/EmailTemplates.vue:84
@@ -3209,6 +3210,7 @@ msgstr ""
 msgctxt "FCRM"
 msgid "Integrations"
 msgstr "Integrazioni"
+msgstr "Integrazioni"
 
 #: frontend/src/components/Layouts/AppSidebar.vue:529
 #: frontend/src/components/Layouts/AppSidebar.vue:532
@@ -3262,7 +3264,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/Settings.vue:136
 msgid "Invite User"
-msgstr ""
+msgstr "Invita Utente"
 
 #: frontend/src/components/Settings/AssignmentRules/AssigneeSearch.vue:78
 #: frontend/src/components/Settings/AssignmentRules/AssigneeSearch.vue:149
@@ -3271,7 +3273,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/InviteUserPage.vue:51
 msgid "Invite as"
-msgstr ""
+msgstr "Invita come"
 
 #: frontend/src/components/Layouts/AppSidebar.vue:543
 msgid "Invite users"
@@ -3456,7 +3458,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/ProfileSettings.vue:83
 msgid "Last name"
-msgstr ""
+msgstr "Cognome"
 
 #: frontend/src/components/Settings/AssignmentRules/AssigneeRules.vue:101
 msgid "Last user assigned by this rule"
@@ -4725,11 +4727,11 @@ msgstr ""
 #: frontend/src/components/Layouts/AppSidebar.vue:540
 #: frontend/src/components/Settings/Settings.vue:94
 msgid "Profile"
-msgstr ""
+msgstr "Profilo"
 
 #: frontend/src/components/Settings/ProfileSettings.vue:147
 msgid "Profile updated successfully"
-msgstr ""
+msgstr "Profilo aggiornato con successo"
 
 #: crm/api/dashboard.py:689
 msgid "Projected vs actual revenue based on deal probability"
@@ -5220,11 +5222,11 @@ msgstr ""
 
 #: frontend/src/components/Settings/CurrencySettings.vue:51
 msgid "Select currency"
-msgstr ""
+msgstr "Seleziona valuta"
 
 #: frontend/src/components/Settings/CurrencySettings.vue:75
 msgid "Select provider"
-msgstr ""
+msgstr "Seleziona fornitore"
 
 #: frontend/src/components/Settings/AssignmentRules/AssigneeRules.vue:84
 msgid "Select the assignees for {0}."
@@ -5256,7 +5258,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/InviteUserPage.vue:6
 msgid "Send invites to"
-msgstr ""
+msgstr "Invia inviti a"
 
 #. Option for the 'Type' (Select) field in DocType 'CRM Dropdown Item'
 #: crm/fcrm/doctype/crm_dropdown_item/crm_dropdown_item.json
@@ -5594,6 +5596,7 @@ msgstr ""
 
 #: frontend/src/components/Settings/Settings.vue:106
 msgid "System Configuration"
+msgstr "Configurazione Sistema"
 msgstr ""
 
 #. Name of a role
@@ -6099,7 +6102,7 @@ msgstr ""
 #: frontend/src/components/Settings/TelephonySettings.vue:23
 #: frontend/src/components/Telephony/ExotelCallUI.vue:210
 msgid "Update"
-msgstr ""
+msgstr "Aggiorna"
 
 #: frontend/src/components/Settings/EmailEdit.vue:74
 msgid "Update Account"
@@ -6155,6 +6158,7 @@ msgstr "Utente"
 
 #: frontend/src/components/Settings/Settings.vue:127
 msgid "User Management"
+msgstr "Gestione Utenti"
 msgstr ""
 
 #. Label of the user_name (Data) field in DocType 'CRM Telephony Agent'
