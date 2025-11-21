@@ -18,7 +18,7 @@
       />
       <AssignTo v-model="assignees.data" doctype="CRM Lead" :docname="leadId" />
       <Dropdown
-        v-if="doc && (document.statuses || document._statuses)"
+        v-if="doc && document.statuses"
         :options="statuses"
         placement="right"
       >
@@ -29,7 +29,7 @@
             :iconRight="open ? 'chevron-up' : 'chevron-down'"
           >
             <template #prefix>
-              <IndicatorIcon :class="getLeadStatus(doc.status).color" />
+              <IndicatorIcon :class="getLeadStatus(doc.status)?.color" />
             </template>
           </Button>
         </template>
