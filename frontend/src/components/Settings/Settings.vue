@@ -88,6 +88,22 @@ const user = computed(() => getUser() || {})
 const tabs = computed(() => {
   let _tabs = [
     {
+      label: __('Personal Settings'),
+      hideLabel: true,
+      items: [
+        {
+          label: __('Profile'),
+          icon: () =>
+            h(Avatar, {
+              size: 'xs',
+              label: user.value.full_name,
+              image: user.value.user_image,
+            }),
+          component: markRaw(ProfileSettings),
+        },
+      ],
+    },
+    {
       label: __('System Configuration'),
       items: [
         {
