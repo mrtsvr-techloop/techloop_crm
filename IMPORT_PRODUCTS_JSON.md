@@ -226,3 +226,4 @@ La funzione usa una transazione database:
 Gli errori per singolo prodotto non causano rollback, solo log e aggiunta alla lista errori.
 
 
+
