@@ -507,11 +507,11 @@ msgstr "Il Fatturato Annuo dovrebbe essere un numero"
 
 #: frontend/src/components/Settings/BrandSettings.vue:55
 msgid "Appears in the left sidebar. Recommended size is 32x32 px in PNG or SVG"
-msgstr ""
+msgstr "Appare nella barra laterale sinistra. Dimensione consigliata 32x32 px in PNG o SVG"
 
 #: frontend/src/components/Settings/BrandSettings.vue:90
 msgid "Appears next to the title in your browser tab. Recommended size is 32x32 px in PNG or ICO"
-msgstr ""
+msgstr "Appare accanto al titolo nella scheda del browser. Dimensione consigliata 32x32 px in PNG o ICO"
 
 #: frontend/src/components/Kanban/KanbanSettings.vue:101
 #: frontend/src/components/Kanban/KanbanView.vue:46
@@ -2411,7 +2411,6 @@ msgstr "Inserisci la chiave di accesso"
 #: frontend/src/components/Settings/BrandSettings.vue:33
 msgid "Enter brand name"
 msgstr "Inserisci il nome del brand"
-msgstr ""
 
 #: frontend/src/components/Settings/LeadSyncing/leadSyncSourceConfig.js:30
 msgid "Enter your Facebook Access Token"
@@ -4514,7 +4513,43 @@ msgstr ""
 #: frontend/src/components/Settings/EmailTemplate/EditEmailTemplate.vue:38
 #: frontend/src/components/Settings/EmailTemplate/NewEmailTemplate.vue:38
 msgid "Payment Reminder"
-msgstr ""
+msgstr "Promemoria Pagamento"
+
+#: frontend/src/components/Settings/BrandSettings.vue:110
+msgid "Payment Information"
+msgstr "Informazioni di Pagamento"
+
+#: frontend/src/components/Settings/BrandSettings.vue:122
+msgid "Payment Information Text"
+msgstr "Testo Informazioni di Pagamento"
+
+#: frontend/src/components/Settings/BrandSettings.vue:123
+msgid "Enter payment information..."
+msgstr "Inserisci informazioni di pagamento..."
+
+#: frontend/src/components/Settings/BrandSettings.vue:114
+msgid "Enter payment information that will be included in WhatsApp messages when the order status is \"Attesa Pagamento\". You can include IBAN, PayPal, instructions, etc."
+msgstr "Inserisci le informazioni di pagamento che verranno incluse nei messaggi WhatsApp quando lo stato dell'ordine è \"Attesa Pagamento\". Puoi includere IBAN, PayPal, istruzioni, ecc."
+
+#: frontend/src/components/Settings/BrandSettings.vue:131
+msgid "Status Change Notifications"
+msgstr "Notifiche Cambio Stato"
+
+#: frontend/src/components/Settings/BrandSettings.vue:135
+msgid "Configure WhatsApp notifications for each status change. Enable/disable notifications and customize the message for each status."
+msgstr "Configura le notifiche WhatsApp per ogni cambio di stato. Abilita/disabilita le notifiche e personalizza il messaggio per ogni stato."
+
+#: frontend/src/components/Settings/BrandSettings.vue:157
+msgid "Leave empty to use default message"
+msgstr "Lascia vuoto per usare il messaggio predefinito"
+
+#: frontend/src/components/Settings/BrandSettings.vue:209
+msgid "Enable notification for"
+msgstr "Abilita notifica per"
+
+#: frontend/src/components/Settings/BrandSettings.vue:219
+msgid "Custom message for"
+msgstr "Messaggio personalizzato per"
 
 #: frontend/src/components/Settings/EmailTemplate/EditEmailTemplate.vue:69
 #: frontend/src/components/Settings/EmailTemplate/NewEmailTemplate.vue:69

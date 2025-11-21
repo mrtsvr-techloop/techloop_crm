@@ -283,13 +283,6 @@ after_migrate = ["crm.fcrm.doctype.fcrm_settings.fcrm_settings.after_migrate"]
 
 standard_dropdown_items = [
 	{
-		"name1": "app_selector",
-		"label": "Apps",
-		"type": "Route",
-		"route": "#",
-		"is_standard": 1,
-	},
-	{
 		"name1": "toggle_theme",
 		"label": "Toggle theme",
 		"type": "Route",
@@ -309,14 +302,6 @@ standard_dropdown_items = [
 		"name1": "login_to_fc",
 		"label": "Login to Frappe Cloud",
 		"type": "Route",
-		"route": "#",
-		"is_standard": 1,
-	},
-	{
-		"name1": "about",
-		"label": "About",
-		"type": "Route",
-		"icon": "info",
 		"route": "#",
 		"is_standard": 1,
 	},
