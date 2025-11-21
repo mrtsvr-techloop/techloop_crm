@@ -282,8 +282,55 @@ def _create_default_tags():
     return created_tags
 
 
-def _add_tags_to_product(product_name: str, tag_names: list):
-    """Aggiunge i tag specificati al prodotto."""
+def _create_or_get_tag_master(tag_name: str, color: str = None):
+    """
+    Crea un tag master se non esiste, altrimenti lo restituisce.
+    
+    Args:
+        tag_name: Nome del tag
+        color: Colore del tag in formato hex (es. "#dc2626"). Se None, usa un colore default.
+        
+    Returns:
+        str: Nome del documento CRM Product Tag Master
+    """
+    # Verifica se il tag esiste già
+    existing = frappe.db.exists("CRM Product Tag Master", {"tag_name": tag_name})
+    if existing:
+        return existing
+    
+    # Colore default se non specificato
+    if not color:
+        # Genera un colore basato sul nome del tag (hash semplice)
+        import hashlib
+        hash_obj = hashlib.md5(tag_name.encode())
+        hash_hex = hash_obj.hexdigest()[:6]
+        color = f"#{hash_hex}"
+    
+    # Crea nuovo tag master
+    try:
+        tag_doc = frappe.get_doc({
+            "doctype": "CRM Product Tag Master",
+            "tag_name": tag_name,
+            "description": tag_name.replace("-", " ").title(),
+            "color": color
+        })
+        tag_doc.insert()
+        print(f"✅ Creato tag master: {tag_name}")
+        return tag_doc.name
+    except Exception as e:
+        frappe.log_error(f"Errore creando tag master '{tag_name}': {str(e)}")
+        raise
+
+
+def _add_tags_to_product(product_name: str, tag_names: list, auto_create_tags: bool = True):
+    """
+    Aggiunge i tag specificati al prodotto.
+    
+    Args:
+        product_name: Nome del documento CRM Product
+        tag_names: Lista di nomi tag da aggiungere
+        auto_create_tags: Se True, crea automaticamente i tag master se non esistono
+    """
     
     try:
         product_doc = frappe.get_doc("CRM Product", product_name)
@@ -293,19 +340,179 @@ def _add_tags_to_product(product_name: str, tag_names: list):
         
         # Aggiungi nuovi tag
         for tag_name in tag_names:
-            # Verifica che il tag master esista
-            tag_master = frappe.db.exists("CRM Product Tag Master", {"tag_name": tag_name})
-            if tag_master:
+            try:
+                if auto_create_tags:
+                    # Crea il tag master se non esiste
+                    tag_master = _create_or_get_tag_master(tag_name)
+                else:
+                    # Verifica che il tag master esista
+                    tag_master = frappe.db.exists("CRM Product Tag Master", {"tag_name": tag_name})
+                    if not tag_master:
+                        print(f"⚠️  Tag master '{tag_name}' non trovato per prodotto {product_name}")
+                        continue
+                
+                # Aggiungi il tag al prodotto
+                tag_color = frappe.get_value("CRM Product Tag Master", tag_master, "color")
                 product_doc.append("product_tags", {
                     "tag_name": tag_master,
-                    "color": frappe.get_value("CRM Product Tag Master", tag_master, "color")
+                    "color": tag_color
                 })
-            else:
-                print(f"⚠️  Tag master '{tag_name}' non trovato per prodotto {product_name}")
+            except Exception as e:
+                frappe.log_error(f"Errore processando tag '{tag_name}' per prodotto {product_name}: {str(e)}")
         
         product_doc.save()
-        print(f"🏷️  Aggiunti {len(tag_names)} tag a {product_name}")
+        print(f"🏷️  Aggiunti {len([t for t in tag_names if t])} tag a {product_name}")
         
     except Exception as e:
         frappe.log_error(f"Errore aggiungendo tag a {product_name}: {str(e)}")
+
+
+@frappe.whitelist()
+def import_products_from_json(products_json: str):
+    """
+    Importa prodotti da un JSON.
+    
+    Formato JSON atteso:
+    [
+        {
+            "product_code": "PROD-001",              # OBBLIGATORIO: Codice univoco del prodotto
+            "product_name": "Nome Prodotto",         # OBBLIGATORIO: Nome del prodotto
+            "standard_rate": 10.00,                  # Opzionale: Prezzo (default: 0.00)
+            "description": "Descrizione prodotto",   # Opzionale: Descrizione del prodotto
+            "tags": ["tag1", "tag2"]                 # Opzionale: Lista di nomi tag (devono esistere come CRM Product Tag Master)
+        }
+    ]
+    
+    Esempio completo:
+    [
+        {
+            "product_code": "EXTRA-CHOCOLATE",
+            "product_name": "Extra chocolate",
+            "standard_rate": 40.00,
+            "description": "Impasto al cioccolato con cubetti di cioccolato fondente. Disponibile solo in formato da 1KG.",
+            "tags": ["limited-edition", "cioccolato", "cioccolato-fondente", "1kg"]
+        },
+        {
+            "product_code": "PROD-SEMPLICE",
+            "product_name": "Prodotto Semplice",
+            "standard_rate": 25.50,
+            "description": "Un prodotto senza tag opzionali"
+        },
+        {
+            "product_code": "PROD-MINIMO",
+            "product_name": "Prodotto Minimo",
+            "standard_rate": 15.00
+        }
+    ]
+    
+    Note:
+    - Se un prodotto con lo stesso product_code esiste già, verrà aggiornato
+    - I tag vengono creati automaticamente se non esistono come CRM Product Tag Master
+    - I tag creati automaticamente avranno un colore generato automaticamente basato sul nome
+    - Vedi products_import_example.json per un esempio completo
+    
+    Args:
+        products_json: Stringa JSON contenente l'array di prodotti
+        
+    Returns:
+        dict: Risultato dell'operazione con statistiche:
+            {
+                "success": True/False,
+                "message": "Messaggio descrittivo",
+                "created_products": ["PROD-001", "PROD-002"],
+                "updated_products": ["PROD-003"],
+                "errors": ["Lista errori se presenti"]
+            }
+    """
+    frappe.only_for("System Manager")
+    
+    try:
+        import json
+        
+        # Parse JSON
+        try:
+            products_data = json.loads(products_json)
+        except json.JSONDecodeError as e:
+            return {
+                "success": False,
+                "error": f"JSON non valido: {str(e)}"
+            }
+        
+        if not isinstance(products_data, list):
+            return {
+                "success": False,
+                "error": "Il JSON deve contenere un array di prodotti"
+            }
+        
+        created_products = []
+        updated_products = []
+        errors = []
+        
+        for idx, product_data in enumerate(products_data):
+            try:
+                # Validazione campi obbligatori
+                if not product_data.get("product_code"):
+                    errors.append(f"Prodotto {idx + 1}: product_code mancante")
+                    continue
+                
+                if not product_data.get("product_name"):
+                    errors.append(f"Prodotto {idx + 1}: product_name mancante")
+                    continue
+                
+                product_code = product_data["product_code"]
+                product_name = product_data["product_name"]
+                standard_rate = float(product_data.get("standard_rate", 0))
+                description = product_data.get("description", "")
+                tags = product_data.get("tags", [])
+                
+                # Controlla se il prodotto esiste già
+                existing = frappe.db.exists("CRM Product", {"product_code": product_code})
+                
+                if existing:
+                    # Aggiorna prodotto esistente
+                    product_doc = frappe.get_doc("CRM Product", existing)
+                    product_doc.product_name = product_name
+                    product_doc.standard_rate = standard_rate
+                    product_doc.description = description
+                    product_doc.save()
+                    updated_products.append(product_doc.name)
+                else:
+                    # Crea nuovo prodotto
+                    product_doc = frappe.get_doc({
+                        "doctype": "CRM Product",
+                        "product_code": product_code,
+                        "product_name": product_name,
+                        "standard_rate": standard_rate,
+                        "description": description,
+                        "disabled": 0
+                    })
+                    product_doc.insert()
+                    created_products.append(product_doc.name)
+                
+                # Aggiungi i tag se specificati
+                if tags:
+                    _add_tags_to_product(product_doc.name, tags)
+                
+            except Exception as e:
+                error_msg = f"Errore processando prodotto {idx + 1} ({product_data.get('product_code', 'N/A')}): {str(e)}"
+                errors.append(error_msg)
+                frappe.log_error(error_msg)
+        
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Importati {len(created_products)} nuovi prodotti e aggiornati {len(updated_products)} esistenti",
+            "created_products": created_products,
+            "updated_products": updated_products,
+            "errors": errors if errors else None
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Errore generale durante import prodotti: {str(e)}")
+        frappe.db.rollback()
+        return {
+            "success": False,
+            "error": f"Errore generale: {str(e)}"
+        }
 

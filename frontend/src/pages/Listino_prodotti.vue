@@ -11,6 +11,12 @@
           @click="refreshProducts"
         />
         <Button
+          variant="outline"
+          :label="__('Importa da JSON')"
+          :iconLeft="LucideFileJson"
+          @click="showImportModal = true"
+        />
+        <Button
           variant="solid"
           :label="__('Aggiungi Prodotto')"
           :iconLeft="LucidePlus"
@@ -319,6 +325,47 @@
 
     <!-- Filter Modal -->
 
+    <!-- Import JSON Modal -->
+    <Dialog v-model="showImportModal" :options="{ title: __('Importa Prodotti da JSON') }">
+      <template #body-content>
+        <div class="space-y-4">
+          <p class="text-sm text-ink-gray-6">
+            {{ __('Incolla il JSON con i prodotti da importare. Formato:') }}
+          </p>
+          <pre class="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-32">{{ `[
+  {
+    "product_code": "PROD-001",
+    "product_name": "Nome Prodotto",
+    "standard_rate": 10.00,
+    "description": "Descrizione prodotto",
+    "tags": ["tag1", "tag2"]
+  }
+]` }}</pre>
+          <Textarea
+            v-model="importJsonText"
+            :label="__('JSON Prodotti')"
+            :placeholder="__('Incolla qui il JSON...')"
+            rows="10"
+            class="font-mono text-sm"
+          />
+          <div v-if="importError" class="text-sm text-red-600 bg-red-50 p-3 rounded">
+            {{ importError }}
+          </div>
+        </div>
+      </template>
+      <template #actions>
+        <div class="flex gap-2 ml-auto">
+          <Button variant="ghost" :label="__('Annulla')" @click="closeImportModal" />
+          <Button
+            variant="solid"
+            :label="__('Importa')"
+            :loading="importProductsResource.loading"
+            @click="handleImportProducts"
+          />
+        </div>
+      </template>
+    </Dialog>
+
   </div>
 </template>
 
@@ -336,7 +383,8 @@ import LucideEdit from '~icons/lucide/edit'
 import LucideCopy from '~icons/lucide/copy'
 import LucideTrash2 from '~icons/lucide/trash-2'
 import LucideFilter from '~icons/lucide/filter'
-import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, FileUploader, createResource, call } from 'frappe-ui'
+import LucideFileJson from '~icons/lucide/file-json'
+import { Button, Dialog, Input, Textarea, Dropdown, Checkbox, Badge, FileUploader, createResource, call, toast } from 'frappe-ui'
 import Link from '@/components/Controls/Link.vue'
 import { ref, computed } from 'vue'
 import { usePageMeta } from 'frappe-ui'
@@ -346,12 +394,15 @@ const products = ref([])
 const showAddModal = ref(false)
 const showProductMenuModal = ref(false)
 const showFilterModal = ref(false)
+const showImportModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 const sortBy = ref('name')
 const selectedTag = ref('')
 const selectedProduct = ref(null)
+const importJsonText = ref('')
+const importError = ref('')
 
 
 
@@ -469,6 +520,28 @@ const productsResource = createResource({
       }
     })
     products.value = await Promise.all(promises)
+  }
+})
+
+const importProductsResource = createResource({
+  url: 'crm.api.products.import_products_from_json',
+  method: 'POST',
+  makeParams() {
+    return {
+      products_json: importJsonText.value
+    }
+  },
+  onSuccess: (result) => {
+    if (result.success) {
+      toast.success(__('Prodotti importati con successo!'))
+      closeImportModal()
+      refreshProducts()
+    } else {
+      importError.value = result.error || __('Errore durante l\'importazione')
+    }
+  },
+  onError: (error) => {
+    importError.value = error.message || __('Errore durante l\'importazione')
   }
 })
 
@@ -754,6 +827,28 @@ function getReadableTextColor(bg) {
     return luminance > 0.6 ? '#0b1324' : '#FFFFFF'
   } catch {
     return '#0b1324'
+  }
+}
+
+function closeImportModal() {
+  showImportModal.value = false
+  importJsonText.value = ''
+  importError.value = ''
+}
+
+function handleImportProducts() {
+  if (!importJsonText.value.trim()) {
+    importError.value = __('Inserisci un JSON valido')
+    return
+  }
+  
+  try {
+    // Validate JSON format
+    JSON.parse(importJsonText.value)
+    importError.value = ''
+    importProductsResource.fetch()
+  } catch (e) {
+    importError.value = __('JSON non valido: ') + e.message
   }
 }
 </script>
